@@ -62,7 +62,7 @@ export const AIMessageItem: React.FC<AIMessageItemProps> = ({ message, onActionC
 
   return (
     <div className="flex gap-4 mb-8 text-left group">
-      {/* Gemini Style Sparkle / Brand Icon */}
+      {/* Kinetic Brand Icon */}
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-1">
         <img
           src="/kenetic_logo.webp"

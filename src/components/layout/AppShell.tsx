@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Outlet, useLocation, useNavigate, Navigate } from 'react-router-dom'
-import { GeminiSidebar } from './GeminiSidebar'
+import { KineticSidebar } from './KineticSidebar'
 import { useAuth } from '@/contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { leaveService } from '@/services/leaveService'
@@ -50,18 +50,18 @@ export const AppShell: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#131314] dark:bg-[#131314] text-foreground font-sans transition-colors duration-200">
-      {/* Gemini Collapsible Sidebar */}
-      <GeminiSidebar
+      {/* Kinetic Collapsible Sidebar */}
+      <KineticSidebar
         isExpanded={isSidebarExpanded}
         onToggle={() => setIsSidebarExpanded(!isSidebarExpanded)}
       />
 
       {/* Main Viewport */}
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-background relative">
-        {/* Subtle Gemini Ambient Center Glow */}
+        {/* Subtle Kinetic Ambient Center Glow */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_50%_at_50%_45%,rgba(35,172,227,0.07),rgba(0,0,0,0))] dark:bg-[radial-gradient(ellipse_60%_50%_at_50%_45%,rgba(35,172,227,0.08),rgba(0,0,0,0))]" />
 
-        {/* Minimal Gemini Top Right Controls Bar */}
+        {/* Minimal Kinetic Top Right Controls Bar */}
         <header className="h-14 w-full flex items-center justify-end px-4 sm:px-6 gap-2 z-20 shrink-0">
 
           {/* Alyxra Digital Pill Badge */}

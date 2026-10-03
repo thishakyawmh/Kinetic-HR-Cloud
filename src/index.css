@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* Gemini clean white */
+    --background: 0 0% 100%; /* Kinetic clean white */
     --foreground: 0 0% 12%; /* #1f1f1f */
 
-    --card: 216 33% 97%; /* #f0f4f9 Gemini light surface */
+    --card: 216 33% 97%; /* #f0f4f9 Kinetic light surface */
     --card-foreground: 0 0% 12%;
 
     --popover: 0 0% 100%;
@@ -36,10 +36,10 @@
   }
 
   .dark {
-    --background: 240 3% 8%; /* #131314 Gemini dark background */
+    --background: 240 3% 8%; /* #131314 Kinetic dark background */
     --foreground: 0 0% 90%; /* #e3e3e3 */
 
-    --card: 210 3% 12%; /* #1e1f20 Gemini dark surface container */
+    --card: 210 3% 12%; /* #1e1f20 Kinetic dark surface container */
     --card-foreground: 0 0% 90%;
 
     --popover: 210 3% 12%; /* #1e1f20 */
@@ -52,7 +52,7 @@
     --secondary-foreground: 0 0% 100%;
 
     --muted: 210 3% 15%; /* #242627 */
-    --muted-foreground: 120 2% 77%; /* #c4c7c5 Gemini dark muted */
+    --muted-foreground: 120 2% 77%; /* #c4c7c5 Kinetic dark muted */
 
     --accent: 210 3% 16%;
     --accent-foreground: 0 0% 90%;

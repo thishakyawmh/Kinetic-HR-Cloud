@@ -30,14 +30,14 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
-interface GeminiSidebarProps {
+interface KineticSidebarProps {
   isExpanded: boolean
   onToggle: () => void
   onOpenLeaves?: () => void
   onNewChat?: () => void
 }
 
-export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
+export const KineticSidebar: React.FC<KineticSidebarProps> = ({
   isExpanded,
   onToggle,
   onOpenLeaves,
@@ -229,7 +229,7 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom Profile & Settings Section (Gemini Style) */}
+      {/* Bottom Profile & Settings Section */}
       <div className="p-3 border-t border-border/30 relative">
         {isExpanded ? (
           <div className="flex items-center justify-between">
@@ -271,7 +271,7 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
           </div>
         )}
 
-        {/* Gemini Settings Popup: Theme Toggle & Logout Only */}
+        {/* Kinetic Settings Popup: Theme Toggle & Logout Only */}
         {showSettingsMenu && (
           <div className="absolute bottom-16 left-8 w-56 rounded-[20px] border border-[#3c4043]/60 bg-[#1e1f20] text-[#e3e3e3] p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 text-left space-y-0.5 text-xs font-sans">
             {/* Theme Change Option */}

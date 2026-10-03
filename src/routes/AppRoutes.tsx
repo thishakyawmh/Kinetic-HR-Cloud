@@ -61,7 +61,7 @@ export const AppRoutes: React.FC = () => {
       <Route element={<AppShell />}>
         <Route path="/" element={<RootRedirect />} />
 
-        {/* Employee Experience (AI-First Workspace like Gemini / ChatGPT) */}
+        {/* Employee Experience (Kinetic AI-First Workspace) */}
         <Route path="/employee/dashboard" element={<EmployeeWorkspace />} />
         <Route path="/employee/assistant" element={<EmployeeWorkspace />} />
         <Route path="/employee/overview" element={<EmployeeDashboard />} />
