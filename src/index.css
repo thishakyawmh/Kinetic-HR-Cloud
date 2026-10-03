@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* Gemini clean white */
+    --foreground: 0 0% 12%; /* #1f1f1f */
+
+    --card: 216 33% 97%; /* #f0f4f9 Gemini light surface */
+    --card-foreground: 0 0% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+
+    --primary: 197 78% 51%; /* #23ace3 Kinetic Cyan */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 25 85% 61%; /* #ef8d46 Kinetic Orange */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 216 33% 96%; /* #f0f4f9 */
+    --muted-foreground: 0 0% 45%; /* #737373 */
+
+    --accent: 216 33% 93%;
+    --accent-foreground: 0 0% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 89%; /* #e3e3e3 */
+    --input: 0 0% 89%;
+    --ring: 197 78% 51%;
+
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 240 3% 8%; /* #131314 Gemini dark background */
+    --foreground: 0 0% 90%; /* #e3e3e3 */
+
+    --card: 210 3% 12%; /* #1e1f20 Gemini dark surface container */
+    --card-foreground: 0 0% 90%;
+
+    --popover: 210 3% 12%; /* #1e1f20 */
+    --popover-foreground: 0 0% 90%;
+
+    --primary: 197 78% 51%; /* #23ace3 Kinetic Cyan */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 25 85% 61%; /* #ef8d46 Kinetic Orange */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 3% 15%; /* #242627 */
+    --muted-foreground: 120 2% 77%; /* #c4c7c5 Gemini dark muted */
+
+    --accent: 210 3% 16%;
+    --accent-foreground: 0 0% 90%;
+
+    --destructive: 0 63% 40%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 3% 20%; /* #333538 */
+    --input: 210 3% 20%;
+    --ring: 197 78% 51%;
+  }
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/googlesans/v71/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIKli.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/googlesans/v71/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrw2IKli.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/googlesans/v71/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrzjJ6li.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Google Sans Text';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/googlesanstext/v29/5aUu9-KzpRiLCAt4Unrc-xIKmCU5mE0.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Google Sans Text';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/googlesanstext/v29/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVrm8.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Google Sans Text';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/googlesanstext/v29/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oPFTrm8.ttf') format('truetype');
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Google Sans', 'Google Sans Text', 'Product Sans', Roboto, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Google Sans', 'Product Sans', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  p, span, button, input, textarea {
+    font-family: 'Google Sans Text', 'Google Sans', Roboto, sans-serif;
+  }
+}
+
+/* Remove all scrollbars completely while keeping full scrollability */
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+}
+
+* {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
