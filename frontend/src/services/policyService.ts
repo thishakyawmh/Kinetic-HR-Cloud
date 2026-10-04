@@ -1,8 +1,14 @@
 import { appDataStore } from './storage'
+import { apiClient } from './apiClient'
 import { PolicyDocument } from '@/types'
+
+const useMock = () => import.meta.env.VITE_USE_MOCK_SERVICES !== 'false'
 
 export const policyService = {
   async getPolicies(tenantId: string, category?: string, search?: string): Promise<PolicyDocument[]> {
+    if (!useMock()) {
+      return apiClient.get<PolicyDocument[]>('/policies', { params: { tenantId, category, search } })
+    }
     await new Promise(r => setTimeout(r, 100))
     let list = appDataStore.getPolicies(tenantId)
     if (category && category !== 'all') {
@@ -20,6 +26,9 @@ export const policyService = {
   },
 
   async getPolicyById(id: string): Promise<PolicyDocument | undefined> {
+    if (!useMock()) {
+      return apiClient.get<PolicyDocument>(`/policies/${id}`)
+    }
     await new Promise(r => setTimeout(r, 60))
     return appDataStore.getPolicy(id)
   },
@@ -34,6 +43,9 @@ export const policyService = {
     keyTerms: string[]
     contentExcerpt?: string
   }): Promise<PolicyDocument> {
+    if (!useMock()) {
+      return apiClient.post<PolicyDocument>('/policies', data)
+    }
     await new Promise(r => setTimeout(r, 300))
     return appDataStore.addPolicy(data)
   },

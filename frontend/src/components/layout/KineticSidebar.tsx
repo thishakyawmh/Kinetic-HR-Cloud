@@ -234,12 +234,15 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
         {isExpanded ? (
           <div className="flex items-center justify-between">
             {/* User Profile Card */}
-            <div className="flex items-center gap-2.5 overflow-hidden p-1.5 rounded-xl flex-1 pr-2">
-              <div className="h-7 w-7 rounded-full bg-[#23ace3] text-white text-xs font-semibold flex items-center justify-center shrink-0 shadow-xs">
+            <div className="flex items-center gap-2.5 overflow-hidden p-1.5 rounded-xl flex-1 pr-2 min-w-0">
+              <div className="h-8 w-8 rounded-full bg-[#23ace3] text-white text-xs font-semibold flex items-center justify-center shrink-0 shadow-xs">
                 {user?.name?.[0] || 'U'}
               </div>
-              <div className="truncate text-left">
+              <div className="truncate text-left min-w-0">
                 <div className="text-xs font-medium text-foreground truncate">{user?.name || 'User'}</div>
+                <div className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                  {user?.jobTitle || user?.department || 'Employee'}
+                </div>
               </div>
             </div>
 

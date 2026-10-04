@@ -1,36 +1,14 @@
 {
-  "name": "boc",
+  "name": "kinetic-hr-cloud-workspace",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "Kinetic HR Cloud - Monorepo with React Frontend & Azure Functions Backend",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^5.9.1",
-    "@tanstack/react-query": "^5.104.0",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.49.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-hook-form": "^7.89.0",
-    "react-router-dom": "^7.18.4",
-    "tailwind-merge": "^3.7.0",
-    "zod": "^3.25.76"
-  },
-  "devDependencies": {
-    "@types/node": "^24.19.1",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "@vitejs/plugin-react": "^6.1.1",
-    "autoprefixer": "^10.6.1",
-    "oxlint": "^1.81.0",
-    "postcss": "^8.5.28",
-    "tailwindcss": "^3.4.19",
-    "typescript": "~6.0.2",
-    "vite": "^8.3.0"
+    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend start",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "build": "npm run build:frontend && npm run build:backend"
   }
 }

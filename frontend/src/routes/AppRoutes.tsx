@@ -56,6 +56,7 @@ export const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/login/:companyId" element={<Login />} />
 
       {/* Main Authenticated Application Layout */}
       <Route element={<AppShell />}>
