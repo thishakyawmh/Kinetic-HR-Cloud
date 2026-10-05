@@ -8,8 +8,9 @@ import { PolicyCard } from '@/components/policy/PolicyCard'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Search } from 'lucide-react'
+import { Search, Download } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 export const EmployeePolicies: React.FC = () => {
   const { tenant } = useAuth()
@@ -118,6 +119,27 @@ export const EmployeePolicies: React.FC = () => {
                     </Badge>
                   ))}
                 </div>
+              </div>
+
+              <div className="pt-3 border-t border-border/50 flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const res = await policyService.getDownloadUrl(activePolicy.id)
+                      if (res?.downloadUrl) {
+                        window.open(res.downloadUrl, '_blank')
+                      }
+                    } catch (e) {
+                      console.error('Download policy failed', e)
+                    }
+                  }}
+                  className="text-xs gap-1.5 rounded-xl border-border bg-[#23ace3]/10 text-[#23ace3] hover:bg-[#23ace3]/20"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Download Document PDF</span>
+                </Button>
               </div>
             </div>
           </>

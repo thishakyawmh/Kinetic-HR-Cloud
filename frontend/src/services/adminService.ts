@@ -1,8 +1,21 @@
 import { appDataStore } from './storage'
+import { apiClient } from './apiClient'
 import { AuditEvent, IntegrationStatusItem, AIUsageMetrics } from '@/types'
+
+const useMock = () => import.meta.env.VITE_USE_MOCK_SERVICES !== 'false'
 
 export const adminService = {
   async getDashboardStats(tenantId: string) {
+    if (!useMock()) {
+      return apiClient.get<{
+        totalEmployees: number
+        activeEmployees: number
+        pendingRequests: number
+        activePolicies: number
+        aiRequestsToday: number
+        systemHealth: string
+      }>('/admin/stats', { params: { tenantId } })
+    }
     await new Promise(r => setTimeout(r, 120))
     const employees = appDataStore.getUsers(tenantId)
     const leaves = appDataStore.getLeaveRequests(tenantId)
@@ -20,6 +33,11 @@ export const adminService = {
   },
 
   async getAuditLogs(tenantId: string, filterAction?: string, filterRisk?: string): Promise<AuditEvent[]> {
+    if (!useMock()) {
+      return apiClient.get<AuditEvent[]>('/admin/audit-logs', {
+        params: { tenantId, filterAction, filterRisk },
+      })
+    }
     await new Promise(r => setTimeout(r, 100))
     let logs = appDataStore.getAuditLogs(tenantId)
     if (filterAction && filterAction !== 'all') {
@@ -32,6 +50,9 @@ export const adminService = {
   },
 
   async getIntegrations(): Promise<IntegrationStatusItem[]> {
+    if (!useMock()) {
+      return apiClient.get<IntegrationStatusItem[]>('/admin/integrations')
+    }
     await new Promise(r => setTimeout(r, 80))
     return appDataStore.getIntegrations()
   },

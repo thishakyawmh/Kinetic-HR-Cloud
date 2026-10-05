@@ -158,8 +158,101 @@ export async function updateLeaveStatus(
     })
 
     const { resource: updated } = await container.item(leaveId, tenantId).replace(currentLeave)
+
+    // If approved, deduct used and update remaining in leave_balances container
+    if (body.status === 'approved' && currentLeave.leaveTypeCode && currentLeave.employeeId) {
+      try {
+        const balContainer = getTenantContainer('leave_balances')
+        const { resources: balances } = await balContainer.items
+          .query({
+            query: 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND c.code = @code',
+            parameters: [
+              { name: '@tenantId', value: tenantId },
+              { name: '@userId', value: currentLeave.employeeId },
+              { name: '@code', value: currentLeave.leaveTypeCode },
+            ],
+          })
+          .fetchAll()
+
+        if (balances.length > 0) {
+          const bal = balances[0]
+          bal.used = (bal.used || 0) + (currentLeave.requestedDays || 1)
+          bal.remaining = Math.max(0, (bal.totalAllowance || 0) - bal.used)
+          await balContainer.items.upsert(bal)
+        }
+      } catch (balErr) {
+        console.warn('Could not auto-deduct leave balance:', balErr)
+      }
+    }
+
     return { status: 200, jsonBody: updated }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
   }
 }
+
+/**
+ * GET /api/leaves/types
+ * Retrieves active leave policies and types for the tenant
+ */
+export async function getLeaveTypes(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const defaultLeaveTypes = [
+    {
+      id: 'lt-annual',
+      name: 'Annual Leave',
+      code: 'annual',
+      defaultDays: 20,
+      requiresApproval: true,
+      description: 'Paid standard vacation and planned personal time off.',
+    },
+    {
+      id: 'lt-sick',
+      name: 'Sick Leave',
+      code: 'sick',
+      defaultDays: 10,
+      requiresApproval: true,
+      description: 'Medical recuperation and health visits.',
+    },
+    {
+      id: 'lt-casual',
+      name: 'Casual Leave',
+      code: 'casual',
+      defaultDays: 5,
+      requiresApproval: false,
+      description: 'Short unplanned personal leave.',
+    },
+    {
+      id: 'lt-emergency',
+      name: 'Emergency Leave',
+      code: 'emergency',
+      defaultDays: 3,
+      requiresApproval: true,
+      description: 'Immediate family or critical emergent circumstances.',
+    },
+    {
+      id: 'lt-parental',
+      name: 'Parental Leave',
+      code: 'parental',
+      defaultDays: 60,
+      requiresApproval: true,
+      description: 'Maternity, paternity and adoption leave.',
+    },
+    {
+      id: 'lt-unpaid',
+      name: 'Unpaid Leave',
+      code: 'unpaid',
+      defaultDays: 0,
+      requiresApproval: true,
+      description: 'Extended sabbatical or authorized absence beyond balance.',
+    },
+  ]
+
+  return { status: 200, jsonBody: defaultLeaveTypes }
+}
+

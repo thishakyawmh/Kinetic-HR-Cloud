@@ -38,9 +38,9 @@ export const AdminApprovals: React.FC = () => {
 
         <TabsContent value="pending" className="space-y-4">
           {pendingRequests.length === 0 ? (
-            <Card className="border border-dashed p-10 text-center bg-slate-50">
-              <CheckSquare className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-              <div className="text-sm font-semibold text-slate-800">No Pending Requests</div>
+            <Card className="border border-dashed border-border/80 p-10 text-center bg-card/40 rounded-2xl">
+              <CheckSquare className="h-8 w-8 text-emerald-400 mx-auto mb-2" />
+              <div className="text-sm font-semibold text-foreground">No Pending Requests</div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 All employee requests across all business units have been addressed.
               </p>

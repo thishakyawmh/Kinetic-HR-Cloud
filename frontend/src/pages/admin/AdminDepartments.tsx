@@ -23,32 +23,32 @@ export const AdminDepartments: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {departments.map((dept, i) => (
-          <Card key={i} className="border-slate-200 hover:border-slate-300 transition-all shadow-xs">
+          <Card key={i} className="border-border/60 hover:border-border transition-all shadow-xs bg-card rounded-2xl">
             <CardContent className="p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-sky-50 text-sky-700">
+                  <div className="p-2 rounded-lg bg-[#23ace3]/10 text-[#23ace3]">
                     <Building className="h-4 w-4" />
                   </div>
-                  <h4 className="font-bold text-slate-900 text-sm">{dept.name}</h4>
+                  <h4 className="font-bold text-foreground text-sm">{dept.name}</h4>
                 </div>
                 <Badge variant="outline" className="text-[10px]">
                   {dept.status}
                 </Badge>
               </div>
 
-              <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div className="space-y-1.5 text-xs text-muted-foreground bg-muted/30 p-3 rounded-xl border border-border/50">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Department Lead:</span>
-                  <span className="font-semibold text-slate-900">{dept.head}</span>
+                  <span>Department Lead:</span>
+                  <span className="font-semibold text-foreground">{dept.head}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Active Headcount:</span>
-                  <span className="font-semibold text-slate-900">{dept.count} members</span>
+                  <span>Active Headcount:</span>
+                  <span className="font-semibold text-foreground">{dept.count} members</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Staffing Threshold:</span>
-                  <span className="font-semibold text-indigo-700">{dept.threshold}</span>
+                  <span>Staffing Threshold:</span>
+                  <span className="font-semibold text-[#23ace3]">{dept.threshold}</span>
                 </div>
               </div>
             </CardContent>

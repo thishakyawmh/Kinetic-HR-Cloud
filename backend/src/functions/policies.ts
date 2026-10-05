@@ -68,3 +68,66 @@ export async function createPolicy(
     return { status: 500, jsonBody: { error: err.message } }
   }
 }
+
+/**
+ * GET /api/policies/{id}
+ */
+export async function getPolicyById(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+  const policyId = request.params.id
+
+  try {
+    const policies = await queryTenantItems<any>(
+      'policies',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.id = @id',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@id', value: policyId },
+      ]
+    )
+
+    if (policies.length === 0) {
+      return { status: 404, jsonBody: { error: 'Policy not found' } }
+    }
+
+    return { status: 200, jsonBody: policies[0] }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+/**
+ * GET /api/policies/{id}/download-url
+ * Generates an Azure Blob Storage SAS token for downloading policy documents
+ */
+export async function getPolicyDownloadUrl(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+  const policyId = request.params.id
+
+  try {
+    const fileName = `${policyId}.pdf`
+    const { generateTenantBlobSasUrl } = await import('../config/blob')
+    const downloadUrl = await generateTenantBlobSasUrl(tenantId, 'policies', fileName, 'r', 30)
+
+    return {
+      status: 200,
+      jsonBody: { downloadUrl, expiresInMinutes: 30 },
+    }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+

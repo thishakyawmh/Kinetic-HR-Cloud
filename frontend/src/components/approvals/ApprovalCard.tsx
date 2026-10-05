@@ -19,12 +19,16 @@ import { approvalService } from '@/services/approvalService'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 
+import { useAuth } from '@/contexts/AuthContext'
+
 interface ApprovalCardProps {
   request: LeaveRequest
   onStatusChange?: (updated: LeaveRequest) => void
 }
 
 export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusChange }) => {
+  const { user } = useAuth()
+  const reviewerName = user?.name || 'Manager Reviewer'
   const [isProcessing, setIsProcessing] = useState(false)
   const [dialogMode, setDialogMode] = useState<'reject' | 'clarify' | null>(null)
   const [commentText, setCommentText] = useState('')
@@ -34,8 +38,8 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
     try {
       const updated = await approvalService.approveRequest(
         request.id,
-        'David Wilson',
-        'Approved by Engineering Director.'
+        reviewerName,
+        `Approved by ${reviewerName}.`
       )
       if (updated && onStatusChange) {
         onStatusChange(updated)
@@ -51,7 +55,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
     try {
       const updated = await approvalService.rejectRequest(
         request.id,
-        'David Wilson',
+        reviewerName,
         dialogMode === 'clarify' ? `Clarification needed: ${commentText}` : commentText
       )
       if (updated && onStatusChange) {

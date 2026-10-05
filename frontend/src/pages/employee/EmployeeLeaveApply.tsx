@@ -121,29 +121,27 @@ export const EmployeeLeaveApply: React.FC = () => {
       <PageHeader
         title="Apply for Leave"
         subtitle="Submit a formal leave request for manager review and calendar synchronization."
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/employee/leave')}
-          className="gap-1 text-xs"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Back to Leave</span>
-        </Button>
-      </PageHeader>
-
-
+        backButton={
+          <button
+            type="button"
+            onClick={() => navigate('/employee/leave')}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer group py-1"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <span>Back to Leave</span>
+          </button>
+        }
+      />
 
       {submittedRequest ? (
         /* Confirmation State */
-        <Card className="border-emerald-200 bg-emerald-50/30 p-8 text-center animate-in fade-in zoom-in-95">
+        <Card className="border border-emerald-500/30 bg-emerald-500/5 p-8 text-center rounded-[24px] shadow-sm animate-in fade-in zoom-in-95">
           <CardContent className="space-y-4 max-w-md mx-auto">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 mx-auto">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 mx-auto">
               <CheckCircle2 className="h-8 w-8" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900">
+              <h3 className="text-xl font-bold text-foreground">
                 Leave request submitted successfully
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
@@ -179,7 +177,7 @@ export const EmployeeLeaveApply: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setSubmittedRequest(null)}
-                className="text-xs"
+                className="text-xs rounded-xl"
               >
                 Submit Another Request
               </Button>
@@ -187,7 +185,7 @@ export const EmployeeLeaveApply: React.FC = () => {
                 variant="default"
                 size="sm"
                 onClick={() => navigate('/employee/leave')}
-                className="text-xs bg-sky-600 text-white"
+                className="text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl"
               >
                 View Leave Dashboard
               </Button>
@@ -198,21 +196,24 @@ export const EmployeeLeaveApply: React.FC = () => {
         /* Structured Form */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Standard Leave Application</CardTitle>
-                <CardDescription>
+            <Card className="border border-border/70 bg-card rounded-[24px] shadow-sm overflow-hidden">
+              <CardHeader className="p-6 pb-2">
+                <CardTitle className="text-base font-bold text-foreground">Standard Leave Application</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Please submit planned annual leave at least 2 weeks in advance.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6 pt-4">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   {/* Leave Type Select */}
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 block mb-1.5">
+                    <label className="text-xs font-semibold text-foreground block mb-1.5">
                       Leave Type *
                     </label>
-                    <Select {...register('leaveTypeCode')}>
+                    <Select
+                      {...register('leaveTypeCode')}
+                      className="h-10 rounded-xl bg-background border-border/80 text-foreground"
+                    >
                       <option value="annual">Annual Leave (Planned Vacation)</option>
                       <option value="sick">Sick Leave (Medical & Health)</option>
                       <option value="casual">Casual Leave (Personal Errand)</option>
@@ -224,48 +225,56 @@ export const EmployeeLeaveApply: React.FC = () => {
                   {/* Dates Row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-slate-800 block mb-1.5">
+                      <label className="text-xs font-semibold text-foreground block mb-1.5">
                         Start Date *
                       </label>
-                      <Input type="date" {...register('startDate')} />
+                      <Input
+                        type="date"
+                        {...register('startDate')}
+                        className="h-10 rounded-xl bg-background border-border/80 text-foreground"
+                      />
                       {errors.startDate && (
-                        <p className="text-[11px] text-rose-600 mt-1">{errors.startDate.message}</p>
+                        <p className="text-[11px] text-rose-500 mt-1">{errors.startDate.message}</p>
                       )}
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-800 block mb-1.5">
+                      <label className="text-xs font-semibold text-foreground block mb-1.5">
                         End Date *
                       </label>
-                      <Input type="date" {...register('endDate')} />
+                      <Input
+                        type="date"
+                        {...register('endDate')}
+                        className="h-10 rounded-xl bg-background border-border/80 text-foreground"
+                      />
                       {errors.endDate && (
-                        <p className="text-[11px] text-rose-600 mt-1">{errors.endDate.message}</p>
+                        <p className="text-[11px] text-rose-500 mt-1">{errors.endDate.message}</p>
                       )}
                     </div>
                   </div>
 
                   {/* Reason */}
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 block mb-1.5">
+                    <label className="text-xs font-semibold text-foreground block mb-1.5">
                       Reason for Absence *
                     </label>
                     <Textarea
                       {...register('reason')}
-                      placeholder="Please provide details regarding your leave request..."
                       rows={3}
+                      className="rounded-xl bg-background border-border/80 text-foreground resize-none"
                     />
                     {errors.reason && (
-                      <p className="text-[11px] text-rose-600 mt-1">{errors.reason.message}</p>
+                      <p className="text-[11px] text-rose-500 mt-1">{errors.reason.message}</p>
                     )}
                   </div>
 
                   {/* Optional Attachment */}
                   <div>
-                    <label className="text-xs font-semibold text-slate-800 block mb-1.5">
+                    <label className="text-xs font-semibold text-foreground block mb-1.5">
                       Optional Attachment (Medical Certificate / Travel Proof)
                     </label>
-                    <div className="border border-dashed border-slate-300 rounded-xl p-4 text-center hover:bg-slate-50 cursor-pointer">
-                      <FileUp className="h-5 w-5 text-slate-400 mx-auto mb-1" />
-                      <span className="text-xs text-slate-600 font-medium block">
+                    <div className="border border-dashed border-border/80 hover:border-[#23ace3]/60 rounded-2xl p-5 text-center bg-muted/20 hover:bg-muted/40 transition-all cursor-pointer group">
+                      <FileUp className="h-5 w-5 text-muted-foreground group-hover:text-[#23ace3] mx-auto mb-1.5 transition-colors" />
+                      <span className="text-xs text-foreground font-medium block">
                         Click to select or drag and drop document
                       </span>
                       <span className="text-[10px] text-muted-foreground">PDF, PNG, JPG up to 10MB</span>
@@ -277,7 +286,7 @@ export const EmployeeLeaveApply: React.FC = () => {
                     <Button
                       type="submit"
                       disabled={applyMutation.isPending}
-                      className="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs h-10"
+                      className="w-full bg-[#23ace3] hover:bg-[#1b97ca] disabled:opacity-60 text-white font-medium text-sm h-11 rounded-xl shadow-xs transition-all cursor-pointer"
                     >
                       {applyMutation.isPending ? 'Submitting Request...' : 'Submit Leave Request'}
                     </Button>
@@ -289,34 +298,34 @@ export const EmployeeLeaveApply: React.FC = () => {
 
           {/* Quota & Calculation Preview Column */}
           <div className="space-y-4">
-            <Card className="bg-slate-50/70 border-slate-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xs uppercase font-bold text-slate-600">
+            <Card className="border border-border/70 bg-card rounded-[24px] shadow-sm overflow-hidden">
+              <CardHeader className="p-5 pb-3">
+                <CardTitle className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                   Balance Calculation Preview
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-xs">
-                <div className="flex justify-between py-2 border-b border-border/50">
+              <CardContent className="p-5 pt-0 space-y-3 text-xs">
+                <div className="flex justify-between py-2 border-b border-border/40">
                   <span className="text-muted-foreground">Available Quota:</span>
                   <span className="font-bold text-foreground">{currentRemaining} days</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-border/50">
+                <div className="flex justify-between py-2 border-b border-border/40">
                   <span className="text-muted-foreground">Requested Duration:</span>
                   <span className="font-bold text-[#23ace3]">{requestedDays} business day(s)</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-border/50">
+                <div className="flex justify-between py-2 border-b border-border/40">
                   <span className="text-muted-foreground">Remaining after approval:</span>
                   <span className={`font-bold ${afterRemaining < 0 ? 'text-rose-500' : 'text-foreground'}`}>
                     {afterRemaining} days
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] text-muted-foreground space-y-1 mt-3">
+                <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/50 text-[11px] text-muted-foreground space-y-1 mt-3">
                   <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                    <ShieldCheck className="h-3.5 w-3.5 text-[#23ace3]" />
+                    <ShieldCheck className="h-4 w-4 text-[#23ace3]" />
                     <span>Manager Review SLA</span>
                   </div>
-                  <p>
+                  <p className="leading-relaxed">
                     Submitted requests are routed to {user?.managerName || 'David Wilson'}. Standard review SLA is 24 hours.
                   </p>
                 </div>

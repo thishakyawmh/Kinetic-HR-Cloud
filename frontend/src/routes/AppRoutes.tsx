@@ -3,7 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { AppShell } from '@/components/layout/AppShell'
 
-// Auth
+// Public Landing & Auth
+import { LandingPage } from '@/pages/public/LandingPage'
 import { Login } from '@/pages/auth/Login'
 
 // Employee Pages
@@ -55,12 +56,16 @@ const RootRedirect: React.FC = () => {
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
+      {/* Public Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* Authentication */}
       <Route path="/login" element={<Login />} />
       <Route path="/login/:companyId" element={<Login />} />
 
       {/* Main Authenticated Application Layout */}
       <Route element={<AppShell />}>
-        <Route path="/" element={<RootRedirect />} />
+        <Route path="/dashboard" element={<RootRedirect />} />
 
         {/* Employee Experience (Kinetic AI-First Workspace) */}
         <Route path="/employee/dashboard" element={<EmployeeWorkspace />} />

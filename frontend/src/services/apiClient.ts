@@ -25,7 +25,8 @@ class ApiClient {
     }
 
     try {
-      const rawSession = localStorage.getItem('kinetic_auth_session')
+      const rawSession =
+        sessionStorage.getItem('kinetic_auth_session') || localStorage.getItem('kinetic_auth_session')
       if (rawSession) {
         const session = JSON.parse(rawSession)
         if (session.token) {
@@ -72,6 +73,8 @@ class ApiClient {
 
       if (response.status === 401) {
         // Token expired or invalid
+        sessionStorage.removeItem('kinetic_auth_session')
+        sessionStorage.setItem('kinetic_logged_out', 'true')
         localStorage.removeItem('kinetic_auth_session')
         localStorage.setItem('kinetic_logged_out', 'true')
         if (!window.location.pathname.startsWith('/login')) {

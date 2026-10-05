@@ -18,7 +18,7 @@ import {
 
 export const Login: React.FC = () => {
   const { companyId: routeCompanyId } = useParams<{ companyId?: string }>()
-  const { switchUser, switchTenant, allTenants, allUsers } = useAuth()
+  const { allTenants, loginWithCredentials, validateOrganization } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
@@ -28,6 +28,7 @@ export const Login: React.FC = () => {
   const [passwordInput, setPasswordInput] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   // Resolve tenant matching current routeCompanyId
   const currentTenant = allTenants.find(
@@ -44,13 +45,8 @@ export const Login: React.FC = () => {
     primaryColor: '#0284c7',
   } : allTenants[0])
 
-  // Users belonging to the current tenant or default
-  const tenantUsers = allUsers.filter(u =>
-    currentTenant ? u.tenantId === currentTenant.id : true
-  )
-
   // Step 1: Handle Organization ID Submission
-  const handleCompanySubmit = (e: React.FormEvent) => {
+  const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const cleanId = companyInput.trim().toLowerCase()
     if (!cleanId) {
@@ -58,11 +54,20 @@ export const Login: React.FC = () => {
       return
     }
     setErrorMessage('')
-    navigate(`/login/${encodeURIComponent(cleanId)}`)
+    setIsLoading(true)
+
+    try {
+      await validateOrganization(cleanId)
+      navigate(`/login/${encodeURIComponent(cleanId)}`)
+    } catch (err: any) {
+      setErrorMessage(err.message || `Organization "${cleanId}" not found`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Step 2: Handle Employee ID & Password Login Submission
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
+  const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage('')
 
@@ -75,50 +80,27 @@ export const Login: React.FC = () => {
       return
     }
 
-    // Try finding the user by employeeNumber, email, or id
-    const cleanEmp = employeeIdInput.trim().toLowerCase()
-    const targetTenantId = currentTenant ? currentTenant.id : 'tenant-kinetic'
-
-    const matchedUser = allUsers.find(
-      u =>
-        u.tenantId === targetTenantId &&
-        (u.employeeNumber.toLowerCase() === cleanEmp ||
-          u.email.toLowerCase() === cleanEmp ||
-          u.id.toLowerCase() === cleanEmp ||
-          u.name.toLowerCase().includes(cleanEmp))
-    ) || allUsers.find(
-      u =>
-        u.employeeNumber.toLowerCase() === cleanEmp ||
-        u.email.toLowerCase() === cleanEmp ||
-        u.id.toLowerCase() === cleanEmp
-    )
-
-    if (matchedUser) {
-      switchTenant(matchedUser.tenantId)
-      switchUser(matchedUser.id)
+    setIsLoading(true)
+    try {
+      const targetTenantId = currentTenant ? currentTenant.id : 'tenant-kinetic'
+      const session = await loginWithCredentials(
+        targetTenantId,
+        employeeIdInput.trim(),
+        passwordInput.trim()
+      )
       const targetRoute =
-        matchedUser.role === 'admin'
+        session.user.role === 'admin'
           ? '/admin/dashboard'
-          : matchedUser.role === 'manager'
-          ? '/manager/dashboard'
-          : matchedUser.role === 'platform_admin'
-          ? '/platform/dashboard'
-          : '/employee/dashboard'
+          : session.user.role === 'manager'
+            ? '/manager/dashboard'
+            : session.user.role === 'platform_admin'
+              ? '/platform/dashboard'
+              : '/employee/dashboard'
       navigate(targetRoute)
-    } else {
-      // If no exact user match, allow demo login with the first tenant user or show error
-      if (tenantUsers.length > 0) {
-        const fallback = tenantUsers[0]
-        switchTenant(fallback.tenantId)
-        switchUser(fallback.id)
-        navigate('/employee/dashboard')
-      } else {
-        setErrorMessage(
-          `No employee found with ID "${employeeIdInput}". Try demo ID: ${
-            currentTenant?.code === 'NOVA' ? 'NV-108' : 'KT-8842'
-          }`
-        )
-      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Login failed. Please verify your Employee ID and password.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -216,9 +198,10 @@ export const Login: React.FC = () => {
               {/* Submit Organization ID Button */}
               <button
                 type="submit"
-                className="w-full h-11 bg-[#23ace3] hover:bg-[#1b97ca] text-white font-medium text-sm rounded-xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                disabled={isLoading}
+                className="w-full h-11 bg-[#23ace3] hover:bg-[#1b97ca] disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium text-sm rounded-xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
-                <span>Continue</span>
+                <span>{isLoading ? 'Verifying...' : 'Continue'}</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>
@@ -314,9 +297,10 @@ export const Login: React.FC = () => {
               {/* Sign In Button */}
               <button
                 type="submit"
-                className="w-full h-11 bg-[#23ace3] hover:bg-[#1b97ca] text-white font-medium text-sm rounded-xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 mt-4"
+                disabled={isLoading}
+                className="w-full h-11 bg-[#23ace3] hover:bg-[#1b97ca] disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium text-sm rounded-xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 mt-4"
               >
-                <span>Sign In</span>
+                <span>{isLoading ? 'Signing In...' : 'Sign In'}</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>
@@ -325,7 +309,7 @@ export const Login: React.FC = () => {
 
         {/* Footer Disclaimer */}
         <p className="text-center text-xs text-muted-foreground/80">
-          Kinetic HR Cloud is an enterprise AI cloud layer. All transactions are logged for SOC2 compliance.
+          Kinetic HR Cloud is an enterprise multi-tenant HR system.
         </p>
       </div>
     </div>

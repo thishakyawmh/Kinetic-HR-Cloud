@@ -53,17 +53,17 @@ export const EmployeePayslipDetail: React.FC = () => {
         title={`Payslip: ${payslip.periodMonth} ${payslip.periodYear}`}
         subtitle={`Disbursement Date: ${payslip.payDate} • Reference #${payslip.id}`}
         badge={<Badge variant="success">{payslip.status}</Badge>}
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/employee/payslips')}
-          className="gap-1 text-xs"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Back to Payslips</span>
-        </Button>
-      </PageHeader>
+        backButton={
+          <button
+            type="button"
+            onClick={() => navigate('/employee/payslips')}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer group py-1"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <span>Back to Payslips</span>
+          </button>
+        }
+      />
 
       {/* Payslip Header Card */}
       <Card className="border border-border/60 shadow-sm bg-card rounded-2xl overflow-hidden">
@@ -185,6 +185,24 @@ export const EmployeePayslipDetail: React.FC = () => {
               Official electronic payroll document generated under IRS Form W-2 compliance.
             </span>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const res = await payrollService.getDownloadUrl(payslip.id)
+                    if (res?.downloadUrl) {
+                      window.open(res.downloadUrl, '_blank')
+                    }
+                  } catch (e) {
+                    console.error('Download failed', e)
+                  }
+                }}
+                className="text-xs gap-1.5 rounded-xl border-border bg-[#23ace3]/10 text-[#23ace3] hover:bg-[#23ace3]/20"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Download PDF</span>
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

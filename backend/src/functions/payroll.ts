@@ -35,6 +35,40 @@ export async function getPayslips(
 }
 
 /**
+ * GET /api/payroll/payslips/{id}
+ */
+export async function getPayslipById(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+  const payslipId = request.params.id
+
+  try {
+    const payslips = await queryTenantItems<any>(
+      'payslips',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.id = @id',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@id', value: payslipId },
+      ]
+    )
+
+    if (payslips.length === 0) {
+      return { status: 404, jsonBody: { error: 'Payslip not found' } }
+    }
+
+    return { status: 200, jsonBody: payslips[0] }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+/**
  * GET /api/payroll/payslips/{id}/download-url
  * Generates an Azure Blob Storage SAS token for secure direct download
  */
@@ -61,3 +95,4 @@ export async function getPayslipDownloadUrl(
     return { status: 500, jsonBody: { error: err.message } }
   }
 }
+

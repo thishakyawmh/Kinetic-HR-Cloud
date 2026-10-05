@@ -49,4 +49,12 @@ export const policyService = {
     await new Promise(r => setTimeout(r, 300))
     return appDataStore.addPolicy(data)
   },
+
+  async getDownloadUrl(policyId: string): Promise<{ downloadUrl: string }> {
+    if (!useMock()) {
+      return apiClient.get<{ downloadUrl: string }>(`/policies/${policyId}/download-url`)
+    }
+    return { downloadUrl: '#' }
+  },
 }
+

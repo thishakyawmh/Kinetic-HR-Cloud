@@ -6,7 +6,10 @@
     "build": "tsc",
     "watch": "tsc -w",
     "prestart": "npm run build",
-    "start": "func start",
+    "dev": "npm run build && node dist/src/dev-server.js",
+    "start": "npm run build && node dist/src/dev-server.js",
+    "seed": "npm run build && node dist/src/scripts/seed.js",
+    "start:func": "func start",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
