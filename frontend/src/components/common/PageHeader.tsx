@@ -5,12 +5,13 @@ interface PageHeaderProps {
   subtitle?: string
   badge?: React.ReactNode
   backButton?: React.ReactNode
+  showBorder?: boolean
   children?: React.ReactNode
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, badge, backButton, children }) => {
+export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, badge, backButton, showBorder = true, children }) => {
   return (
-    <div className="space-y-3 pb-6 mb-6 border-b border-border/60">
+    <div className={`space-y-2 ${showBorder ? 'pb-6 mb-6 border-b border-border/60' : 'pb-1'}`}>
       {backButton && (
         <div className="flex items-center">
           {backButton}

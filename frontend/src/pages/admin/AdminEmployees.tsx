@@ -17,18 +17,23 @@ import {
   UserPlus,
   Edit2,
   Building,
+  Building2,
   Users,
   Database,
   UploadCloud,
-  FileSpreadsheet,
   CheckCircle2,
   Sparkles,
   Fingerprint,
-  PlusCircle,
-  ArrowRight,
   ShieldCheck,
   RefreshCw,
   Plus,
+  ChevronDown,
+  ChevronUp,
+  MoreVertical,
+  ArrowRight,
+  Eye,
+  Globe,
+  Layers,
 } from 'lucide-react'
 
 // Sample preset fingerprint scanner & legacy ERP database export
@@ -100,16 +105,32 @@ export const AdminEmployees: React.FC = () => {
   const { tenant } = useAuth()
   const queryClient = useQueryClient()
 
-  // Tab state (Default to Departments & Workspaces as requested)
-  const [activeTab, setActiveTab] = useState<'departments' | 'import' | 'directory'>('departments')
+  // 2 Navigation Tabs
+  const [activeTab, setActiveTab] = useState<'departments' | 'import'>('departments')
 
-  // Search and Filter
+  // Workspace Mode: 'departments' (Multiple divisions) vs 'company' (Single company workspace)
+  const [workspaceMode, setWorkspaceMode] = useState<'departments' | 'company'>('departments')
+
+  // Selection Modal state for "+ Add New Workspace"
+  const [isAddWorkspaceChoiceOpen, setIsAddWorkspaceChoiceOpen] = useState(false)
+
+  // Master directory is HIDDEN by default until user clicks blue "Explore" text inside Employee Count Card!
+  const [showMasterDirectory, setShowMasterDirectory] = useState(false)
+
+  // Three dots menu open state for department cards
+  const [activeMenuDept, setActiveMenuDept] = useState<string | null>(null)
+
+  // Expanded Department Card state for inline Employee Directory viewing
+  const [expandedDept, setExpandedDept] = useState<string | null>(null)
+
+  // Search & Filters for Master Directory
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('all')
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editingDept, setEditingDept] = useState<any | null>(null)
 
   // Single Employee Form State
   const [newName, setNewName] = useState('')
@@ -118,7 +139,7 @@ export const AdminEmployees: React.FC = () => {
   const [newDept, setNewDept] = useState('Engineering')
   const [newTitle, setNewTitle] = useState('')
 
-  // Ingestion / Import State
+  // Ingestion State
   const [importJsonText, setImportJsonText] = useState(JSON.stringify(SAMPLE_BIOMETRIC_DATASET, null, 2))
   const [deptColumnName, setDeptColumnName] = useState('Department')
   const [importStatus, setImportStatus] = useState<{
@@ -167,7 +188,7 @@ export const AdminEmployees: React.FC = () => {
     },
   })
 
-  // Run Bulk Dataset Ingestion
+  // Run Bulk Ingestion
   const handleRunIngestion = async () => {
     setIsImporting(true)
     setImportStatus(null)
@@ -215,28 +236,19 @@ export const AdminEmployees: React.FC = () => {
     return matchesSearch && matchesDept
   })
 
-  // Calculate unique departments from employee records + static departments
+  // Unique Department Names
   const allDeptNames = Array.from(
     new Set([...departments.map((d: any) => d.name), ...employees.map(e => e.department)])
   )
 
   return (
-    <div className="space-y-6">
-      {/* Page Header (Clean, without top buttons as requested) */}
-      <PageHeader
-        title="Workforce, Directory & Department Hub"
-        subtitle="Unified department division workspaces, legacy biometric dataset ingestion pool, and employee directory."
-        badge={
-          <Badge variant="outline" className="text-xs bg-[#23ace3]/10 border-[#23ace3]/30 text-[#23ace3]">
-            {tenant?.plan || 'Enterprise'} Plan • {employees.length} Active Personnel
-          </Badge>
-        }
-      />
+    <div className="space-y-6 font-sans">
+      {/* Page Header */}
+      <PageHeader title="Workforce, Directory & Department Hub" showBorder={false} />
 
-      {/* Primary Navigation Tabs in Requested Order */}
-      <div className="flex items-center justify-between border-b border-border/60 pb-3">
+      {/* Navigation Tabs */}
+      <div className="flex items-center justify-between pb-1 border-b border-border/50">
         <div className="flex gap-2">
-          {/* TAB 1: DEPARTMENTS & WORKSPACES */}
           <button
             onClick={() => setActiveTab('departments')}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
@@ -246,10 +258,13 @@ export const AdminEmployees: React.FC = () => {
             }`}
           >
             <Building className="h-4 w-4" />
-            <span>Departments & Workspaces ({allDeptNames.length})</span>
+            <span>
+              {workspaceMode === 'company'
+                ? 'Whole Company Workspace'
+                : `Departments & Workspaces (${allDeptNames.length})`}
+            </span>
           </button>
 
-          {/* TAB 2: DATABASE & FINGERPRINT INGESTION POOL */}
           <button
             onClick={() => setActiveTab('import')}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
@@ -264,19 +279,6 @@ export const AdminEmployees: React.FC = () => {
               Biometric Legacy
             </Badge>
           </button>
-
-          {/* TAB 3: EMPLOYEE DIRECTORY */}
-          <button
-            onClick={() => setActiveTab('directory')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-              activeTab === 'directory'
-                ? 'bg-[#23ace3] text-white shadow-xs'
-                : 'bg-card text-muted-foreground hover:text-foreground border border-border/50'
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            <span>Employee Directory ({employees.length})</span>
-          </button>
         </div>
 
         <Button
@@ -286,7 +288,7 @@ export const AdminEmployees: React.FC = () => {
             refetchEmployees()
             refetchDepts()
           }}
-          className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
+          className="text-xs text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           <span>Refresh Data</span>
@@ -294,132 +296,564 @@ export const AdminEmployees: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: DEPARTMENTS & WORKSPACE DIVISIONS (FIRST TAB)                      */}
+      {/* TAB 1: WORKSPACES & DEPARTMENTS                                           */}
       {/* ========================================================================= */}
       {activeTab === 'departments' && (
         <div className="space-y-6">
-          {/* Section Header with Add New Workspace Button */}
-          <div className="flex items-center justify-between bg-card p-4 rounded-2xl border border-border/60">
+          {/* TOP OVERVIEW SUMMARY CARDS (Department/Workspace Count & Employee Count Card with Blue Explore Text) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* CARD 1: DEPARTMENT / WORKSPACE COUNT CARD */}
+            <Card className="border border-border/70 bg-card rounded-2xl p-5 shadow-sm hover:border-[#23ace3]/40 transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3.5 rounded-2xl bg-[#23ace3]/15 text-[#23ace3] border border-[#23ace3]/30">
+                    {workspaceMode === 'company' ? <Globe className="h-6 w-6" /> : <Building className="h-6 w-6" />}
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {workspaceMode === 'company' ? 'Active Enterprise Workspace' : 'Department Workspace Divisions'}
+                    </div>
+                    <div className="text-2xl font-black text-foreground mt-0.5">
+                      {workspaceMode === 'company' ? '1 Whole Company Workspace' : `${allDeptNames.length} Departments`}
+                    </div>
+                  </div>
+                </div>
+
+                {workspaceMode === 'company' ? (
+                  <button
+                    type="button"
+                    onClick={() => setWorkspaceMode('departments')}
+                    className="text-xs text-[#23ace3] hover:underline font-semibold bg-[#23ace3]/10 px-2.5 py-1 rounded-lg border border-[#23ace3]/20 cursor-pointer"
+                  >
+                    Switch to Departments
+                  </button>
+                ) : (
+                  <Badge variant="outline" className="text-xs bg-[#23ace3]/10 border-[#23ace3]/30 text-[#23ace3] font-mono">
+                    Active Workspaces
+                  </Badge>
+                )}
+              </div>
+            </Card>
+
+            {/* CARD 2: EMPLOYEE COUNT CARD WITH BLUE EXPLORE TEXT (Toggles Master Directory) */}
+            <Card className="border border-border/70 bg-card rounded-2xl p-5 shadow-sm hover:border-[#23ace3]/40 transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <Users className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Total Active Personnel
+                    </div>
+                    <div className="text-2xl font-black text-foreground mt-0.5">
+                      {employees.length} Members
+                    </div>
+                  </div>
+                </div>
+
+                {/* BLUE EXPLORE TEXT / BUTTON INSIDE EMPLOYEE CARD */}
+                <button
+                  type="button"
+                  onClick={() => setShowMasterDirectory(!showMasterDirectory)}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#23ace3]/10 hover:bg-[#23ace3]/20 border border-[#23ace3]/30 text-[#23ace3] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Click to view/hide master employee roster"
+                >
+                  <span>{showMasterDirectory ? 'Hide Master Roster' : 'Explore Master Directory'}</span>
+                  <ArrowRight className={`h-3.5 w-3.5 transition-transform ${showMasterDirectory ? 'rotate-90' : ''}`} />
+                </button>
+              </div>
+            </Card>
+          </div>
+
+          {/* ACTIVE DEPARTMENTS HEADER BAR WITH + ADD NEW WORKSPACE BUTTON (OPENS POPUP MODAL) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 rounded-2xl border border-border/60 shadow-xs">
             <div>
-              <h3 className="text-sm font-bold text-foreground">Active Department Divisions & Branch Workspaces</h3>
+              <h3 className="text-sm font-bold text-foreground">
+                {workspaceMode === 'company'
+                  ? `${tenant?.name || 'Kinetic Technologies'} - Single Whole Company Workspace`
+                  : 'Active Department Divisions & Branch Workspaces'}
+              </h3>
               <p className="text-xs text-muted-foreground">
-                Manage department operational staffing thresholds, branch units, and assigned personnel.
+                {workspaceMode === 'company'
+                  ? 'All personnel are managed under one consolidated company workspace.'
+                  : 'Manage department operational staffing thresholds, branch units, and assigned personnel.'}
               </p>
             </div>
 
-            {/* Dedicated + Add New Workspace Button (Navigates to full new page) */}
+            {/* + Add New Workspace Button OPENS POPUP DIALOG */}
             <Button
               variant="default"
               size="sm"
-              onClick={() => navigate('/admin/workforce/create-workspace')}
-              className="bg-[#23ace3] hover:bg-[#1b97ca] text-white text-xs font-semibold px-4 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+              onClick={() => setIsAddWorkspaceChoiceOpen(true)}
+              className="bg-[#23ace3] hover:bg-[#1b97ca] text-white text-xs font-bold px-4 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer shrink-0"
             >
               <Plus className="h-4 w-4" />
               <span>+ Add New Workspace</span>
             </Button>
           </div>
 
-          {/* Summary Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-border/60 bg-card rounded-2xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-[#23ace3]/10 text-[#23ace3]">
-                  <Building className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground font-medium">Active Workspaces</div>
-                  <div className="text-xl font-bold text-foreground">{allDeptNames.length} Divisions</div>
-                </div>
-              </div>
-            </Card>
+          {/* WORKSPACE CONTENT: SINGLE COMPANY WORKSPACE vs MULTI-DEPARTMENT CARDS */}
+          {workspaceMode === 'company' ? (
+            /* IF WHOLE COMPANY WORKSPACE: DON'T SHOW INDIVIDUAL DEPARTMENTS! SHOW 1 WHOLE COMPANY WORKSPACE CARD! */
+            <Card className="border-2 border-[#23ace3] bg-gradient-to-br from-card via-card to-[#23ace3]/10 shadow-lg rounded-2xl overflow-hidden transition-all">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-tr from-[#23ace3] to-[#ef8d46] text-white shadow-md">
+                      <Globe className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-foreground text-lg">
+                        {tenant?.name || 'Kinetic Technologies'} Whole Company Workspace
+                      </h4>
+                      <div className="text-xs text-[#23ace3] font-mono font-semibold">
+                        Single Unified Enterprise Workspace • {employees.length} Active Members
+                      </div>
+                    </div>
+                  </div>
 
-            <Card className="border-border/60 bg-card rounded-2xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground font-medium">Total Personnel Assigned</div>
-                  <div className="text-xl font-bold text-foreground">{employees.length} Members</div>
-                </div>
-              </div>
-            </Card>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="bg-[#23ace3] text-white text-xs font-semibold rounded-xl gap-1.5 cursor-pointer"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      <span>+ Add Employee</span>
+                    </Button>
 
-            <Card className="border-border/60 bg-card rounded-2xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-[#ef8d46]/10 text-[#ef8d46]">
-                  <ShieldCheck className="h-5 w-5" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setWorkspaceMode('departments')}
+                      className="text-xs text-muted-foreground rounded-xl"
+                    >
+                      Switch to Departments Mode
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs text-muted-foreground font-medium">Average Staffing SLA</div>
-                  <div className="text-xl font-bold text-foreground">75% Min Quota</div>
-                </div>
-              </div>
-            </Card>
-          </div>
 
-          {/* Department Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {departments.map((dept: any, i: number) => (
-              <Card key={dept.id || i} className="border-border/60 hover:border-[#23ace3]/40 transition-all shadow-xs bg-card rounded-2xl">
-                <CardContent className="p-5 space-y-3">
+                {/* Company Personnel Directory Table Embedded */}
+                <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-[#23ace3]/10 text-[#23ace3]">
-                        <Building className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-foreground text-sm">{dept.name}</h4>
-                        <div className="text-[10px] text-muted-foreground font-mono">ID: {dept.id}</div>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                      {dept.status || 'Active'}
-                    </Badge>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                    {dept.description || 'Department workspace division for operational staffing and approvals.'}
-                  </p>
-
-                  <div className="space-y-1.5 text-xs text-muted-foreground bg-muted/30 p-3 rounded-xl border border-border/50">
-                    <div className="flex justify-between">
-                      <span>Department Lead:</span>
-                      <span className="font-semibold text-foreground">{dept.head || 'Sarah Miller'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Assigned Personnel:</span>
-                      <span className="font-semibold text-[#23ace3]">
-                        {employees.filter(e => e.department.toLowerCase() === dept.name.toLowerCase()).length} Members
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Staffing SLA Threshold:</span>
-                      <span className="font-semibold text-emerald-400">{dept.threshold || '75% Min'}</span>
+                    <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                      Company Personnel Directory ({employees.length} Records)
+                    </h5>
+                    <div className="w-64">
+                      <Input
+                        placeholder="Search company staff..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="h-8 text-xs bg-background rounded-lg"
+                      />
                     </div>
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedDeptFilter(dept.name)
-                      setActiveTab('directory')
-                    }}
-                    className="w-full text-xs text-[#23ace3] hover:bg-[#23ace3]/10 gap-1.5 mt-1 cursor-pointer"
+                  <div className="rounded-xl border border-border/60 overflow-hidden bg-background">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
+                        <TableRow className="border-border/50">
+                          <TableHead className="text-xs">Employee</TableHead>
+                          <TableHead className="text-xs">Role & Title</TableHead>
+                          <TableHead className="text-xs">Biometric Status</TableHead>
+                          <TableHead className="text-xs">Joined</TableHead>
+                          <TableHead className="text-xs text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEmployees.map(emp => (
+                          <TableRow key={emp.id} className="border-border/40 hover:bg-muted/30">
+                            <TableCell>
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#23ace3]/20 font-bold text-xs text-[#23ace3]">
+                                  {emp.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-xs text-foreground">{emp.name}</div>
+                                  <div className="text-[10px] text-muted-foreground font-mono">{emp.email}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-semibold text-xs text-foreground">{emp.jobTitle}</div>
+                              <Badge variant="outline" className="text-[9px] capitalize mt-0.5">
+                                {emp.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+                                <Fingerprint className="h-3.5 w-3.5" />
+                                <span>Active Biometric</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground font-mono">{emp.hireDate}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingUser(emp)}
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            /* MULTI-DEPARTMENT CARDS GRID (With Three Dots Menu for Explore and Edit) */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {departments.map((dept: any, i: number) => {
+                const deptMembers = employees.filter(
+                  e => e.department.toLowerCase() === dept.name.toLowerCase()
+                )
+                const isExpanded = expandedDept === dept.name
+                const isMenuOpen = activeMenuDept === dept.name
+
+                return (
+                  <Card
+                    key={dept.id || i}
+                    className={`border transition-all shadow-sm rounded-2xl overflow-hidden relative ${
+                      isExpanded
+                        ? 'md:col-span-2 lg:col-span-3 border-[#23ace3] bg-card ring-2 ring-[#23ace3]/20'
+                        : 'border-border/70 hover:border-[#23ace3]/60 bg-card hover:shadow-md'
+                    }`}
                   >
-                    <span>View Directory Personnel ({employees.filter(e => e.department.toLowerCase() === dept.name.toLowerCase()).length})</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <CardContent className="p-5 space-y-4">
+                      {/* Card Top: Department Name & Three Dots (...) Dropdown Menu */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-xl bg-[#23ace3]/15 text-[#23ace3] border border-[#23ace3]/30">
+                            <Building className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-foreground text-base tracking-tight">{dept.name}</h4>
+                            <div className="text-[11px] text-[#23ace3] font-mono">
+                              Lead: {dept.head || 'Sarah Miller'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* THREE DOTS (...) MENU CONTAINER */}
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setActiveMenuDept(isMenuOpen ? null : dept.name)}
+                            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                            title="Department Actions"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+
+                          {/* THREE DOTS DROPDOWN MENU WITH EXPLORE & EDIT FUNCTIONS */}
+                          {isMenuOpen && (
+                            <div className="absolute right-0 top-9 z-30 w-40 bg-card border border-border rounded-xl shadow-lg p-1.5 text-xs space-y-1 animate-in fade-in zoom-in-95">
+                              {/* Option 1: Explore (Inline Directory) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExpandedDept(isExpanded ? null : dept.name)
+                                  setActiveMenuDept(null)
+                                }}
+                                className="w-full text-left px-3 py-2 rounded-lg hover:bg-[#23ace3]/10 text-[#23ace3] font-medium flex items-center justify-between cursor-pointer"
+                              >
+                                <span>{isExpanded ? 'Close Roster' : 'Explore Roster'}</span>
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+
+                              {/* Option 2: Edit */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingDept(dept)
+                                  setActiveMenuDept(null)
+                                }}
+                                className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted text-foreground font-medium flex items-center justify-between cursor-pointer"
+                              >
+                                <span>Edit Details</span>
+                                <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        {dept.description || 'Department workspace division for operational staffing and approvals.'}
+                      </p>
+
+                      {/* Department Stats */}
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-3 rounded-xl border border-border/60">
+                        <div>
+                          <div className="text-[10px] text-muted-foreground uppercase font-semibold">Assigned Staff</div>
+                          <div className="font-bold text-foreground text-sm">{deptMembers.length} Members</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-muted-foreground uppercase font-semibold">Staffing SLA</div>
+                          <div className="font-bold text-emerald-400 text-sm">{dept.threshold || '75% Min'}</div>
+                        </div>
+                      </div>
+
+                      {/* Inline Action Row */}
+                      <div className="flex items-center justify-between pt-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setNewDept(dept.name)
+                            setIsAddModalOpen(true)
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
+                        >
+                          <UserPlus className="h-3.5 w-3.5 text-[#23ace3]" />
+                          <span>+ Add Staff</span>
+                        </Button>
+
+                        {/* Blue Explore Action Button */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedDept(isExpanded ? null : dept.name)}
+                          className="text-xs font-bold text-[#23ace3] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>{isExpanded ? 'Hide Personnel' : 'Explore Personnel'}</span>
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+                      </div>
+
+                      {/* EMBEDDED EMPLOYEE DIRECTORY INSIDE DEPARTMENT CARD */}
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-border/60 space-y-3 animate-in fade-in duration-200">
+                          <div className="flex items-center justify-between">
+                            <h5 className="text-xs font-bold text-foreground flex items-center gap-2">
+                              <Users className="h-4 w-4 text-[#23ace3]" />
+                              <span>{dept.name} Personnel Directory ({deptMembers.length} Members)</span>
+                            </h5>
+                          </div>
+
+                          <div className="rounded-xl border border-border/60 overflow-hidden bg-background">
+                            <Table>
+                              <TableHeader className="bg-muted/40">
+                                <TableRow className="border-border/50">
+                                  <TableHead className="text-xs">Employee</TableHead>
+                                  <TableHead className="text-xs">Designation</TableHead>
+                                  <TableHead className="text-xs">Role</TableHead>
+                                  <TableHead className="text-xs">Biometric</TableHead>
+                                  <TableHead className="text-xs text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {deptMembers.length === 0 ? (
+                                  <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-xs">
+                                      No personnel currently assigned to {dept.name}. Click "+ Add Staff" above to assign.
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  deptMembers.map(emp => (
+                                    <TableRow key={emp.id} className="border-border/40 hover:bg-muted/30">
+                                      <TableCell>
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#23ace3]/20 font-bold text-xs text-[#23ace3]">
+                                            {emp.name.charAt(0)}
+                                          </div>
+                                          <div>
+                                            <div className="font-bold text-xs text-foreground">{emp.name}</div>
+                                            <div className="text-[10px] text-muted-foreground font-mono">{emp.email}</div>
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="text-xs text-foreground font-medium">{emp.jobTitle}</TableCell>
+                                      <TableCell>
+                                        <Badge variant="outline" className="text-[9px] capitalize">
+                                          {emp.role}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                                          <Fingerprint className="h-3 w-3" />
+                                          <span>Active</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setEditingUser(emp)}
+                                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
+                                        >
+                                          <Edit2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+
+          {/* ALL COMPANY PERSONNEL MASTER DIRECTORY SECTION (Hidden by default, shown when blue "Explore" is clicked) */}
+          {showMasterDirectory && (
+            <div className="pt-6 border-t border-border/60 space-y-4 animate-in fade-in duration-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border/60">
+                <div>
+                  <h4 className="font-bold text-foreground text-sm flex items-center gap-2">
+                    <Users className="h-4 w-4 text-[#23ace3]" />
+                    <span>All Company Personnel Master Directory ({employees.length})</span>
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    Global roster across all departments, biometric status, and organizational roles.
+                  </p>
+                </div>
+
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="bg-[#23ace3] hover:bg-[#1b97ca] text-white text-xs font-semibold rounded-xl gap-1.5 cursor-pointer shrink-0"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span>+ Add Single Employee</span>
+                </Button>
+              </div>
+
+              {/* Filter and Search Bar */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search employees by name, title, email, or employee number..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="pl-9 h-10 rounded-xl"
+                  />
+                </div>
+                <div className="w-full sm:w-64">
+                  <Select
+                    value={selectedDeptFilter}
+                    onChange={e => setSelectedDeptFilter(e.target.value)}
+                    className="h-10 rounded-xl"
+                  >
+                    <option value="all">All Departments ({employees.length})</option>
+                    {allDeptNames.map((d: any) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              {/* Master Employees Table */}
+              <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-xs">
+                <Table>
+                  <TableHeader className="bg-muted/40">
+                    <TableRow className="border-border/50">
+                      <TableHead>Employee Personnel</TableHead>
+                      <TableHead>Department & Designation</TableHead>
+                      <TableHead>System Role</TableHead>
+                      <TableHead>Biometric & Status</TableHead>
+                      <TableHead>Hire Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEmployees.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-xs">
+                          No employee records found matching your filter criteria.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredEmployees.map(emp => (
+                        <TableRow key={emp.id} className="border-border/40 hover:bg-muted/30 transition-colors">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#23ace3]/15 font-bold text-xs text-[#23ace3] border border-[#23ace3]/30">
+                                {emp.name.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                                  <span>{emp.name}</span>
+                                  <span className="text-[10px] text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded-md">
+                                    {emp.employeeNumber}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-muted-foreground font-mono">{emp.email}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-foreground">
+                            <div className="font-semibold text-foreground flex items-center gap-1">
+                              <Building className="h-3 w-3 text-[#23ace3]" />
+                              <span>{emp.department}</span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">{emp.jobTitle}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                emp.role === 'admin' || emp.role === 'platform_admin'
+                                  ? 'destructive'
+                                  : emp.role === 'manager'
+                                  ? 'info'
+                                  : 'outline'
+                              }
+                              className="text-[10px] capitalize font-mono"
+                            >
+                              {emp.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <Badge variant="success" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                Active
+                              </Badge>
+                              <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Fingerprint className="h-3 w-3 text-[#23ace3]" />
+                                <span>Biometric Linked</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground font-mono">{emp.hireDate}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingUser(emp)}
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg cursor-pointer"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: LEGACY DATABASE & FINGERPRINT SCANNER INGESTION POOL (SECOND TAB)  */}
+      {/* TAB 2: LEGACY DATABASE & FINGERPRINT SCANNER INGESTION POOL             */}
       {/* ========================================================================= */}
       {activeTab === 'import' && (
         <div className="space-y-6">
@@ -549,147 +983,81 @@ export const AdminEmployees: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: EMPLOYEE DIRECTORY & ROSTER (THIRD TAB)                             */}
+      {/* POPUP MODAL: SELECTION DIALOG FOR "+ ADD NEW WORKSPACE"                    */}
       {/* ========================================================================= */}
-      {activeTab === 'directory' && (
-        <div className="space-y-4">
-          {/* Filter, Search, and Add Single Employee Button Bar inside Tab 3 */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border/60">
-            <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search employees by name, title, email, or employee number..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-9 h-10 rounded-xl"
-                />
-              </div>
-              <div className="w-full sm:w-64">
-                <Select
-                  value={selectedDeptFilter}
-                  onChange={e => setSelectedDeptFilter(e.target.value)}
-                  className="h-10 rounded-xl"
-                >
-                  <option value="all">All Departments ({employees.length})</option>
-                  {allDeptNames.map((d: any) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+      <Dialog open={isAddWorkspaceChoiceOpen} onOpenChange={setIsAddWorkspaceChoiceOpen}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-[#23ace3]" />
+            <span>Create Workspace Structure</span>
+          </DialogTitle>
+          <DialogDescription>
+            Choose whether to create department divisions or a single unified company workspace.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-3">
+          {/* Choice A: Department Division Workspace */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsAddWorkspaceChoiceOpen(false)
+              setWorkspaceMode('departments')
+              navigate('/admin/workforce/create-workspace')
+            }}
+            className="p-5 text-left rounded-2xl border-2 border-[#23ace3]/40 hover:border-[#23ace3] bg-gradient-to-br from-card via-card to-[#23ace3]/10 hover:shadow-lg transition-all cursor-pointer space-y-3 group"
+          >
+            <div className="p-3 rounded-xl bg-[#23ace3]/15 text-[#23ace3] w-fit group-hover:scale-105 transition-transform">
+              <Building className="h-6 w-6" />
             </div>
+            <div>
+              <h4 className="font-bold text-foreground text-sm flex items-center justify-between">
+                <span>Create Department Division</span>
+                <ArrowRight className="h-4 w-4 text-[#23ace3] group-hover:translate-x-1 transition-transform" />
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Create a specific department division (Engineering, Risk Audit, Branch BOC-01). Department cards will be displayed.
+              </p>
+            </div>
+          </button>
 
-            {/* Dedicated + Add Single Employee Button inside Employee Directory tab */}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setIsAddModalOpen(true)}
-              className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl shadow-xs h-10 px-4 whitespace-nowrap cursor-pointer shrink-0"
-            >
-              <UserPlus className="h-4 w-4" />
-              <span>+ Add Single Employee</span>
-            </Button>
-          </div>
-
-          {/* Employees Table */}
-          <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-xs">
-            <Table>
-              <TableHeader className="bg-muted/40">
-                <TableRow className="border-border/50">
-                  <TableHead>Employee Personnel</TableHead>
-                  <TableHead>Department & Designation</TableHead>
-                  <TableHead>System Role</TableHead>
-                  <TableHead>Biometric & Status</TableHead>
-                  <TableHead>Hire Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-xs">
-                      No employee records found matching your filter criteria.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredEmployees.map(emp => (
-                    <TableRow key={emp.id} className="border-border/40 hover:bg-muted/30 transition-colors">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#23ace3]/15 font-bold text-xs text-[#23ace3] border border-[#23ace3]/30">
-                            {emp.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
-                              <span>{emp.name}</span>
-                              <span className="text-[10px] text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded-md">
-                                {emp.employeeNumber}
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground font-mono">{emp.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-foreground">
-                        <div className="font-semibold text-foreground flex items-center gap-1">
-                          <Building className="h-3 w-3 text-[#23ace3]" />
-                          <span>{emp.department}</span>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground">{emp.jobTitle}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            emp.role === 'admin' || emp.role === 'platform_admin'
-                              ? 'destructive'
-                              : emp.role === 'manager'
-                              ? 'info'
-                              : 'outline'
-                          }
-                          className="text-[10px] capitalize font-mono"
-                        >
-                          {emp.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <Badge variant="success" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                            Active
-                          </Badge>
-                          <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Fingerprint className="h-3 w-3 text-[#23ace3]" />
-                            <span>Biometric Linked</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground font-mono">{emp.hireDate}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingUser(emp)}
-                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg cursor-pointer"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          {/* Choice B: Whole Company Workspace */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsAddWorkspaceChoiceOpen(false)
+              setWorkspaceMode('company')
+            }}
+            className="p-5 text-left rounded-2xl border-2 border-[#ef8d46]/40 hover:border-[#ef8d46] bg-gradient-to-br from-card via-card to-[#ef8d46]/10 hover:shadow-lg transition-all cursor-pointer space-y-3 group"
+          >
+            <div className="p-3 rounded-xl bg-[#ef8d46]/15 text-[#ef8d46] w-fit group-hover:scale-105 transition-transform">
+              <Globe className="h-6 w-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-foreground text-sm flex items-center justify-between">
+                <span>Create Whole Company Workspace</span>
+                <ArrowRight className="h-4 w-4 text-[#ef8d46] group-hover:translate-x-1 transition-transform" />
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Create 1 unified workspace for the whole company. After this, individual department cards are hidden and only 1 company workspace card is displayed.
+              </p>
+            </div>
+          </button>
         </div>
-      )}
+
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => setIsAddWorkspaceChoiceOpen(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       {/* ========================================================================= */}
       {/* MODAL: ADD SINGLE EMPLOYEE                                                */}
       {/* ========================================================================= */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogHeader>
-          <DialogTitle>Add Single Employee</DialogTitle>
+          <DialogTitle>Add Single Employee to {newDept || 'Workspace'}</DialogTitle>
           <DialogDescription>
             Enrolls the employee into {tenant?.name} with automated Microsoft Entra ID claim provisioning.
           </DialogDescription>
@@ -746,6 +1114,52 @@ export const AdminEmployees: React.FC = () => {
         </DialogFooter>
       </Dialog>
 
+      {/* Edit Department Modal */}
+      <Dialog open={editingDept !== null} onOpenChange={open => !open && setEditingDept(null)}>
+        {editingDept && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Edit Department Workspace: {editingDept.name}</DialogTitle>
+              <DialogDescription>Update leadership, staffing SLAs, and description.</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2 text-xs">
+              <div>
+                <label className="font-semibold block mb-1">Department Lead</label>
+                <Input
+                  value={editingDept.head || ''}
+                  onChange={e => setEditingDept({ ...editingDept, head: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="font-semibold block mb-1">Staffing Threshold SLA</label>
+                <Input
+                  value={editingDept.threshold || ''}
+                  onChange={e => setEditingDept({ ...editingDept, threshold: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setEditingDept(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  refetchDepts()
+                  setEditingDept(null)
+                }}
+                className="bg-[#23ace3] text-white"
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </Dialog>
+
       {/* Edit Employee Modal */}
       <Dialog open={editingUser !== null} onOpenChange={open => !open && setEditingUser(null)}>
         {editingUser && (
@@ -798,7 +1212,7 @@ export const AdminEmployees: React.FC = () => {
                   refetchDepts()
                   setEditingUser(null)
                 }}
-                className="bg-[#23ace3] text-white"
+                className="bg-[#23ace3] text-white font-semibold"
               >
                 Save Changes
               </Button>
