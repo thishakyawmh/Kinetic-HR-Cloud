@@ -1,4 +1,4 @@
-const BASE_URL = process.env.BASE_URL || 'http://localhost:7072/api'
+const BASE_URL = process.env.BASE_URL || 'http://localhost:7071/api'
 
 async function assert(condition: boolean, msg: string) {
   if (!condition) {

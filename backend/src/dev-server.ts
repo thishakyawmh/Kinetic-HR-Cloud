@@ -57,7 +57,7 @@ try {
   console.warn('Could not load local.settings.json', e)
 }
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 7072
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 7071
 
 interface RouteDefinition {
   method: string

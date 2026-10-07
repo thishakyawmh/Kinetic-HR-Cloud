@@ -111,8 +111,9 @@ export async function loginEmployee(
 
     if (users.length === 0) {
       // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
+      let devUser: any = null
       if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice')) {
-        const devUser = {
+        devUser = {
           id: 'user-Alice',
           tenantId: 'tenant-kinetic',
           name: 'Alice Johnson',
@@ -122,13 +123,49 @@ export async function loginEmployee(
           jobTitle: 'Senior Frontend Engineer',
           employeeNumber: 'KT-8842',
         }
+      } else if (cleanEmp.includes('kt-1044') || cleanEmp === 'david' || cleanEmp.includes('david')) {
+        devUser = {
+          id: 'user-David',
+          tenantId: 'tenant-kinetic',
+          name: 'David Wilson',
+          email: 'David.wilson@kinetictech.io',
+          role: 'manager' as const,
+          department: 'Engineering',
+          jobTitle: 'Engineering Manager',
+          employeeNumber: 'KT-1044',
+        }
+      } else if (cleanEmp.includes('kt-0012') || cleanEmp === 'sarah' || cleanEmp.includes('sarah')) {
+        devUser = {
+          id: 'user-Sarah',
+          tenantId: 'tenant-kinetic',
+          name: 'Sarah Miller',
+          email: 'Sarah.miller@kinetictech.io',
+          role: 'admin' as const,
+          department: 'Human Resources',
+          jobTitle: 'HR Administrator',
+          employeeNumber: 'KT-0012',
+        }
+      } else if (cleanEmp.includes('kc-0001') || cleanEmp === 'alex' || cleanEmp.includes('alex')) {
+        devUser = {
+          id: 'user-PlatformAdmin',
+          tenantId: 'tenant-kinetic',
+          name: 'Alex Vance',
+          email: 'Alex.vance@kinetictech.io',
+          role: 'platform_admin' as const,
+          department: 'Platform Operations',
+          jobTitle: 'Kinetic Platform Administrator',
+          employeeNumber: 'KC-0001',
+        }
+      }
+
+      if (devUser) {
         const token = signToken(devUser)
         return {
           status: 200,
           jsonBody: {
             user: devUser,
             token,
-            tenant: { id: 'tenant-kinetic', name: 'Kinetic Technologies', code: 'KINETIC' },
+            tenant: { id: devUser.tenantId, name: 'Kinetic Technologies', code: 'KINETIC' },
           },
         }
       }

@@ -15,7 +15,7 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private get baseUrl(): string {
-    return (import.meta.env.VITE_API_BASE_URL || 'http://localhost:7072/api').replace(/\/$/, '')
+    return (import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071/api').replace(/\/$/, '')
   }
 
   private getAuthHeaders(): HeadersInit {
