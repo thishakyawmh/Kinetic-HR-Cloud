@@ -10,7 +10,7 @@ export interface AuthSession {
 
 const AUTH_STORAGE_KEY = 'kinetic_auth_session'
 const LOGGED_OUT_KEY = 'kinetic_logged_out'
-const useMock = () => import.meta.env.VITE_USE_MOCK_SERVICES === 'true'
+const useMock = () => import.meta.env.VITE_USE_MOCK_SERVICES !== 'false'
 
 export const authService = {
   getCurrentSession(): AuthSession | null {
@@ -119,15 +119,43 @@ export const authService = {
       return session
     }
 
-    // Mock mode fallback
-    const targetUser = appDataStore.getUsers(tenantId).find(
-      u =>
-        u.employeeNumber.toLowerCase() === employeeId.toLowerCase() ||
-        u.email.toLowerCase() === employeeId.toLowerCase() ||
-        u.id.toLowerCase() === employeeId.toLowerCase()
-    ) || appDataStore.getUsers(tenantId)[0]
+    // Mock mode resolution
+    const cleanId = employeeId.trim().toLowerCase()
+    const usersInTenant = appDataStore.getUsers(tenantId)
 
-    if (!targetUser) throw new Error(`Employee ID "${employeeId}" not found`)
+    // 1. Direct match by employee number, email, or id
+    let targetUser = usersInTenant.find(
+      u =>
+        u.employeeNumber.toLowerCase() === cleanId ||
+        u.email.toLowerCase() === cleanId ||
+        u.id.toLowerCase() === cleanId
+    )
+
+    // 2. Convenience aliases for testing & demos
+    if (!targetUser) {
+      if (cleanId === 'manager' || cleanId === 'david' || cleanId.includes('manager')) {
+        targetUser = usersInTenant.find(u => u.role === 'manager')
+      } else if (cleanId === 'admin' || cleanId === 'hr' || cleanId === 'sarah' || cleanId.includes('admin')) {
+        targetUser = usersInTenant.find(u => u.role === 'admin')
+      } else if (cleanId === 'platform' || cleanId === 'platform_admin' || cleanId === 'alex') {
+        targetUser = usersInTenant.find(u => u.role === 'platform_admin')
+      } else if (cleanId === 'employee' || cleanId === 'alice') {
+        targetUser = usersInTenant.find(u => u.role === 'employee' && u.employeeNumber === 'KT-8842')
+      } else {
+        // Match by partial name or email prefix
+        targetUser = usersInTenant.find(u =>
+          u.name.toLowerCase().includes(cleanId) ||
+          u.email.toLowerCase().startsWith(cleanId)
+        )
+      }
+    }
+
+    if (!targetUser) {
+      throw new Error(
+        `Employee ID "${employeeId}" not found. Try KT-8842 (Employee), KT-1044 (Manager), KT-0012 (HR Admin), or KC-0001 (Platform Admin).`
+      )
+    }
+
     const tenant = appDataStore.getTenant(targetUser.tenantId) || appDataStore.getTenants()[0]
 
     const session: AuthSession = {

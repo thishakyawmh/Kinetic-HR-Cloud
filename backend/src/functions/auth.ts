@@ -111,8 +111,9 @@ export async function loginEmployee(
 
     if (users.length === 0) {
       // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
-      if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice')) {
-        const devUser = {
+      let devUser: any = null
+      if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice') || cleanEmp === 'employee') {
+        devUser = {
           id: 'user-Alice',
           tenantId: 'tenant-kinetic',
           name: 'Alice Johnson',
@@ -122,6 +123,64 @@ export async function loginEmployee(
           jobTitle: 'Senior Frontend Engineer',
           employeeNumber: 'KT-8842',
         }
+      } else if (cleanEmp.includes('kt-1044-emp')) {
+        devUser = {
+          id: 'user-david-emp',
+          tenantId: 'tenant-kinetic',
+          name: 'David Wilson (Employee)',
+          email: 'david.emp@kinetictech.io',
+          role: 'employee' as const,
+          department: 'Engineering',
+          jobTitle: 'Engineering Director',
+          employeeNumber: 'KT-1044-EMP',
+        }
+      } else if (cleanEmp.includes('kt-1044') || cleanEmp === 'david' || cleanEmp.includes('manager')) {
+        devUser = {
+          id: 'user-david',
+          tenantId: 'tenant-kinetic',
+          name: 'David Wilson',
+          email: 'david.wilson@kinetictech.io',
+          role: 'manager' as const,
+          department: 'Engineering',
+          jobTitle: 'Engineering Director',
+          employeeNumber: 'KT-1044',
+        }
+      } else if (cleanEmp.includes('kt-0012-emp')) {
+        devUser = {
+          id: 'user-sarah-emp',
+          tenantId: 'tenant-kinetic',
+          name: 'Sarah Miller (Employee)',
+          email: 'sarah.emp@kinetictech.io',
+          role: 'employee' as const,
+          department: 'Human Resources',
+          jobTitle: 'VP of People & Operations',
+          employeeNumber: 'KT-0012-EMP',
+        }
+      } else if (cleanEmp.includes('kt-0012') || cleanEmp === 'sarah' || cleanEmp.includes('admin') || cleanEmp === 'hr') {
+        devUser = {
+          id: 'user-sarah',
+          tenantId: 'tenant-kinetic',
+          name: 'Sarah Miller',
+          email: 'sarah.miller@kinetictech.io',
+          role: 'admin' as const,
+          department: 'Human Resources',
+          jobTitle: 'VP of People & Operations',
+          employeeNumber: 'KT-0012',
+        }
+      } else if (cleanEmp.includes('kc-0001') || cleanEmp === 'alex' || cleanEmp.includes('platform')) {
+        devUser = {
+          id: 'user-platform-admin',
+          tenantId: 'tenant-kinetic',
+          name: 'Alex Thorne',
+          email: 'alex.thorne@kineticcloud.azure.com',
+          role: 'platform_admin' as const,
+          department: 'Cloud Platform Operations',
+          jobTitle: 'Principal Cloud Platform Director',
+          employeeNumber: 'KC-0001',
+        }
+      }
+
+      if (devUser) {
         const token = signToken(devUser)
         return {
           status: 200,
@@ -135,7 +194,7 @@ export async function loginEmployee(
 
       return {
         status: 401,
-        jsonBody: { error: `Employee ID "${employeeId}" not found in this organization` },
+        jsonBody: { error: `Employee ID "${employeeId}" not found in this organization. Try KT-8842 (Employee), KT-1044 (Manager), KT-0012 (HR Admin), or KC-0001 (Platform Admin).` },
       }
     }
 
