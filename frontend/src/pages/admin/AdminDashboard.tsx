@@ -145,33 +145,39 @@ export const AdminDashboard: React.FC = () => {
 
           <Card className="border-border/60 bg-card rounded-2xl overflow-hidden shadow-xs">
             <CardContent className="p-0 divide-y divide-border/40">
-              {auditLogs.slice(0, 5).map(event => (
-                <div key={event.id} className="p-4 flex items-start justify-between gap-3 text-xs hover:bg-muted/30 transition-colors">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-foreground">{event.action}</span>
-                      <Badge
-                        variant={
-                          event.riskLevel === 'High'
-                            ? 'destructive'
-                            : event.riskLevel === 'Medium'
-                            ? 'warning'
-                            : 'outline'
-                        }
-                        className="text-[10px]"
-                      >
-                        {event.riskLevel} Risk
-                      </Badge>
-                    </div>
-                    <div className="text-muted-foreground">{event.resource}</div>
-                    <p className="text-muted-foreground italic text-[11px]">{event.details}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="font-medium text-foreground block">{event.userName}</span>
-                    <span className="text-[10px] text-muted-foreground">{event.timestamp}</span>
-                  </div>
+              {auditLogs.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  No recent enterprise activity recorded for this organization.
                 </div>
-              ))}
+              ) : (
+                auditLogs.slice(0, 5).map(event => (
+                  <div key={event.id} className="p-4 flex items-start justify-between gap-3 text-xs hover:bg-muted/30 transition-colors">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-foreground">{event.action}</span>
+                        <Badge
+                          variant={
+                            event.riskLevel === 'High'
+                              ? 'destructive'
+                              : event.riskLevel === 'Medium'
+                              ? 'warning'
+                              : 'outline'
+                          }
+                          className="text-[10px]"
+                        >
+                          {event.riskLevel} Risk
+                        </Badge>
+                      </div>
+                      <div className="text-muted-foreground">{event.resource}</div>
+                      <p className="text-muted-foreground italic text-[11px]">{event.details}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-medium text-foreground block">{event.userName}</span>
+                      <span className="text-[10px] text-muted-foreground">{event.timestamp}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
