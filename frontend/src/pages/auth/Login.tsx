@@ -83,6 +83,12 @@ export const Login: React.FC = () => {
     setIsLoading(true)
     try {
       const targetTenantId = currentTenant ? currentTenant.id : 'tenant-kinetic'
+      console.log('🔍 [AUTH DEBUG - Step 1: Submitting Login]', {
+        inputEmployeeId: employeeIdInput.trim(),
+        targetTenantId,
+        currentTenantCode: currentTenant?.code,
+        routeCompanyId
+      })
       const session = await loginWithCredentials(
         targetTenantId,
         employeeIdInput.trim(),
@@ -96,8 +102,15 @@ export const Login: React.FC = () => {
             : session.user.role === 'platform_admin'
               ? '/platform/dashboard'
               : '/employee/dashboard'
+      console.log('🔍 [AUTH DEBUG - Step 2: Login Success]', {
+        userName: session.user.name,
+        userRole: session.user.role,
+        userEmployeeNumber: session.user.employeeNumber,
+        navigatingTo: targetRoute
+      })
       navigate(targetRoute)
     } catch (err: any) {
+      console.error('🔍 [AUTH DEBUG - Step 3: Login Failed]', err)
       setErrorMessage(err.message || 'Login failed. Please verify your Employee ID and password.')
     } finally {
       setIsLoading(false)

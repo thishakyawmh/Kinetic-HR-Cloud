@@ -98,12 +98,22 @@ export const authService = {
   },
 
   async login(tenantId: string, employeeId: string, password?: string): Promise<AuthSession> {
-    if (!useMock()) {
+    const isMock = useMock()
+    console.log('🔍 [AUTH DEBUG - authService.login call]', {
+      isMockMode: isMock,
+      tenantId,
+      employeeId,
+      hasPassword: !!password
+    })
+
+    if (!isMock) {
+      console.log('🔍 [AUTH DEBUG - Sending POST /auth/login to backend...]')
       const response = await apiClient.post<{ user: User; token: string; tenant: Tenant }>('/auth/login', {
         tenantId,
         employeeId,
         password,
       })
+      console.log('🔍 [AUTH DEBUG - Backend returned user]', response.user)
       const session: AuthSession = {
         user: response.user,
         tenant: response.tenant || {
@@ -122,6 +132,11 @@ export const authService = {
     // Mock mode resolution
     const cleanId = employeeId.trim().toLowerCase()
     const usersInTenant = appDataStore.getUsers(tenantId)
+    console.log('🔍 [AUTH DEBUG - Mock mode searching in users list]', {
+      tenantId,
+      usersFoundInStore: usersInTenant.length,
+      sampleIds: usersInTenant.map(u => `${u.name} (${u.employeeNumber}: ${u.role})`)
+    })
 
     // 1. Direct match by employee number, email, or id
     let targetUser = usersInTenant.find(

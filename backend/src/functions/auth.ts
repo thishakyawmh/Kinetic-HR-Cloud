@@ -112,11 +112,7 @@ export async function loginEmployee(
     if (users.length === 0) {
       // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
       let devUser: any = null
-<<<<<<< HEAD
-      if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice')) {
-=======
       if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice') || cleanEmp === 'employee') {
->>>>>>> 907a5b9d4499834ee25d8db62daa1c4256356a9c
         devUser = {
           id: 'user-Alice',
           tenantId: 'tenant-kinetic',
@@ -127,39 +123,6 @@ export async function loginEmployee(
           jobTitle: 'Senior Frontend Engineer',
           employeeNumber: 'KT-8842',
         }
-<<<<<<< HEAD
-      } else if (cleanEmp.includes('kt-1044') || cleanEmp === 'david' || cleanEmp.includes('david')) {
-        devUser = {
-          id: 'user-David',
-          tenantId: 'tenant-kinetic',
-          name: 'David Wilson',
-          email: 'David.wilson@kinetictech.io',
-          role: 'manager' as const,
-          department: 'Engineering',
-          jobTitle: 'Engineering Manager',
-          employeeNumber: 'KT-1044',
-        }
-      } else if (cleanEmp.includes('kt-0012') || cleanEmp === 'sarah' || cleanEmp.includes('sarah')) {
-        devUser = {
-          id: 'user-Sarah',
-          tenantId: 'tenant-kinetic',
-          name: 'Sarah Miller',
-          email: 'Sarah.miller@kinetictech.io',
-          role: 'admin' as const,
-          department: 'Human Resources',
-          jobTitle: 'HR Administrator',
-          employeeNumber: 'KT-0012',
-        }
-      } else if (cleanEmp.includes('kc-0001') || cleanEmp === 'alex' || cleanEmp.includes('alex')) {
-        devUser = {
-          id: 'user-PlatformAdmin',
-          tenantId: 'tenant-kinetic',
-          name: 'Alex Vance',
-          email: 'Alex.vance@kinetictech.io',
-          role: 'platform_admin' as const,
-          department: 'Platform Operations',
-          jobTitle: 'Kinetic Platform Administrator',
-=======
       } else if (cleanEmp.includes('kt-1044-emp')) {
         devUser = {
           id: 'user-david-emp',
@@ -213,7 +176,6 @@ export async function loginEmployee(
           role: 'platform_admin' as const,
           department: 'Cloud Platform Operations',
           jobTitle: 'Principal Cloud Platform Director',
->>>>>>> 907a5b9d4499834ee25d8db62daa1c4256356a9c
           employeeNumber: 'KC-0001',
         }
       }
