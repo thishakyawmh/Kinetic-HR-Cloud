@@ -15,7 +15,12 @@ import {
   getTeamMembers,
   updateEmployee,
   createEmployee,
+  bulkImportEmployees,
 } from './functions/employees'
+import {
+  getDepartments,
+  createDepartment,
+} from './functions/departments'
 import {
   getPayslips,
   getPayslipById,
@@ -99,11 +104,16 @@ addRoute('POST', '/api/leaves', createLeaveRequest)
 addRoute('PATCH', '/api/leaves/{id}/status', updateLeaveStatus)
 
 // Employees
+addRoute('POST', '/api/employees/import', bulkImportEmployees)
 addRoute('GET', '/api/employees/team', getTeamMembers)
 addRoute('GET', '/api/employees', getEmployees)
 addRoute('GET', '/api/employees/{id}', getEmployeeById)
 addRoute('PATCH', '/api/employees/{id}', updateEmployee)
 addRoute('POST', '/api/employees', createEmployee)
+
+// Departments
+addRoute('GET', '/api/departments', getDepartments)
+addRoute('POST', '/api/departments', createDepartment)
 
 // Payroll
 addRoute('GET', '/api/payroll/payslips', getPayslips)

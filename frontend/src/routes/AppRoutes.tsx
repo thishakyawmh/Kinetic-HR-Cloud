@@ -29,6 +29,7 @@ import { ManagerAssistant } from '@/pages/manager/ManagerAssistant'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminEmployees } from '@/pages/admin/AdminEmployees'
 import { AdminDepartments } from '@/pages/admin/AdminDepartments'
+import { AdminCreateWorkspace } from '@/pages/admin/AdminCreateWorkspace'
 import { AdminLeaveTypes } from '@/pages/admin/AdminLeaveTypes'
 import { AdminPolicies } from '@/pages/admin/AdminPolicies'
 import { AdminHolidays } from '@/pages/admin/AdminHolidays'
@@ -87,6 +88,8 @@ export const AppRoutes: React.FC = () => {
 
         {/* HR Administrator Experience */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/workforce" element={<AdminEmployees />} />
+        <Route path="/admin/workforce/create-workspace" element={<AdminCreateWorkspace />} />
         <Route path="/admin/employees" element={<AdminEmployees />} />
         <Route path="/admin/departments" element={<AdminDepartments />} />
         <Route path="/admin/leave-types" element={<AdminLeaveTypes />} />

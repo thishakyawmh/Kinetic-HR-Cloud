@@ -65,8 +65,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const adminNav: NavItem[] = [
     { label: 'Command Center', to: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Employee Directory', to: '/admin/employees', icon: Users },
-    { label: 'Departments', to: '/admin/departments', icon: Building },
+    { label: 'Workforce & Departments', to: '/admin/workforce', icon: Users },
     { label: 'Leave Rules & Quotas', to: '/admin/leave-types', icon: CalendarDays },
     { label: 'Policy Documents & RAG', to: '/admin/policies', icon: BookOpen },
     { label: 'Audit & Compliance Logs', to: '/admin/audit-logs', icon: History },

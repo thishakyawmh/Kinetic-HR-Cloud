@@ -135,6 +135,13 @@ const LOCAL_MEMORY_DATA: Record<string, any[]> = {
       currency: 'USD',
     },
   ],
+  departments: [
+    { id: 'dept-eng', tenantId: 'tenant-kinetic', name: 'Engineering', head: 'David Wilson', threshold: '70% min staffing', status: 'Active', description: 'Core product engineering and cloud infrastructure division.' },
+    { id: 'dept-hr', tenantId: 'tenant-kinetic', name: 'Human Resources', head: 'Sarah Miller', threshold: '80% min staffing', status: 'Active', description: 'People operations, talent acquisition, and compliance.' },
+    { id: 'dept-prod', tenantId: 'tenant-kinetic', name: 'Product Management', head: 'Claire Underwood', threshold: '75% min staffing', status: 'Active', description: 'Product roadmap and feature architecture.' },
+    { id: 'dept-[#23ace3]', tenantId: 'tenant-kinetic', name: 'Design & UX', head: 'Carlos Mendoza', threshold: '65% min staffing', status: 'Active', description: 'User interface design and brand identity systems.' },
+    { id: 'dept-ops', tenantId: 'tenant-kinetic', name: 'Operations & Cloud', head: 'Brandon Lee', threshold: '85% min staffing', status: 'Active', description: 'Cloud infrastructure, security, and biometric hardware ops.' },
+  ],
   policies: [
     {
       id: 'pol-1',

@@ -71,8 +71,7 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
 
   const adminNav = [
     { label: 'Command Center', to: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Employee Directory', to: '/admin/employees', icon: Users },
-    { label: 'Departments', to: '/admin/departments', icon: Building },
+    { label: 'Workforce & Departments', to: '/admin/workforce', icon: Users },
     { label: 'Leave Rules', to: '/admin/leave-types', icon: CalendarDays },
     { label: 'Policy Documents', to: '/admin/policies', icon: BookOpen },
     { label: 'Audit Logs', to: '/admin/audit-logs', icon: History },

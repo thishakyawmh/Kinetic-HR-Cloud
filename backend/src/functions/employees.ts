@@ -170,3 +170,117 @@ export async function createEmployee(
   }
 }
 
+/**
+ * POST /api/employees/import
+ * Bulk imports legacy or biometric employee datasets (from fingerprint scanners / ERP),
+ * automatically extracts unique department names, creates new department workspaces,
+ * and links employees to those departments.
+ */
+export async function bulkImportEmployees(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+
+  try {
+    const body = (await request.json()) as {
+      dataset: Array<Record<string, any>>
+      departmentColumn?: string
+    }
+
+    const dataset = body?.dataset || []
+    const deptCol = (body?.departmentColumn || 'Department').trim()
+
+    if (!Array.isArray(dataset) || dataset.length === 0) {
+      return { status: 400, jsonBody: { error: 'Invalid or empty employee dataset' } }
+    }
+
+    const usersContainer = getTenantContainer('users')
+    const deptsContainer = getTenantContainer('departments')
+
+    // Fetch existing departments for tenant
+    const existingDepts = await queryTenantItems<any>('departments', tenantId, 'SELECT c.name FROM c WHERE c.tenantId = @tenantId', [{ name: '@tenantId', value: tenantId }])
+    const existingDeptNames = new Set(existingDepts.map((d: any) => d.name.toLowerCase()))
+
+    const createdDeptNames: string[] = []
+    const importedEmployees: any[] = []
+
+    for (let i = 0; i < dataset.length; i++) {
+      const row = dataset[i]
+      
+      // Determine department from specified column name or fallback key
+      const rawDept =
+        row[deptCol] ||
+        row['Department'] ||
+        row['department'] ||
+        row['Division'] ||
+        row['dept_name'] ||
+        row['Dept'] ||
+        'Operations'
+
+      const deptName = String(rawDept).trim()
+
+      // Auto-create department if it doesn't exist yet
+      if (deptName && !existingDeptNames.has(deptName.toLowerCase())) {
+        existingDeptNames.add(deptName.toLowerCase())
+        createdDeptNames.push(deptName)
+        const newDeptObj = {
+          id: `dept-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+          tenantId,
+          name: deptName,
+          head: auth.user!.name || 'Department Lead',
+          threshold: '75% min staffing',
+          status: 'Active',
+          description: `Auto-generated department workspace from dataset import (${deptCol}).`,
+          createdAt: new Date().toISOString(),
+        }
+        await deptsContainer.items.create(newDeptObj)
+      }
+
+      // Extract employee details with biometric & legacy field support
+      const name = row['Name'] || row['name'] || row['EmployeeName'] || row['Full Name'] || `Imported Staff #${i + 1}`
+      const empNum = row['EmployeeNumber'] || row['employeeNumber'] || row['EmpID'] || row['BiometricID'] || `EMP-${1000 + i}`
+      const email = row['Email'] || row['email'] || `${name.toLowerCase().replace(/\s+/g, '.')}@kinetictech.io`
+      const role = (row['Role'] || row['role'] || 'employee').toLowerCase()
+      const jobTitle = row['JobTitle'] || row['jobTitle'] || row['Designation'] || row['Title'] || 'Staff Member'
+      const phone = row['Phone'] || row['phone'] || row['Mobile'] || ''
+
+      const empObj = {
+        id: `user-${Date.now().toString(36)}-${i}`,
+        tenantId,
+        name,
+        email,
+        role: ['admin', 'manager', 'employee', 'platform_admin'].includes(role) ? role : 'employee',
+        department: deptName,
+        jobTitle,
+        employeeNumber: empNum,
+        phone,
+        location: row['Location'] || row['Branch'] || 'Colombo HQ',
+        hireDate: row['HireDate'] || row['Joined'] || new Date().toISOString().substring(0, 10),
+        biometricStatus: 'Linked (Fingerprint Active)',
+        createdAt: new Date().toISOString(),
+      }
+
+      await usersContainer.items.upsert(empObj)
+      importedEmployees.push(empObj)
+    }
+
+    return {
+      status: 200,
+      jsonBody: {
+        success: true,
+        message: `Successfully imported ${importedEmployees.length} employee records.`,
+        importedCount: importedEmployees.length,
+        createdDepartments: createdDeptNames,
+        employees: importedEmployees,
+      },
+    }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message || 'Error processing dataset import' } }
+  }
+}
+
+
