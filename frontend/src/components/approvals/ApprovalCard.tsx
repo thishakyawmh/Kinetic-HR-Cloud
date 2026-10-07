@@ -80,14 +80,37 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
                   {request.employeeName.charAt(0)}
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-foreground">{request.employeeName}</h4>
-                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <h4 className="text-base font-bold text-foreground">{request.employeeName}</h4>
+                    {request.priorLeavesCount === 0 && (
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px]">
+                        🌟 First Time Applicant (0 Absences)
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="flex items-center gap-1">
                       <Building className="h-3 w-3 text-muted-foreground" />
                       {request.department}
                     </span>
                     <span>•</span>
                     <span>ID: {request.id}</span>
+                    {request.priorLeavesCount !== undefined && request.priorLeavesCount > 0 && (
+                      <>
+                        <span>•</span>
+                        <span className="text-amber-500/90 font-medium">
+                          {request.priorLeavesCount} prior leaves this year
+                        </span>
+                      </>
+                    )}
+                    {request.submissionOrder && (
+                      <>
+                        <span>•</span>
+                        <span className="font-mono text-[11px] text-sky-400">
+                          Applied #{request.submissionOrder} in queue
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -256,3 +256,67 @@ export async function getLeaveTypes(
   return { status: 200, jsonBody: defaultLeaveTypes }
 }
 
+import { arbitrateLeaveConflict } from '../services/aiEngine'
+
+/**
+ * POST /api/leaves/ai-evaluate
+ * Evaluates department leave requests under a daily max quota (e.g. 5 approvals out of 8 requests)
+ * using historical leave frequency logs, urgency sentiment, and fairness rules.
+ */
+export async function evaluateAIFairnessLeaves(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+
+  try {
+    const body = (await request.json().catch(() => ({}))) as any
+    const targetDate = body?.date || '2026-10-25'
+    const department = body?.department || 'Engineering'
+    const maxDailyQuota = Number(body?.maxDailyQuota || 5)
+
+    // Call real AI arbitration engine
+    const report = await arbitrateLeaveConflict(tenantId, department, targetDate, maxDailyQuota)
+
+    // If autoExecute requested, update database status for all evaluated items
+    if (body?.autoExecute && report.evaluations.length > 0) {
+      const container = getTenantContainer('leaves')
+      for (const item of report.evaluations) {
+        try {
+          const { resource: current } = await container.item(item.candidateId, tenantId).read()
+          if (current) {
+            current.status = item.aiRecommendation
+            current.updatedAt = new Date().toISOString()
+            if (!current.timeline) current.timeline = []
+            current.timeline.push({
+              id: `tl-ai-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+              action: `ai_${item.aiRecommendation}`,
+              actorName: 'Kinetic Autonomous AI Engine',
+              timestamp: new Date().toISOString(),
+              comment: item.aiRationale,
+            })
+            await container.item(item.candidateId, tenantId).replace(current)
+          }
+        } catch (err) {
+          console.warn(`Could not update leave item ${item.candidateId}:`, err)
+        }
+      }
+    }
+
+    return {
+      status: 200,
+      jsonBody: {
+        ...report,
+        targetDate: report.conflictDate,
+        maxDailyQuota: report.allowedCapacityLimit,
+      },
+    }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+

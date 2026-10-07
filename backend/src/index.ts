@@ -5,6 +5,7 @@ import {
   getLeaveRequests,
   createLeaveRequest,
   updateLeaveStatus,
+  evaluateAIFairnessLeaves,
 } from './functions/leaves'
 import { getEmployees, getEmployeeById } from './functions/employees'
 import { getPayslips, getPayslipDownloadUrl } from './functions/payroll'
@@ -52,6 +53,13 @@ app.http('updateLeaveStatus', {
   authLevel: 'anonymous',
   route: 'leaves/{id}/status',
   handler: updateLeaveStatus,
+})
+
+app.http('evaluateAIFairnessLeaves', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'leaves/ai-evaluate',
+  handler: evaluateAIFairnessLeaves,
 })
 
 // Employees & Organization Directory

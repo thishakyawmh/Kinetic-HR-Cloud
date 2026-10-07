@@ -98,6 +98,8 @@ export interface LeaveRequest {
   reviewedBy?: string
   reviewerComment?: string
   isEmergency: boolean
+  priorLeavesCount?: number
+  submissionOrder?: number
   aiAnalysis?: AIAnalysisSummary
 }
 
