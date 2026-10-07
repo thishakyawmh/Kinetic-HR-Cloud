@@ -137,7 +137,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
                 <div className="p-1 rounded bg-[#23ace3]/15 text-[#23ace3]">
                   <Bot className="h-3.5 w-3.5" />
                 </div>
-                <span>Kinetic AI Decision Support</span>
+                <span>Policy & Capacity Analysis</span>
               </div>
 
               {request.aiAnalysis ? (
@@ -149,13 +149,13 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
                     <span className="text-foreground font-medium block">
                       {request.aiAnalysis.applicablePolicy}
                     </span>
-                    <span className="text-[11px] text-emerald-500 font-medium block">
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">
                       ✓ Remaining Quota: {request.aiAnalysis.employeeRemainingDays} days available
                     </span>
                   </div>
 
                   {request.aiAnalysis.teamCoverageWarning && (
-                    <div className="p-2.5 rounded-lg bg-[#ef8d46]/10 border border-[#ef8d46]/30 text-[#ef8d46] space-y-1">
+                    <div className="p-2.5 rounded-lg bg-[#ef8d46]/10 border border-[#ef8d46]/30 text-[#c86b25] dark:text-[#ef8d46] space-y-1">
                       <span className="text-[10px] font-semibold uppercase flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
                         Staffing Conflict Warning
@@ -167,17 +167,13 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
                   )}
 
                   <div className="p-2.5 rounded-lg bg-[#23ace3]/10 border border-[#23ace3]/20 text-[11px] text-foreground">
-                    <span className="font-semibold block mb-0.5 text-[#23ace3]">AI Recommendation:</span>
+                    <span className="font-semibold block mb-0.5 text-[#0284c7] dark:text-[#23ace3]">AI Recommendation:</span>
                     <p className="italic">{request.aiAnalysis.recommendationText}</p>
                   </div>
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">Standard leave request verified against quota limits.</p>
               )}
-
-              <p className="text-[10px] text-slate-400 italic">
-                * AI provides decision support only. Final approval authority resides with the direct manager.
-              </p>
             </div>
 
             {/* Action Buttons for Manager */}
@@ -186,7 +182,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
                 <Button
                   onClick={handleApprove}
                   disabled={isProcessing}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-semibold text-xs h-9"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-semibold text-xs h-9 cursor-pointer"
                 >
                   <CheckCircle className="h-3.5 w-3.5" />
                   <span>Approve Request</span>
@@ -197,7 +193,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
                     size="sm"
                     onClick={() => setDialogMode('reject')}
                     disabled={isProcessing}
-                    className="text-xs text-rose-400 hover:bg-rose-500/10 border-rose-500/30 rounded-xl"
+                    className="text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/30 rounded-xl cursor-pointer"
                   >
                     <XCircle className="h-3 w-3 mr-1" />
                     Reject

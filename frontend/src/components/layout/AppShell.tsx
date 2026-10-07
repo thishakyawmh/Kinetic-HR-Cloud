@@ -46,10 +46,11 @@ export const AppShell: React.FC = () => {
   const isMainAIWorkspace =
     location.pathname === '/employee/dashboard' ||
     location.pathname === '/employee/assistant' ||
+    location.pathname === '/manager/assistant' ||
     location.pathname === '/'
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#131314] dark:bg-[#131314] text-foreground font-sans transition-colors duration-200">
+    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground font-sans transition-colors duration-200">
       {/* Kinetic Collapsible Sidebar */}
       <KineticSidebar
         isExpanded={isSidebarExpanded}
@@ -59,15 +60,15 @@ export const AppShell: React.FC = () => {
       {/* Main Viewport */}
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-background relative">
         {/* Subtle Kinetic Ambient Center Glow */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_50%_at_50%_45%,rgba(35,172,227,0.07),rgba(0,0,0,0))] dark:bg-[radial-gradient(ellipse_60%_50%_at_50%_45%,rgba(35,172,227,0.08),rgba(0,0,0,0))]" />
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_50%_at_50%_45%,rgba(35,172,227,0.04),rgba(0,0,0,0))] dark:bg-[radial-gradient(ellipse_60%_50%_at_50%_45%,rgba(35,172,227,0.08),rgba(0,0,0,0))]" />
 
         {/* Minimal Kinetic Top Right Controls Bar */}
         <header className="h-14 w-full flex items-center justify-end px-4 sm:px-6 gap-2 z-20 shrink-0">
 
-          {/* Alyxra Digital Pill Badge */}
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1e1f20] border border-[#333538]/60 text-xs font-medium text-foreground shadow-xs">
+          {/* Active Organization Pill Badge */}
+          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-card border border-border text-xs font-medium text-foreground shadow-xs">
             <Building2 className="h-3.5 w-3.5 text-[#23ace3]" />
-            <span>Alyxra Digital</span>
+            <span>{tenant?.name || 'Kinetic HR Cloud'}</span>
           </div>
 
           {/* Notifications */}

@@ -34,7 +34,7 @@ interface HRRequestItem {
   type: string
   details: string
   dateSubmitted: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled'
   reviewer: string
   riskLevel: 'Low Risk' | 'Medium Risk' | 'High Risk'
 }
@@ -43,7 +43,7 @@ export const EmployeeRequests: React.FC = () => {
   const { user, tenant } = useAuth()
   const navigate = useNavigate()
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'>('all')
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'leave' | 'document'>('all')
   const [selectedRequest, setSelectedRequest] = useState<HRRequestItem | null>(null)
   const [isDocModalOpen, setIsDocModalOpen] = useState(false)

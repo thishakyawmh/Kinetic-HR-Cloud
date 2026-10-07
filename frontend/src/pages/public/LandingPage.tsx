@@ -18,8 +18,9 @@ import {
   Moon,
   Zap,
   Activity,
-  Menu,
-  X,
+  HeartPulse,
+  Laptop,
+  Landmark,
 } from 'lucide-react'
 
 export const LandingPage: React.FC = () => {
@@ -28,7 +29,6 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate()
 
   const [isAnnual, setIsAnnual] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const dashboardPath =
     role === 'platform_admin'
@@ -39,13 +39,13 @@ export const LandingPage: React.FC = () => {
           ? '/manager/dashboard'
           : '/employee/dashboard'
 
-  const partners = [
-    { name: 'Microsoft Azure', tag: 'Cloud Platform', icon: Cloud },
-    { name: 'Entra ID', tag: 'Single Sign-On', icon: Lock },
-    { name: 'ADP Vantage', tag: 'Payroll Engine', icon: FileSpreadsheet },
-    { name: 'Slack', tag: 'Approvals & Bots', icon: Zap },
-    { name: 'Workday', tag: 'HRIS Sync', icon: Building2 },
-    { name: 'SOC 2 Type II', tag: 'Certified', icon: ShieldCheck },
+  const vendors = [
+    { name: 'MetLife Global', tag: 'Health & Insurance', icon: HeartPulse },
+    { name: 'Checkr Verified', tag: 'Background Checks', icon: ShieldCheck },
+    { name: 'Dell Premier', tag: 'Hardware Logistics', icon: Laptop },
+    { name: 'Coursera Enterprise', tag: 'Corporate L&D', icon: BookOpen },
+    { name: 'Fidelity Wealth', tag: '401(k) & Pensions', icon: Landmark },
+    { name: 'Quest Diagnostics', tag: 'Occupational Health', icon: Activity },
   ]
 
   const features = [
@@ -144,170 +144,95 @@ export const LandingPage: React.FC = () => {
       <div className="fixed top-20 right-1/4 w-[450px] h-[400px] bg-[#ef8d46]/8 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed inset-0 bg-[radial-gradient(#23ace3_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.035] pointer-events-none -z-10" />
 
+      {/* Discreet floating theme toggle in top right corner */}
+      <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl border border-border/70 bg-card/85 text-muted-foreground hover:text-foreground hover:bg-card shadow-md backdrop-blur-md transition-all cursor-pointer hover:scale-105"
+          title="Toggle theme"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+      </div>
+
       {/* =========================================================================
-          TOP NAVBAR (Clean with prominent Login button on top right)
+          COVER HERO SECTION (Centered logo, cover layout with action buttons)
           ========================================================================= */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-background/85 border-b border-border/60">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/kenetic_logo.webp"
-              alt="Kinetic HR Logo"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg object-contain"
-            />
-            <span className="font-bold text-base sm:text-lg tracking-tight text-foreground flex items-center">
-              Kinetic
-              <span className="font-extrabold ml-1 flex items-center">
+      <section className="relative min-h-[82vh] flex flex-col justify-center items-center text-center px-4 sm:px-6 py-16 sm:py-24">
+        {/* Ambient glow accent behind hero center */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[520px] h-[340px] sm:h-[520px] bg-[#23ace3]/15 rounded-full blur-[130px] pointer-events-none -z-10" />
+
+        <div className="max-w-3xl mx-auto space-y-6 w-full">
+          {/* Centered Kinetic HR Cloud Logo & Platform Name */}
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className="relative p-3.5 sm:p-4 rounded-3xl bg-card/85 border border-border/80 shadow-2xl shadow-[#23ace3]/20 backdrop-blur-xl group hover:scale-105 transition-all duration-300">
+              <img
+                src="/kenetic_logo.webp"
+                alt="Kinetic HR Logo"
+                className="h-16 w-16 sm:h-20 sm:w-20 object-contain drop-shadow-md"
+              />
+            </div>
+
+            <h1 className="flex items-center justify-center gap-2 text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground">
+              <span>Kinetic</span>
+              <span className="flex items-center">
                 <span className="text-[#23ace3]">H</span>
                 <span className="text-[#ef8d46]">R</span>
               </span>
-              <span className="ml-1.5 text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#23ace3]/12 text-[#23ace3] border border-[#23ace3]/25">
+              <span className="ml-2 text-xs sm:text-sm md:text-base font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#23ace3]/15 text-[#23ace3] border border-[#23ace3]/30">
                 Cloud
               </span>
-            </span>
-          </Link>
-
-          {/* Center Links */}
-          <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">
-              Features
-            </a>
-            <a href="#partners" className="hover:text-foreground transition-colors">
-              Partners
-            </a>
-            <a href="#plans" className="hover:text-foreground transition-colors">
-              Plans
-            </a>
-          </nav>
-
-          {/* Right Controls: Theme + Prominent Login Button */}
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-border/70 bg-card/80 text-muted-foreground hover:text-foreground hover:bg-card transition-colors cursor-pointer"
-              title="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-
-            {isAuthenticated && (
-              <button
-                onClick={() => navigate(dashboardPath)}
-                className="hidden sm:inline-flex items-center text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-lg hover:bg-muted/40 cursor-pointer"
-              >
-                Workspace
-              </button>
-            )}
-
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#23ace3] hover:bg-[#1da0d4] text-white font-semibold text-xs transition-all cursor-pointer shadow-sm hover:shadow-[#23ace3]/20"
-            >
-              <span>Login</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl border border-border/70 bg-card text-muted-foreground"
-            >
-              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </button>
+            </h1>
           </div>
-        </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden px-4 py-3 border-t border-border/60 bg-background/95 backdrop-blur-md space-y-2 text-xs">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-foreground">
-              Features
-            </a>
-            <a href="#partners" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-foreground">
-              Partners
-            </a>
-            <a href="#plans" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-foreground">
-              Plans
-            </a>
-            <div className="pt-2">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#23ace3] text-white font-semibold text-xs shadow-xs"
-              >
-                <span>Login</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* =========================================================================
-          HERO SECTION (Punchy, balanced spacing, cohesive stats bar)
-          ========================================================================= */}
-      <section className="pt-12 pb-10 sm:pt-16 sm:pb-12 text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-5">
-
-          {/* 1-Line Headline */}
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-[1.15]">
-            Intelligent HR cloud for{' '}
-            <span className="text-[#23ace3]">modern teams</span>
-          </h1>
-
-          {/* 1-Sentence Description */}
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+          {/* Platform Description */}
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto">
             Unified leave tracking, secure payroll vaults, and automated compliance under strict tenant data isolation.
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-row items-center justify-center gap-3 pt-2">
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl bg-[#23ace3] hover:bg-[#1da0d4] text-white font-semibold text-xs sm:text-sm shadow-md shadow-[#23ace3]/20 transition-all cursor-pointer"
-            >
-              <span>Sign In to Org</span>
-            </Link>
+          {/* Cover Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-3.5 pt-3">
+            {isAuthenticated ? (
+              <button
+                onClick={() => navigate(dashboardPath)}
+                className="inline-flex items-center gap-2 px-6 sm:px-7 py-3 rounded-xl bg-[#23ace3] hover:bg-[#1da0d4] text-white font-semibold text-xs sm:text-sm shadow-lg shadow-[#23ace3]/25 hover:shadow-[#23ace3]/40 transition-all cursor-pointer hover:-translate-y-0.5"
+              >
+                <span>Go to Workspace</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 px-6 sm:px-7 py-3 rounded-xl bg-[#23ace3] hover:bg-[#1da0d4] text-white font-semibold text-xs sm:text-sm shadow-lg shadow-[#23ace3]/25 hover:shadow-[#23ace3]/40 transition-all cursor-pointer hover:-translate-y-0.5"
+              >
+                <span>Sign In</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+
             <a
               href="#plans"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-card/80 hover:bg-card border border-border/90 hover:border-foreground/30 text-foreground font-semibold text-xs sm:text-sm transition-all cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-2 px-6 sm:px-7 py-3 rounded-xl bg-card/80 hover:bg-card border border-border/80 hover:border-[#23ace3]/40 text-foreground font-semibold text-xs sm:text-sm transition-all cursor-pointer shadow-xs hover:-translate-y-0.5 backdrop-blur-xs"
             >
               <span>View Plans</span>
             </a>
-          </div>
-
-          {/* Sleek Unified 3-Item Metrics Bar */}
-          <div className="pt-4 max-w-2xl mx-auto">
-            <div className="rounded-2xl bg-card/70 border border-border/80 backdrop-blur-md p-3 sm:p-4 grid grid-cols-3 divide-x divide-border/60 shadow-xs">
-              <div className="px-2 text-center">
-                <div className="text-lg sm:text-2xl font-extrabold font-mono text-[#23ace3]">99.99%</div>
-                <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mt-0.5">Cloud SLA</div>
-              </div>
-              <div className="px-2 text-center">
-                <div className="text-lg sm:text-2xl font-extrabold font-mono text-foreground">Isolated</div>
-                <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mt-0.5">Tenant Partitions</div>
-              </div>
-              <div className="px-2 text-center">
-                <div className="text-lg sm:text-2xl font-extrabold font-mono text-[#ef8d46]">AES-256</div>
-                <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mt-0.5">Blob Encryption</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* =========================================================================
-          PARTNERS (Sleek horizontal ribbon, zero dead space)
+          OUR VENDORS (Sleek horizontal ribbon, zero dead space)
           ========================================================================= */}
-      <section id="partners" className="py-8 sm:py-10 border-y border-border/60 bg-muted/20 backdrop-blur-xs">
+      <section id="vendors" className="py-8 sm:py-10 border-y border-border/60 bg-muted/20 backdrop-blur-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-4 text-center">
           <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Trusted Platform Integrations
+            Our Vendors
           </span>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-            {partners.map((p, idx) => {
-              const Icon = p.icon
+            {vendors.map((v, idx) => {
+              const Icon = v.icon
               return (
                 <div
                   key={idx}
@@ -317,8 +242,8 @@ export const LandingPage: React.FC = () => {
                     <Icon className="h-3.5 w-3.5" />
                   </div>
                   <div className="text-left min-w-0">
-                    <div className="text-xs font-semibold text-foreground truncate">{p.name}</div>
-                    <div className="text-[10px] text-muted-foreground truncate">{p.tag}</div>
+                    <div className="text-xs font-semibold text-foreground truncate">{v.name}</div>
+                    <div className="text-[10px] text-muted-foreground truncate">{v.tag}</div>
                   </div>
                 </div>
               )

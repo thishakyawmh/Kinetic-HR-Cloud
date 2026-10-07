@@ -40,14 +40,14 @@ export const ManagerDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Manager Command Center — ${user?.name || 'David Wilson'}`}
-        subtitle={`Engineering Department Overview • ${tenant?.name}`}
+        title={`Manager Command Center - ${user?.name || 'David Wilson'}`}
+        subtitle={`Engineering Department Overview • ${tenant?.name || 'Alyxra Digital'}`}
       >
         <Button
           variant="ai"
           size="sm"
           onClick={() => navigate('/manager/assistant')}
-          className="gap-1.5 text-xs"
+          className="gap-1.5 text-xs rounded-xl shadow-xs transition-all cursor-pointer"
         >
           <Bot className="h-3.5 w-3.5" />
           <span>Manager AI Agent</span>
@@ -56,7 +56,7 @@ export const ManagerDashboard: React.FC = () => {
           variant="default"
           size="sm"
           onClick={() => navigate('/manager/approvals')}
-          className="gap-1.5 text-xs bg-sky-600 hover:bg-sky-700 text-white"
+          className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1da0d4] text-white rounded-xl shadow-xs transition-all cursor-pointer"
         >
           <Clock className="h-3.5 w-3.5" />
           <span>Review Approvals ({pendingApprovals.length})</span>
@@ -67,25 +67,29 @@ export const ManagerDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Team Members"
-          value={12}
+          value={teamMembers.length || 12}
           subtitle="Direct and dotted-line reports"
           icon={Users}
-          iconColor="text-sky-600 bg-sky-50"
+          iconColor="text-[#23ace3] bg-[#23ace3]/15"
         />
         <StatCard
           title="On Leave Today"
           value={2}
           subtitle="Scheduled authorized absences"
           icon={CalendarDays}
-          iconColor="text-indigo-600 bg-indigo-50"
-          badge={<Badge variant="outline" className="text-[10px]">Marcus & Priya</Badge>}
+          iconColor="text-indigo-600 dark:text-indigo-400 bg-indigo-500/15"
+          badge={
+            <Badge variant="outline" className="text-[10px] border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10">
+              Marcus & Priya
+            </Badge>
+          }
         />
         <StatCard
           title="Pending Approvals"
           value={pendingApprovals.length}
           subtitle="Awaiting manager sign-off"
           icon={Clock}
-          iconColor="text-amber-600 bg-amber-50"
+          iconColor="text-[#c86b25] dark:text-[#ef8d46] bg-[#ef8d46]/15"
           trend={{ value: 'Action Required', positive: false }}
         />
         <StatCard
@@ -93,7 +97,7 @@ export const ManagerDashboard: React.FC = () => {
           value="75%"
           subtitle="Friday standup coverage threshold"
           icon={AlertTriangle}
-          iconColor="text-rose-600 bg-rose-50"
+          iconColor="text-rose-600 dark:text-rose-400 bg-rose-500/15"
           trend={{ value: 'Below 80% Threshold', positive: false }}
         />
       </div>
@@ -101,7 +105,7 @@ export const ManagerDashboard: React.FC = () => {
       {/* Staffing Alert Callout */}
       <Card className="border-[#ef8d46]/30 bg-[#ef8d46]/10 p-5 rounded-2xl shadow-xs">
         <div className="flex items-start gap-3.5">
-          <div className="p-2 rounded-xl bg-[#ef8d46]/20 text-[#ef8d46] shrink-0">
+          <div className="p-2 rounded-xl bg-[#ef8d46]/20 text-[#c86b25] dark:text-[#ef8d46] shrink-0">
             <AlertTriangle className="h-5 w-5" />
           </div>
           <div className="flex-1">
@@ -116,7 +120,7 @@ export const ManagerDashboard: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => navigate('/manager/team')}
-            className="text-xs shrink-0 border-[#ef8d46]/30 text-foreground hover:bg-[#ef8d46]/20 rounded-xl"
+            className="text-xs shrink-0 border-[#ef8d46]/50 text-[#c86b25] dark:text-[#ef8d46] hover:bg-[#ef8d46]/20 rounded-xl transition-all cursor-pointer"
           >
             <span>View Team Roster</span>
             <ArrowRight className="h-3 w-3 ml-1" />
@@ -139,7 +143,7 @@ export const ManagerDashboard: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => navigate('/manager/approvals')}
-            className="text-xs text-[#23ace3] hover:bg-[#23ace3]/15 rounded-lg"
+            className="text-xs text-[#0284c7] dark:text-[#23ace3] hover:bg-[#23ace3]/15 rounded-lg cursor-pointer"
           >
             <span>View all approvals</span>
             <ArrowRight className="h-3 w-3 ml-1" />
@@ -148,7 +152,7 @@ export const ManagerDashboard: React.FC = () => {
 
         {pendingApprovals.length === 0 ? (
           <Card className="border border-dashed border-border/80 p-8 text-center bg-card/40 rounded-2xl">
-            <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+            <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
             <div className="text-sm font-semibold text-foreground">Inbox Zero: No Pending Approvals</div>
             <p className="text-xs text-muted-foreground mt-0.5">
               All team leave submissions have been reviewed.

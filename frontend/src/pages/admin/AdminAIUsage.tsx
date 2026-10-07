@@ -42,12 +42,6 @@ export const AdminAIUsage: React.FC = () => {
       <PageHeader
         title="AI Agent Observability & Activity Metrics"
         subtitle="Telemetry visualization of Microsoft Foundry Agent Service, Azure OpenAI token usage, and RAG retrieval pipelines."
-        badge={
-          <Badge variant="ai" className="gap-1 text-xs">
-            <Sparkles className="h-3 w-3" />
-            Live Observability Stream
-          </Badge>
-        }
       />
 
       {/* Telemetry Metric Cards (Section 29) */}

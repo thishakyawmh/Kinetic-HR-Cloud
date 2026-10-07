@@ -70,7 +70,7 @@ export const AdminDashboard: React.FC = () => {
           value={248}
           subtitle="Active on corporate roster"
           icon={Users}
-          iconColor="text-sky-600 bg-sky-50"
+          iconColor="text-[#23ace3] bg-[#23ace3]/15"
           trend={{ value: '+4 this month', positive: true }}
         />
         <StatCard
@@ -78,14 +78,14 @@ export const AdminDashboard: React.FC = () => {
           value={stats?.pendingRequests ?? 12}
           subtitle="Awaiting manager/admin review"
           icon={Clock}
-          iconColor="text-amber-600 bg-amber-50"
+          iconColor="text-[#ef8d46] bg-[#ef8d46]/15"
         />
         <StatCard
           title="Active Policies"
           value={stats?.activePolicies ?? 18}
           subtitle="Indexed in Azure AI Search"
           icon={BookOpen}
-          iconColor="text-indigo-600 bg-indigo-50"
+          iconColor="text-indigo-400 bg-indigo-500/15"
           trend={{ value: '100% vector indexed', positive: true }}
         />
         <StatCard
@@ -93,7 +93,7 @@ export const AdminDashboard: React.FC = () => {
           value={stats?.aiRequestsToday ? stats.aiRequestsToday.toLocaleString() : '1,284'}
           subtitle="Avg response latency: 380ms"
           icon={Sparkles}
-          iconColor="text-purple-600 bg-purple-50"
+          iconColor="text-purple-400 bg-purple-500/15"
           trend={{ value: '99.8% safe SLA', positive: true }}
         />
       </div>

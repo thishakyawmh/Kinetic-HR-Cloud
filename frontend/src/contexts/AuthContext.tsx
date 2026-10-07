@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         session,
         user: session?.user || null,
-        tenant: session?.tenant || null,
+        tenant: session?.tenant || (session?.user ? appDataStore.getTenant(session.user.tenantId) : null) || allTenants[0] || null,
         role,
         isAuthenticated: !!session,
         allTenants,
