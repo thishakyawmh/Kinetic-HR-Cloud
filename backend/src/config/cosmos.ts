@@ -60,6 +60,36 @@ const LOCAL_MEMORY_DATA: Record<string, any[]> = {
       employeeNumber: 'KT-0012',
     },
     {
+      id: 'user-platform-admin',
+      tenantId: 'tenant-kinetic',
+      name: 'Alex Thorne',
+      email: 'alex.thorne@kineticcloud.azure.com',
+      role: 'platform_admin',
+      department: 'Cloud Platform Operations',
+      jobTitle: 'Principal Cloud Platform Director',
+      employeeNumber: 'KC-0001',
+    },
+    {
+      id: 'user-david-emp',
+      tenantId: 'tenant-kinetic',
+      name: 'David Wilson (Employee)',
+      email: 'david.emp@kinetictech.io',
+      role: 'employee',
+      department: 'Engineering',
+      jobTitle: 'Engineering Director',
+      employeeNumber: 'KT-1044-EMP',
+    },
+    {
+      id: 'user-sarah-emp',
+      tenantId: 'tenant-kinetic',
+      name: 'Sarah Miller (Employee)',
+      email: 'sarah.emp@kinetictech.io',
+      role: 'employee',
+      department: 'Human Resources',
+      jobTitle: 'VP of People & Operations',
+      employeeNumber: 'KT-0012-EMP',
+    },
+    {
       id: 'user-brandon-nova',
       tenantId: 'tenant-nova',
       name: 'Brandon Lee',
@@ -133,8 +163,33 @@ function createMockContainer(name: string): Container {
       query: (querySpec: any) => ({
         fetchAll: async () => {
           let results = [...store]
-          // If searching for organization code/id
           if (querySpec && querySpec.parameters) {
+            // Filter by tenantId
+            const tenantParam = querySpec.parameters.find((p: any) => p.name === '@tenantId')
+            if (tenantParam) {
+              const tVal = String(tenantParam.value).toLowerCase()
+              results = results.filter((item: any) => item.tenantId && item.tenantId.toLowerCase() === tVal)
+            }
+            // Filter by empId (employeeNumber, email, or id)
+            const empParam = querySpec.parameters.find((p: any) => p.name === '@empId')
+            if (empParam) {
+              const eVal = String(empParam.value).toLowerCase()
+              results = results.filter((u: any) =>
+                (u.employeeNumber && u.employeeNumber.toLowerCase() === eVal) ||
+                (u.email && u.email.toLowerCase() === eVal) ||
+                (u.id && u.id.toLowerCase() === eVal)
+              )
+            }
+            // Filter by userId
+            const userParam = querySpec.parameters.find((p: any) => p.name === '@userId')
+            if (userParam) {
+              const uVal = String(userParam.value).toLowerCase()
+              results = results.filter((item: any) =>
+                (item.userId && item.userId.toLowerCase() === uVal) ||
+                (item.id && item.id.toLowerCase() === uVal)
+              )
+            }
+            // If searching for organization code/id
             const orgParam = querySpec.parameters.find((p: any) => p.name === '@orgId')
             if (orgParam) {
               const val = String(orgParam.value).toLowerCase()

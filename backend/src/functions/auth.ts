@@ -99,7 +99,7 @@ export async function loginEmployee(
     const cleanEmp = employeeId.trim().toLowerCase()
 
     // Query user specifically in tenantId partition
-    const users = await queryTenantItems<any>(
+    let users = await queryTenantItems<any>(
       'users',
       tenantId,
       'SELECT * FROM c WHERE c.tenantId = @tenantId AND (LOWER(c.employeeNumber) = @empId OR LOWER(c.email) = @empId OR LOWER(c.id) = @empId)',
@@ -108,6 +108,19 @@ export async function loginEmployee(
         { name: '@empId', value: cleanEmp },
       ]
     )
+
+    // Secondary safety: ensure the first user actually matches the requested employeeId/role
+    if (users.length > 0) {
+      const exactMatch = users.find(u =>
+        (u.employeeNumber && u.employeeNumber.toLowerCase() === cleanEmp) ||
+        (u.email && u.email.toLowerCase() === cleanEmp) ||
+        (u.id && u.id.toLowerCase() === cleanEmp) ||
+        (cleanEmp === 'manager' && u.role === 'manager') ||
+        (cleanEmp === 'admin' && u.role === 'admin') ||
+        (cleanEmp === 'platform' && u.role === 'platform_admin')
+      )
+      users = exactMatch ? [exactMatch] : []
+    }
 
     if (users.length === 0) {
       // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
