@@ -28,7 +28,9 @@ import {
   Moon,
   HelpCircle,
   ChevronRight,
+  Zap,
 } from 'lucide-react'
+import { PlanUpgradeModal } from '@/components/subscription/PlanUpgradeModal'
 
 interface KineticSidebarProps {
   isExpanded: boolean
@@ -48,6 +50,7 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
   const navigate = useNavigate()
   const location = useLocation()
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   const employeeNav = [
@@ -61,12 +64,9 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
 
   const managerNav = [
     { label: 'Manager Assistant', to: '/manager/assistant', icon: Sparkles },
+    { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
     { label: 'Team Approvals', to: '/manager/approvals', icon: CheckSquare, badge: '1' },
     { label: 'Team Availability', to: '/manager/team', icon: Users },
-    { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Personal Leaves', to: '/employee/leave', icon: CalendarDays },
-    { label: 'Payslips', to: '/employee/payslips', icon: FileSpreadsheet },
-    { label: 'Policies', to: '/employee/policies', icon: BookOpen },
   ]
 
   const adminNav = [
@@ -103,12 +103,16 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
     if (onNewChat) {
       onNewChat()
     }
-    navigate(`/employee/dashboard?new=${Date.now()}`)
+    if (role === 'manager') {
+      navigate(`/manager/assistant?new=${Date.now()}`)
+    } else {
+      navigate(`/employee/dashboard?new=${Date.now()}`)
+    }
   }
 
   return (
     <aside
-      className={`h-screen shrink-0 transition-all duration-300 ease-in-out font-sans flex flex-col justify-between border-r border-border/60 bg-[#1e1f20] dark:bg-[#18191a] text-foreground select-none z-30 ${
+      className={`h-screen shrink-0 transition-all duration-300 ease-in-out font-sans flex flex-col justify-between border-r border-border/60 bg-card dark:bg-[#18191a] text-foreground select-none z-30 ${
         isExpanded ? 'w-64' : 'w-16'
       }`}
     >
@@ -227,6 +231,89 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
             )
           })}
         </nav>
+
+        {/* Administrator Current Plan & Plan Upgrade Section */}
+        {role === 'admin' && (
+          isExpanded ? (
+            <div className="p-2 border-t border-border/30 shrink-0">
+              <div className="rounded-2xl border border-border/60 bg-muted/20 p-3 space-y-2.5 transition-all hover:border-[#23ace3]/40">
+                {/* Header: Plan Name & Active Badge */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#23ace3]/15 text-[#23ace3] shrink-0">
+                      <Zap className="h-3 w-3" />
+                    </div>
+                    <span className="text-xs font-bold text-foreground truncate">
+                      {tenant?.plan || 'Enterprise'} Plan
+                    </span>
+                  </div>
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full shrink-0">
+                    <span className="h-1 w-1 rounded-full bg-emerald-400" />
+                    Active
+                  </span>
+                </div>
+
+                {/* Usage / Quota Details */}
+                <div className="space-y-1 text-[11px] text-muted-foreground">
+                  <div className="flex justify-between items-center">
+                    <span>Active Seats</span>
+                    <span className="font-semibold text-foreground">
+                      12 / {tenant?.plan === 'Starter' ? '25' : tenant?.plan === 'Business' ? '100' : '1,000'}
+                    </span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="h-1.5 w-full bg-border/40 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#23ace3] to-[#ef8d46] rounded-full transition-all"
+                      style={{
+                        width:
+                          tenant?.plan === 'Starter'
+                            ? '48%'
+                            : tenant?.plan === 'Business'
+                            ? '12%'
+                            : '1.2%',
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center pt-0.5 text-[10px]">
+                    <span>AI Quota</span>
+                    <span className="font-medium text-foreground">
+                      {tenant?.plan === 'Starter'
+                        ? '500'
+                        : tenant?.plan === 'Business'
+                        ? '2,500'
+                        : '15,000'}{' '}
+                      req/mo
+                    </span>
+                  </div>
+                </div>
+
+                {/* Upgrade Button - Only shown for Starter and Business plans */}
+                {tenant?.plan !== 'Enterprise' && (
+                  <button
+                    onClick={() => setIsUpgradeModalOpen(true)}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold bg-[#23ace3]/15 text-[#23ace3] hover:bg-[#23ace3] hover:text-white border border-[#23ace3]/30 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    <span>Upgrade Plan</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            tenant?.plan !== 'Enterprise' ? (
+              <div className="py-2 border-t border-border/30 flex justify-center shrink-0">
+                <button
+                  onClick={() => setIsUpgradeModalOpen(true)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#23ace3]/15 text-[#23ace3] hover:bg-[#23ace3] hover:text-white border border-[#23ace3]/30 transition-all cursor-pointer"
+                  title={`${tenant?.plan || 'Starter'} Plan - Click to Upgrade`}
+                >
+                  <Zap className="h-4 w-4" />
+                </button>
+              </div>
+            ) : null
+          )
+        )}
       </div>
 
       {/* Bottom Profile & Settings Section */}
@@ -276,29 +363,29 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
 
         {/* Kinetic Settings Popup: Theme Toggle & Logout Only */}
         {showSettingsMenu && (
-          <div className="absolute bottom-16 left-8 w-56 rounded-[20px] border border-[#3c4043]/60 bg-[#1e1f20] text-[#e3e3e3] p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 text-left space-y-0.5 text-xs font-sans">
+          <div className="absolute bottom-16 left-8 w-56 rounded-[20px] border border-border bg-popover text-popover-foreground p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 text-left space-y-0.5 text-xs font-sans">
             {/* Theme Change Option */}
             <button
               onClick={() => {
                 toggleTheme()
               }}
-              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[#282a2c] rounded-xl transition-colors cursor-pointer text-left text-xs"
+              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted rounded-xl transition-colors cursor-pointer text-left text-xs text-foreground"
             >
               <div className="flex items-center gap-3">
                 {theme === 'dark' ? (
-                  <Moon className="h-4 w-4 text-[#9aa0a6]" />
+                  <Moon className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <Sun className="h-4 w-4 text-[#9aa0a6]" />
+                  <Sun className="h-4 w-4 text-muted-foreground" />
                 )}
                 <span>Theme</span>
               </div>
-              <div className="flex items-center gap-1 text-[#9aa0a6]">
+              <div className="flex items-center gap-1 text-muted-foreground">
                 <span className="capitalize text-[11px] font-medium">{theme}</span>
                 <ChevronRight className="h-3 w-3" />
               </div>
             </button>
 
-            <div className="border-t border-[#3c4043]/40 my-1" />
+            <div className="border-t border-border/60 my-1" />
 
             {/* Logout Button */}
             <button
@@ -307,15 +394,20 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
                 logout()
                 navigate('/login')
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#282a2c] rounded-xl cursor-pointer text-left transition-colors text-[#e3e3e3] hover:text-rose-400 group text-xs"
+              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted rounded-xl cursor-pointer text-left transition-colors text-foreground hover:text-rose-500 group text-xs"
             >
-              <LogOut className="h-4 w-4 text-[#9aa0a6] group-hover:text-rose-400 transition-colors shrink-0" />
+              <LogOut className="h-4 w-4 text-muted-foreground group-hover:text-rose-500 transition-colors shrink-0" />
               <span className="font-medium">Log out</span>
             </button>
           </div>
         )}
       </div>
 
+      {/* Plan Upgrade & Management Modal */}
+      <PlanUpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
     </aside>
   )
 }

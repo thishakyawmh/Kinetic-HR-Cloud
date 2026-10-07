@@ -51,14 +51,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   ]
 
   const managerNav: NavItem[] = [
+    { label: 'Manager Assistant', to: '/manager/assistant', icon: Sparkles, badge: 'AI' },
     { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
     { label: 'Team Approvals', to: '/manager/approvals', icon: CheckSquare, badge: '1 Pending' },
     { label: 'Team Availability', to: '/manager/team', icon: Users },
-    { label: 'Manager AI Agent', to: '/manager/assistant', icon: Bot, badge: 'AI' },
-    // Also include employee self-service shortcuts for manager's personal needs
-    { label: 'My Personal Leave', to: '/employee/leave', icon: CalendarDays },
-    { label: 'My Payslips', to: '/employee/payslips', icon: FileSpreadsheet },
-    { label: 'Policy Browser', to: '/employee/policies', icon: BookOpen },
   ]
 
   const adminNav: NavItem[] = [

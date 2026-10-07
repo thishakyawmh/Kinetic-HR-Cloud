@@ -193,6 +193,26 @@ export const Login: React.FC = () => {
                 <p className="text-[11px] text-muted-foreground pt-0.5">
                   Enter your organization's unique domain or organization code to proceed.
                 </p>
+
+                {/* Quick Demo Organization Shortcuts */}
+                <div className="pt-2">
+                  <div className="text-[11px] text-muted-foreground mb-1.5 font-medium">Demo Organizations:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {allTenants.map(t => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          setCompanyInput(t.code)
+                          navigate(`/login/${encodeURIComponent(t.code.toLowerCase())}`)
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-lg border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer font-medium"
+                      >
+                        {t.name} ({t.code})
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Submit Organization ID Button */}
@@ -231,6 +251,84 @@ export const Login: React.FC = () => {
                   <ArrowLeft className="h-3 w-3" />
                   <span>Change</span>
                 </Link>
+              </div>
+
+              {/* Quick Demo Roles */}
+              <div className="pt-1">
+                <div className="text-[11px] text-muted-foreground mb-1.5 font-medium">Quick Demo Accounts:</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeIdInput('KT-8842')
+                      setPasswordInput('password123')
+                    }}
+                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                  >
+                    <div className="font-semibold text-[11px] text-[#23ace3]">Standard Employee</div>
+                    <div className="text-[10px] text-muted-foreground truncate">Alice (KT-8842)</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeIdInput('KC-0001')
+                      setPasswordInput('password123')
+                    }}
+                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                  >
+                    <div className="font-semibold text-[11px] text-[#23ace3]">Platform Admin</div>
+                    <div className="text-[10px] text-muted-foreground truncate">Alex (KC-0001)</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeIdInput('KT-1044')
+                      setPasswordInput('password123')
+                    }}
+                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                  >
+                    <div className="font-semibold text-[11px] text-[#23ace3]">Manager Account</div>
+                    <div className="text-[10px] text-muted-foreground truncate">David (KT-1044 - Approvals)</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeIdInput('KT-1044-EMP')
+                      setPasswordInput('password123')
+                    }}
+                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                  >
+                    <div className="font-semibold text-[11px] text-[#ef8d46]">David's Employee Account</div>
+                    <div className="text-[10px] text-muted-foreground truncate">David (KT-1044-EMP)</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeIdInput('KT-0012')
+                      setPasswordInput('password123')
+                    }}
+                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                  >
+                    <div className="font-semibold text-[11px] text-[#23ace3]">HR Admin Account</div>
+                    <div className="text-[10px] text-muted-foreground truncate">Sarah (KT-0012 - HR Hub)</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeIdInput('KT-0012-EMP')
+                      setPasswordInput('password123')
+                    }}
+                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                  >
+                    <div className="font-semibold text-[11px] text-[#ef8d46]">Sarah's Employee Account</div>
+                    <div className="text-[10px] text-muted-foreground truncate">Sarah (KT-0012-EMP)</div>
+                  </button>
+                </div>
               </div>
 
               {/* Employee ID Field */}

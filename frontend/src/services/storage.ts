@@ -58,6 +58,26 @@ class AppDataStore {
         this.notifications = parsed.notifications || MOCK_NOTIFICATIONS
         this.integrations = parsed.integrations || MOCK_INTEGRATIONS
         this.aiUsage = parsed.aiUsage || MOCK_AI_USAGE
+
+        // Merge any new default mock users (e.g. separate employee accounts)
+        MOCK_USERS.forEach(mu => {
+          if (!this.users.some(u => u.id === mu.id || u.employeeNumber === mu.employeeNumber)) {
+            this.users.push(mu)
+          }
+        })
+        // Merge missing leave balances
+        Object.keys(MOCK_LEAVE_BALANCES).forEach(k => {
+          if (!this.leaveBalances[k]) {
+            this.leaveBalances[k] = MOCK_LEAVE_BALANCES[k]
+          }
+        })
+        // Merge missing payslips
+        MOCK_PAYSLIPS.forEach(mp => {
+          if (!this.payslips.some(p => p.id === mp.id)) {
+            this.payslips.push(mp)
+          }
+        })
+        this.save()
         return
       } catch (e) {
         console.error('Failed to parse cached store', e)

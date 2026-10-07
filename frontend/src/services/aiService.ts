@@ -20,6 +20,213 @@ export const aiService = {
   ): Promise<AIMessage> {
     const q = userMessage.toLowerCase()
 
+    // 0A. Manager Supervisory Scenario: Team Coverage & Capacity Risk Assessment
+    if (
+      q.includes('coverage') ||
+      q.includes('bottleneck') ||
+      q.includes('capacity') ||
+      q.includes('staffing') ||
+      q.includes('next week') ||
+      q.includes('oct 7') ||
+      q.includes('overlapping') ||
+      q.includes('clash')
+    ) {
+      callback?.onToolStep?.('team_schedule_matrix', 'Querying Engineering schedule matrix & sprint roadmap...')
+      await new Promise(r => setTimeout(r, 450))
+
+      callback?.onToolStep?.('threshold_evaluation', 'Evaluating 70% minimum departmental coverage SLA...')
+      await new Promise(r => setTimeout(r, 450))
+
+      callback?.onToolStep?.('risk_analyzer', 'Analyzing critical on-call & standup staffing impact...')
+      await new Promise(r => setTimeout(r, 400))
+
+      appDataStore.incrementAIMetrics(3, 1)
+
+      const response: AIMessage = {
+        id: `ai-msg-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: `### ⚠️ Team Coverage & Staffing Risk Assessment for Engineering
+
+I have analyzed the **Engineering Department (12 members)** schedule for next week (Oct 5 – Oct 11, 2026):
+
+• **Critical Capacity Dip (Oct 7 – Oct 8):**
+  - **Marcus Vance (Backend)** and **Elena Rostova (Frontend)** have scheduled leaves overlapping on Wednesday and Thursday.
+  - **Priya Patel (DevOps)** is scheduled for remote standby training.
+  - Department active capacity will drop to **75% (9 of 12 available)**, approaching your **70% departmental safety threshold**.
+
+• **Sprint Delivery Impact:**
+  - The Sprint 42 release milestone is scheduled for Oct 9. With backend coverage constrained on Oct 7-8, code reviews and PR merges may bottleneck unless PRs are submitted prior to Oct 6.
+
+• **Supervisory Recommendation:**
+  - Suggest shifting Marcus's secondary sprint tickets to Alice Johnson or David Wilson.
+  - No additional non-emergency leave should be approved for Wednesday, Oct 7 or Thursday, Oct 8.`,
+        sources: [
+          {
+            title: 'Departmental Staffing SLA (Engineering Sec 3.1)',
+            policyId: 'pol-staffing',
+            snippet: 'Engineering teams must maintain 70% active coverage during active sprint cycle windows.',
+          },
+          {
+            title: 'On-Call & Sprint Rotation Matrix Q4 2026',
+            policyId: 'pol-schedule',
+            snippet: 'Minimum 2 backend and 2 frontend engineers must be available on deploy eve.',
+          },
+        ],
+        toolExecutions: [
+          { name: 'team_schedule_matrix', label: 'Aggregated 12 Employee Calendars for Week 41', status: 'completed' },
+          { name: 'threshold_evaluation', label: 'Coverage Level: 75% (Threshold: 70%)', status: 'completed' },
+          { name: 'risk_analyzer', label: 'Bottleneck Identified: Sprint 42 Backend Approvals', status: 'completed' },
+        ],
+        recommendation: {
+          text: 'Capacity is tight at 75% on Oct 7-8. Recommend freezing discretionary leave for those two dates.',
+          approvalRequired: false,
+        },
+      }
+
+      callback?.onComplete?.(response)
+      return response
+    }
+
+    // 0B. Manager Supervisory Scenario: Pending Approvals & Sign-Off Queue
+    if (
+      q.includes('approval') ||
+      q.includes('pending') ||
+      q.includes('sign-off') ||
+      q.includes('marcus') ||
+      q.includes('review approvals')
+    ) {
+      callback?.onToolStep?.('approval_queue', 'Scanning pending supervisory approval queue...')
+      await new Promise(r => setTimeout(r, 450))
+
+      callback?.onToolStep?.('policy_validation', 'Validating request against Emergency Leave Policy v1.8...')
+      await new Promise(r => setTimeout(r, 400))
+
+      appDataStore.incrementAIMetrics(2, 1)
+
+      const pendingList = appDataStore.getLeaveRequests(context.tenantId).filter(r => r.status === 'pending')
+      const targetReq = pendingList[0]
+
+      const response: AIMessage = {
+        id: `ai-msg-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: `You currently have **${pendingList.length || 1} pending approval request** requiring your supervisory decision:
+
+• **Marcus Vance — Emergency Leave**
+  - **Date:** Tomorrow (Oct 3, 2026) • 1 Day
+  - **Reason:** Family emergency / dependent illness
+  - **Policy Compliance:** Valid under **Emergency Leave Policy (Sec 4.2)**. Marcus has 2 emergency days remaining.
+  - **Staffing Impact:** Friday coverage remains at **83% (10 of 12 active)**, safely above the 70% threshold.
+
+**AI Supervisory Recommendation:** **Approve**. All policy criteria are met and team coverage is sufficient.`,
+        sources: [
+          {
+            title: 'Emergency Leave Policy (Sec 4.2)',
+            policyId: 'pol-emergency',
+            snippet: 'Immediate supervisory approval recommended for urgent family or dependent care needs.',
+          },
+        ],
+        toolExecutions: [
+          { name: 'approval_queue', label: 'Retrieved 1 Pending Leave Request for Engineering', status: 'completed' },
+          { name: 'policy_validation', label: 'Verified Policy Compliance: Full Eligibility Confirmed', status: 'completed' },
+        ],
+        recommendation: {
+          text: 'Request complies with corporate emergency guidelines. Direct sign-off recommended.',
+          approvalRequired: true,
+          approvalRole: 'David Wilson (Engineering Lead)',
+        },
+        actionCard: targetReq ? {
+          type: 'approval_review',
+          title: `Approve Leave: ${targetReq.employeeName}`,
+          description: `${targetReq.leaveTypeName} (${targetReq.requestedDays} day) • ${targetReq.startDate}`,
+          data: {
+            requestId: targetReq.id,
+            employeeName: targetReq.employeeName,
+            leaveTypeName: targetReq.leaveTypeName,
+            requestedDays: targetReq.requestedDays,
+            startDate: targetReq.startDate,
+            endDate: targetReq.endDate,
+            reason: targetReq.reason,
+          },
+          actionLabel: 'Approve Request',
+          status: 'ready',
+        } : undefined,
+      }
+
+      callback?.onComplete?.(response)
+      return response
+    }
+
+    // 0C. Manager Supervisory Scenario: Team Availability & Live Attendance
+    if (q.includes('team') || q.includes('who is off') || q.includes('availability') || q.includes('attendance') || q.includes('reports')) {
+      callback?.onToolStep?.('team_roster', 'Retrieving Engineering team members and real-time status...')
+      await new Promise(r => setTimeout(r, 400))
+      appDataStore.incrementAIMetrics(1, 0)
+
+      const response: AIMessage = {
+        id: `ai-msg-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: `### 👥 Engineering Team Availability Overview Today
+
+• **Active In-Office (5):** David Wilson (Lead), Elena Rostova, Samira Khan, Alex Rivera, Kevin Zhang
+• **Active Remote (5):** Alice Johnson, Chen Wei, Liam O'Connor, Maya Lin, Sarah Jenkins
+• **On Leave (2):**
+  - **Marcus Vance:** Emergency Leave (Returning Monday)
+  - **Priya Patel:** Half-day medical appointment (Returning 2:00 PM)
+
+**Upcoming Leaves This Month:**
+- Oct 7 – Oct 8: Alice Johnson (Annual Leave, 2 days)
+- Oct 14: Chen Wei (Casual Leave, 1 day)
+- Oct 26: Corporate Recess / Thanksgiving`,
+        sources: [
+          {
+            title: 'Live Attendance & Team Roster',
+            snippet: 'Real-time synchronization with badge access and remote activity log.',
+          },
+        ],
+        toolExecutions: [
+          { name: 'team_roster', label: '12 Active Team Records Checked', status: 'completed' },
+        ],
+      }
+      callback?.onComplete?.(response)
+      return response
+    }
+
+    // 0D. Manager Guidelines: Overtime & Standby Compensation
+    if (q.includes('overtime') || q.includes('standby') || q.includes('on-call') || q.includes('compensation')) {
+      callback?.onToolStep?.('rag_search', 'Retrieving Engineering Standby & Overtime Policy (Sec 5.4)...')
+      await new Promise(r => setTimeout(r, 400))
+      appDataStore.incrementAIMetrics(1, 1)
+
+      const response: AIMessage = {
+        id: `ai-msg-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: `### 📋 Manager Guidelines: Overtime & Weekend Standby Authorization
+
+Under **Kinetic HR Compensation & Standby Guidelines (v2.1)**:
+
+• **Manager Discretion:** Leads may authorize up to **10 hours of overtime per engineer per pay period** without HR Director sign-off.
+• **Standby Rate:** Weekend on-call standby pays a flat **$150/weekend stipend** plus **1.5x hourly rate** for active triage time over 30 minutes.
+• **Compensatory Off (Comp-Time):** If an engineer works >4 hours on a public holiday, they are entitled to 1 compensatory rest day within 30 days.
+• **Submission Window:** Timesheet adjustments must be approved in Kinetic HR by the 25th of the active billing cycle.`,
+        sources: [
+          {
+            title: 'Overtime & Standby Compensation Guidelines (Sec 5.4)',
+            policyId: 'pol-overtime',
+            snippet: 'Manager pre-approval required for overtime exceeding 10 hours per sprint.',
+          },
+        ],
+        toolExecutions: [
+          { name: 'azure_ai_search', label: 'Retrieved 2 policy articles from HR Policy Index', status: 'completed' },
+        ],
+      }
+      callback?.onComplete?.(response)
+      return response
+    }
+
     // 1. Check for Emergency Leave scenario (Primary MVP Scenario - Step 3 & 4)
     if (
       q.includes('sick') ||

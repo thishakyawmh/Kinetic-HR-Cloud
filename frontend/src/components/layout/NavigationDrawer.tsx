@@ -18,7 +18,9 @@ import {
   Layers,
   Sliders,
   Shield,
+  Zap,
 } from 'lucide-react'
+import { PlanUpgradeModal } from '@/components/subscription/PlanUpgradeModal'
 import { Badge } from '@/components/ui/badge'
 
 interface NavigationDrawerProps {
@@ -41,6 +43,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 }) => {
   const { role, user, tenant } = useAuth()
   const navigate = useNavigate()
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = React.useState(false)
 
   if (!isOpen) return null
 
@@ -55,12 +58,9 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const managerNav: NavItem[] = [
     { label: 'Manager Assistant', to: '/manager/assistant', icon: Sparkles },
+    { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
     { label: 'Team Approvals', to: '/manager/approvals', icon: CheckSquare, badge: '1 pending' },
     { label: 'Team Availability', to: '/manager/team', icon: Users },
-    { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Personal Leaves', to: '/employee/leave', icon: CalendarDays },
-    { label: 'Payslips', to: '/employee/payslips', icon: FileSpreadsheet },
-    { label: 'Policies', to: '/employee/policies', icon: BookOpen },
   ]
 
   const adminNav: NavItem[] = [
@@ -171,18 +171,35 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           </nav>
 
           {/* Footer Info */}
-          <div className="p-4 border-t border-border bg-muted/30 text-xs text-muted-foreground flex items-center justify-between">
-            <div className="truncate max-w-[160px]">
-              <span className="font-medium text-foreground block truncate">{tenant?.name}</span>
-              <span className="text-[10px] text-muted-foreground">{tenant?.domain}</span>
+          <div className="p-4 border-t border-border bg-muted/30 text-xs text-muted-foreground space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="truncate max-w-[150px]">
+                <span className="font-medium text-foreground block truncate">{tenant?.name}</span>
+                <span className="text-[10px] text-muted-foreground">{tenant?.domain}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>{tenant?.plan || 'Enterprise'} Plan</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
-              <span>AI Ready</span>
-            </div>
+
+            {role === 'admin' && tenant?.plan !== 'Enterprise' && (
+              <button
+                onClick={() => setIsUpgradeModalOpen(true)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-[#23ace3]/15 text-[#23ace3] hover:bg-[#23ace3] hover:text-white border border-[#23ace3]/30 transition-all cursor-pointer shadow-2xs"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                <span>Upgrade Plan</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      <PlanUpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
     </div>
   )
 }

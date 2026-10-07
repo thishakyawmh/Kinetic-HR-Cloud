@@ -53,7 +53,7 @@ export const AIMessageItem: React.FC<AIMessageItemProps> = ({ message, onActionC
   if (isUser) {
     return (
       <div className="flex justify-end mb-6">
-        <div className="max-w-[85%] sm:max-w-xl rounded-[20px] bg-card px-5 py-3.5 text-[15px] text-foreground leading-relaxed shadow-2xs">
+        <div className="max-w-[85%] sm:max-w-xl rounded-[20px] bg-card border border-border/70 px-5 py-3.5 text-[15px] text-foreground leading-relaxed shadow-2xs">
           {message.content}
         </div>
       </div>

@@ -7,8 +7,7 @@ import { ApprovalCard } from '@/components/approvals/ApprovalCard'
 import { LeaveHistoryTable } from '@/components/leave/LeaveHistoryTable'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { CheckSquare, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react'
+import { CheckSquare, AlertCircle } from 'lucide-react'
 
 export const ManagerApprovals: React.FC = () => {
   const { tenant } = useAuth()
@@ -28,18 +27,7 @@ export const ManagerApprovals: React.FC = () => {
       <PageHeader
         title="Manager Approval Center"
         subtitle="Review employee leave submissions supported by Kinetic AI policy alignment and department staffing analytics."
-        badge={
-          <Badge variant="ai" className="gap-1 text-xs">
-            <Sparkles className="h-3 w-3" />
-            AI Decision Support Enabled
-          </Badge>
-        }
-      >
-        <div className="flex items-center gap-2 text-xs bg-muted/40 px-3.5 py-1.5 rounded-xl border border-border/60">
-          <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          <span className="font-medium text-foreground">Manager Final Decision Authority</span>
-        </div>
-      </PageHeader>
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -55,7 +43,7 @@ export const ManagerApprovals: React.FC = () => {
         <TabsContent value="pending" className="space-y-4">
           {pendingRequests.length === 0 ? (
             <Card className="border border-dashed border-border/80 p-12 text-center bg-card/40 rounded-2xl">
-              <CheckSquare className="h-10 w-10 text-emerald-400 mx-auto mb-3" />
+              <CheckSquare className="h-10 w-10 text-emerald-600 dark:text-emerald-400 mx-auto mb-3" />
               <h4 className="text-base font-bold text-foreground">All pending requests resolved</h4>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                 There are no employee leave submissions currently waiting for manager sign-off.

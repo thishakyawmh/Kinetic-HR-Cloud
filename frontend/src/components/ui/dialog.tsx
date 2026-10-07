@@ -6,20 +6,21 @@ interface DialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   children: React.ReactNode
+  className?: string
 }
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
+export function Dialog({ open, onOpenChange, children, className }: DialogProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
         onClick={() => onOpenChange(false)}
       />
       {/* Modal Box */}
-      <div className="relative z-50 w-full max-w-lg rounded-2xl border border-border bg-card text-card-foreground p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div className={cn("relative z-50 w-full max-w-lg rounded-2xl border border-border bg-card text-card-foreground p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto", className)}>
         {children}
         <button
           onClick={() => onOpenChange(false)}
