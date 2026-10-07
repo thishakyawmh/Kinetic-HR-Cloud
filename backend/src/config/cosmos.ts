@@ -307,14 +307,147 @@ function createMockContainer(name: string): Container {
 
 export function getTenantContainer(containerName: string): Container {
   const db = getCosmosDatabase()
-  if (!db) {
-    return createMockContainer(containerName)
+  const mockContainer = createMockContainer(containerName)
+
+  if (!db || !isCosmosConfigured()) {
+    return {
+      items: {
+        query: (querySpec: any) => ({
+          fetchAll: async () => {
+            console.log(`🟡 [MOCK DATA] Query on container "${containerName}" -> Served from In-Memory Mock Store`)
+            return mockContainer.items.query(querySpec).fetchAll()
+          },
+        }),
+        create: async (item: any) => {
+          console.log(`🟡 [MOCK DATA] Created item "${item?.id || 'new'}" in container "${containerName}" (In-Memory Mock Store)`)
+          return mockContainer.items.create(item)
+        },
+      },
+      item: (id: string, partitionKey?: string) => ({
+        read: async () => {
+          console.log(`🟡 [MOCK DATA] Read item "${id}" from container "${containerName}" (In-Memory Mock Store)`)
+          return mockContainer.item(id, partitionKey).read()
+        },
+        replace: async (newItem: any) => {
+          console.log(`🟡 [MOCK DATA] Replaced item "${id}" in container "${containerName}" (In-Memory Mock Store)`)
+          return mockContainer.item(id, partitionKey).replace(newItem)
+        },
+        delete: async () => {
+          console.log(`🟡 [MOCK DATA] Deleted item "${id}" from container "${containerName}" (In-Memory Mock Store)`)
+          return mockContainer.item(id, partitionKey).delete()
+        },
+      }),
+    } as unknown as Container
   }
-  return db.container(containerName)
+
+  const realContainer = db.container(containerName)
+
+  // Double-Way Resilient Wrapper: Tries live Azure Cosmos DB, logs clearly to terminal, falls back to Mock Data on failure
+  return {
+    items: {
+      query: (querySpec: any, options?: any) => ({
+        fetchAll: async () => {
+          try {
+            const result = await realContainer.items.query(querySpec, options).fetchAll()
+            console.log(
+              `🟢 [AZURE COSMOS DB] Query on container "${containerName}" -> Returned ${result.resources?.length ?? 0} item(s) from Live Azure Cloud`
+            )
+            return result
+          } catch (err: any) {
+            console.warn(
+              `⚠️  [AZURE COSMOS DB ERROR] Query failed on "${containerName}": ${err.message}. Seamlessly falling back to In-Memory Mock Data!`
+            )
+            const fallbackResult = await mockContainer.items.query(querySpec).fetchAll()
+            console.log(
+              `🟡 [MOCK DATA FALLBACK] Query on container "${containerName}" -> Returned ${fallbackResult.resources?.length ?? 0} item(s) from In-Memory Mock Store`
+            )
+            return fallbackResult
+          }
+        },
+      }),
+      create: async (item: any, options?: any) => {
+        try {
+          const result = await realContainer.items.create(item, options)
+          console.log(
+            `🟢 [AZURE COSMOS DB] Inserted item "${item?.id || 'new'}" into container "${containerName}" (Live Azure Cloud)`
+          )
+          // Keep mock store in sync as secondary mirror
+          try { await mockContainer.items.create(item) } catch (_) {}
+          return result
+        } catch (err: any) {
+          console.warn(
+            `⚠️  [AZURE COSMOS DB ERROR] Insert failed on "${containerName}": ${err.message}. Saving to In-Memory Mock Store!`
+          )
+          const fallbackResult = await mockContainer.items.create(item)
+          console.log(
+            `🟡 [MOCK DATA FALLBACK] Created item "${item?.id || 'new'}" in "${containerName}" (In-Memory Mock Store)`
+          )
+          return fallbackResult
+        }
+      },
+    },
+    item: (id: string, partitionKey?: string) => ({
+      read: async () => {
+        try {
+          const result = await realContainer.item(id, partitionKey).read()
+          if (result.resource) {
+            console.log(
+              `🟢 [AZURE COSMOS DB] Read item "${id}" from container "${containerName}" (Live Azure Cloud)`
+            )
+            return result
+          }
+          // Fallback check if item exists only in mock store
+          const mockResult = await mockContainer.item(id, partitionKey).read()
+          if (mockResult.resource) {
+            console.log(
+              `🟡 [MOCK DATA FALLBACK] Item "${id}" not in live Cosmos DB; retrieved from In-Memory Mock Store`
+            )
+            return mockResult
+          }
+          return result
+        } catch (err: any) {
+          console.warn(
+            `⚠️  [AZURE COSMOS DB ERROR] Read "${id}" failed on "${containerName}": ${err.message}. Falling back to In-Memory Mock Store!`
+          )
+          return mockContainer.item(id, partitionKey).read()
+        }
+      },
+      replace: async (newItem: any, options?: any) => {
+        try {
+          const result = await realContainer.item(id, partitionKey).replace(newItem, options)
+          console.log(
+            `🟢 [AZURE COSMOS DB] Updated item "${id}" in container "${containerName}" (Live Azure Cloud)`
+          )
+          try { await mockContainer.item(id, partitionKey).replace(newItem) } catch (_) {}
+          return result
+        } catch (err: any) {
+          console.warn(
+            `⚠️  [AZURE COSMOS DB ERROR] Update "${id}" failed on "${containerName}": ${err.message}. Updating In-Memory Mock Store!`
+          )
+          return mockContainer.item(id, partitionKey).replace(newItem)
+        }
+      },
+      delete: async () => {
+        try {
+          const result = await realContainer.item(id, partitionKey).delete()
+          console.log(
+            `🟢 [AZURE COSMOS DB] Deleted item "${id}" from container "${containerName}" (Live Azure Cloud)`
+          )
+          try { await mockContainer.item(id, partitionKey).delete() } catch (_) {}
+          return result
+        } catch (err: any) {
+          console.warn(
+            `⚠️  [AZURE COSMOS DB ERROR] Delete "${id}" failed on "${containerName}": ${err.message}. Deleting from In-Memory Mock Store!`
+          )
+          return mockContainer.item(id, partitionKey).delete()
+        }
+      },
+    }),
+  } as unknown as Container
 }
 
 /**
- * Executes a tenant-isolated query in Cosmos DB, with local memory fallback if Azure credentials are not yet entered.
+ * Executes a tenant-isolated query in Cosmos DB, with terminal indicators and fallback to local memory if needed.
  */
 export async function queryTenantItems<T>(
   containerName: string,
@@ -323,16 +456,10 @@ export async function queryTenantItems<T>(
   parameters: Array<{ name: string; value: any }> = []
 ): Promise<T[]> {
   const container = getTenantContainer(containerName)
+  const hasTenantParam = parameters.some(p => p.name === '@tenantId')
+  const finalParams = hasTenantParam ? parameters : [...parameters, { name: '@tenantId', value: tenantId }]
+  const querySpec = { query, parameters: finalParams }
 
-  if (isCosmosConfigured()) {
-    const hasTenantParam = parameters.some(p => p.name === '@tenantId')
-    const finalParams = hasTenantParam ? parameters : [...parameters, { name: '@tenantId', value: tenantId }]
-    const querySpec = { query, parameters: finalParams }
-    const { resources } = await container.items.query<T>(querySpec, { partitionKey: tenantId }).fetchAll()
-    return resources
-  }
-
-  // Local memory fallback
-  const store = LOCAL_MEMORY_DATA[containerName] || []
-  return store.filter(item => !item.tenantId || item.tenantId === tenantId) as T[]
+  const { resources } = await container.items.query<T>(querySpec, { partitionKey: tenantId } as any).fetchAll()
+  return (resources || []) as T[]
 }

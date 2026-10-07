@@ -38,6 +38,7 @@ import {
   getAdminIntegrations,
 } from './functions/admin'
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
+import { isCosmosConfigured, getCosmosDatabase } from './config/cosmos'
 
 // Load environment variables from local.settings.json or fallback to example
 try {
@@ -192,6 +193,7 @@ const server = http.createServer(async (req, res) => {
           info: console.info,
         }
 
+        console.log(`\n📡 [API REQ] ${req.method} ${pathname}`)
         try {
           const result = await route.handler(mockReq as HttpRequest, mockContext as InvocationContext)
           const statusCode = result.status || 200
@@ -239,7 +241,49 @@ server.on('error', (err: any) => {
   }
 })
 
-server.listen(PORT, () => {
-  console.log(`\n🚀 Kinetic HR Azure Backend running locally on http://localhost:${PORT}`)
-  console.log(`📡 Ready for requests from frontend\n`)
+process.on('uncaughtException', (err: any) => {
+  console.error('❌ Uncaught Exception:', err)
+})
+
+process.on('unhandledRejection', (reason: any, promise: any) => {
+  console.error('❌ Unhandled Rejection:', reason)
+})
+
+server.listen(PORT, async () => {
+  console.log(`\n================================================================================`)
+  console.log(`🚀 KINETIC HR ENTERPRISE BACKEND ONLINE: http://localhost:${PORT}`)
+  console.log(`--------------------------------------------------------------------------------`)
+
+  if (isCosmosConfigured()) {
+    const db = getCosmosDatabase()
+    const endpoint = process.env.COSMOS_DB_ENDPOINT
+    const dbName = process.env.COSMOS_DB_DATABASE || 'KineticHR'
+    try {
+      const startMs = Date.now()
+      await db?.read()
+      const latencyMs = Date.now() - startMs
+      console.log(`🟢 [AZURE COSMOS DB] STATUS: CONNECTED & ONLINE (${latencyMs}ms)`)
+      console.log(`   Endpoint    : ${endpoint}`)
+      console.log(`   Database    : ${dbName}`)
+      console.log(`   Active Mode : LIVE CLOUD AZURE DATA (Double-Way: Azure Primary)`)
+    } catch (err: any) {
+      console.log(`⚠️  [AZURE COSMOS DB] STATUS: CONNECTION FAILED (${err.message})`)
+      console.log(`   Active Mode : IN-MEMORY MOCK DATA FALLBACK (Double-Way: Failover Active)`)
+    }
+  } else {
+    console.log(`🟡 [DATABASE STATUS] COSMOS DB CREDENTIALS NOT CONFIGURED`)
+    console.log(`   Active Mode : IN-MEMORY MOCK DATA (Local offline development dataset)`)
+  }
+
+  if (process.env.BLOB_STORAGE_CONNECTION_STRING) {
+    const containerName = process.env.BLOB_CONTAINER_TENANTS || 'tenants'
+    console.log(`🟢 [AZURE BLOB STORAGE] STATUS: CONFIGURED (Container: "${containerName}")`)
+  } else {
+    console.log(`🟡 [AZURE BLOB STORAGE] STATUS: OFFLINE (Blob storage not configured)`)
+  }
+
+  console.log(`--------------------------------------------------------------------------------`)
+  console.log(`🛡️  DOUBLE-WAY ARCHITECTURE: Live Azure Cloud with In-Memory Mock Failover`)
+  console.log(`📡 Ready for incoming requests from frontend`)
+  console.log(`================================================================================\n`)
 })

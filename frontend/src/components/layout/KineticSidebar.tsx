@@ -146,18 +146,33 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
                     }
                   }}
                 />
-                <span className="font-semibold text-sm tracking-tight text-foreground truncate flex items-center">
+                <span className="font-semibold text-sm tracking-tight text-foreground shrink-0 flex items-center">
                   Kinetic
                   <span className="font-bold ml-1 flex items-center">
                     <span className="text-[#23ace3]">H</span>
                     <span className="text-[#ef8d46]">R</span>
                   </span>
                 </span>
+                {role && (
+                  <span
+                    className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-2xs shrink-0 select-none ${
+                      role === 'platform_admin'
+                        ? 'bg-purple-500/15 text-purple-600 dark:text-purple-300 border-purple-500/30'
+                        : role === 'admin'
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'
+                        : role === 'manager'
+                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/30'
+                        : 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/30'
+                    }`}
+                  >
+                    {role === 'platform_admin' ? 'Platform' : role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Employee'}
+                  </span>
+                )}
               </div>
 
               <button
                 onClick={onToggle}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer shrink-0 ml-1"
                 title="Collapse sidebar"
               >
                 <PanelLeftClose className="h-4 w-4" />
