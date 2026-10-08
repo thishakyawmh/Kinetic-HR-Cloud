@@ -31,13 +31,13 @@ export const aiService = {
       q.includes('overlapping') ||
       q.includes('clash')
     ) {
-      callback?.onToolStep?.('team_schedule_matrix', 'Querying Engineering schedule matrix & sprint roadmap...')
+      callback?.onToolStep?.('team_schedule_matrix', 'Querying staff schedule matrix & daily workplace attendance...')
       await new Promise(r => setTimeout(r, 450))
 
-      callback?.onToolStep?.('threshold_evaluation', 'Evaluating 70% minimum departmental coverage SLA...')
+      callback?.onToolStep?.('threshold_evaluation', 'Evaluating 70% minimum departmental staff presence SLA...')
       await new Promise(r => setTimeout(r, 450))
 
-      callback?.onToolStep?.('risk_analyzer', 'Analyzing critical on-call & standup staffing impact...')
+      callback?.onToolStep?.('risk_analyzer', 'Analyzing critical daily shift & duty coverage impact...')
       await new Promise(r => setTimeout(r, 400))
 
       appDataStore.incrementAIMetrics(3, 1)
@@ -46,42 +46,166 @@ export const aiService = {
         id: `ai-msg-${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        content: `### ⚠️ Team Coverage & Staffing Risk Assessment for Engineering
+        content: `### ⚠️ Workplace Staff Presence & Coverage Assessment for Engineering
 
-I have analyzed the **Engineering Department (12 members)** schedule for next week (Oct 5 – Oct 11, 2026):
+I have analyzed the **Engineering Department (12 members)** daily presence for next week (Oct 5 – Oct 11, 2026):
 
 • **Critical Capacity Dip (Oct 7 – Oct 8):**
   - **Marcus Vance (Backend)** and **Elena Rostova (Frontend)** have scheduled leaves overlapping on Wednesday and Thursday.
   - **Priya Patel (DevOps)** is scheduled for remote standby training.
-  - Department active capacity will drop to **75% (9 of 12 available)**, approaching your **70% departmental safety threshold**.
+  - Department active on-duty presence will drop to **75% (9 of 12 present)**, approaching your **70% departmental safety threshold**.
 
-• **Sprint Delivery Impact:**
-  - The Sprint 42 release milestone is scheduled for Oct 9. With backend coverage constrained on Oct 7-8, code reviews and PR merges may bottleneck unless PRs are submitted prior to Oct 6.
+• **Workplace Operations & Coverage Impact:**
+  - Adequate on-duty staff presence is required for daily operational continuity. With coverage constrained on Oct 7-8, daily shift handovers and critical approvals may bottleneck unless essential duties are reallocated prior to Oct 6.
 
 • **Supervisory Recommendation:**
-  - Suggest shifting Marcus's secondary sprint tickets to Alice Johnson or David Wilson.
+  - Suggest shifting Marcus's urgent daily duties to Alice Johnson or David Wilson.
   - No additional non-emergency leave should be approved for Wednesday, Oct 7 or Thursday, Oct 8.`,
         sources: [
           {
             title: 'Departmental Staffing SLA (Engineering Sec 3.1)',
             policyId: 'pol-staffing',
-            snippet: 'Engineering teams must maintain 70% active coverage during active sprint cycle windows.',
+            snippet: 'Engineering teams must maintain 70% active staff presence during scheduled work weeks.',
           },
           {
-            title: 'On-Call & Sprint Rotation Matrix Q4 2026',
+            title: 'Workplace Attendance & Coverage Policy Q4 2026',
             policyId: 'pol-schedule',
-            snippet: 'Minimum 2 backend and 2 frontend engineers must be available on deploy eve.',
+            snippet: 'Minimum 2 backend and 2 frontend engineers must be present on duty each day.',
           },
         ],
         toolExecutions: [
           { name: 'team_schedule_matrix', label: 'Aggregated 12 Employee Calendars for Week 41', status: 'completed' },
-          { name: 'threshold_evaluation', label: 'Coverage Level: 75% (Threshold: 70%)', status: 'completed' },
-          { name: 'risk_analyzer', label: 'Bottleneck Identified: Sprint 42 Backend Approvals', status: 'completed' },
+          { name: 'threshold_evaluation', label: 'Presence Level: 75% (Threshold: 70%)', status: 'completed' },
+          { name: 'risk_analyzer', label: 'Bottleneck Identified: Workplace Staffing Shortage', status: 'completed' },
         ],
         recommendation: {
           text: 'Capacity is tight at 75% on Oct 7-8. Recommend freezing discretionary leave for those two dates.',
           approvalRequired: false,
         },
+      }
+
+      callback?.onComplete?.(response)
+      return response
+    }
+
+    // 0A-2. Manager Investigation Scenario
+    if (q.includes('investigate')) {
+      callback?.onToolStep?.('request_retrieval', 'Locating leave request record & employee profile...')
+      await new Promise(r => setTimeout(r, 400))
+
+      callback?.onToolStep?.('policy_crossref', 'Cross-referencing leave policies and category entitlements...')
+      await new Promise(r => setTimeout(r, 400))
+
+      callback?.onToolStep?.('staffing_analysis', 'Calculating department staffing impact & team overlap...')
+      await new Promise(r => setTimeout(r, 450))
+
+      appDataStore.incrementAIMetrics(3, 1)
+
+      const pendingList = appDataStore.getLeaveRequests(context.tenantId).filter(r => r.status === 'pending')
+      let targetReq = pendingList.find(
+        r => q.toLowerCase().includes(r.id.toLowerCase()) || q.toLowerCase().includes(r.employeeName.toLowerCase())
+      )
+      if (!targetReq) {
+        targetReq = pendingList[0] || {
+          id: 'req-1029',
+          tenantId: context.tenantId,
+          employeeId: 'user-Alice',
+          employeeName: 'Alice Johnson',
+          department: 'Engineering',
+          leaveTypeId: 'lt-emergency',
+          leaveTypeName: 'Emergency Leave',
+          leaveTypeCode: 'emergency',
+          startDate: '2026-10-06',
+          endDate: '2026-10-06',
+          requestedDays: 1,
+          reason: 'Family emergency requiring urgent assistance.',
+          status: 'pending',
+          submittedAt: '2026-10-02T08:30:00Z',
+          isEmergency: true,
+          aiAnalysis: {
+            applicablePolicy: 'Emergency Leave Policy (Sec 4.2 - Dependent Illness)',
+            employeeRemainingDays: 2,
+            scheduledAbsencesCount: 2,
+            teamCoverageWarning: '2 other team members scheduled for leave on Oct 7-8. Engineering Friday standup at 75% coverage.',
+            recommendationText: 'Emergency leave complies with company policy.',
+            requiresHumanApproval: true,
+          },
+        }
+      }
+
+      const isEmergency = targetReq.isEmergency || targetReq.leaveTypeCode === 'emergency'
+      const policyName =
+        targetReq.aiAnalysis?.applicablePolicy ||
+        (isEmergency
+          ? 'Emergency Leave Policy (Sec 4.2 - Dependent Illness)'
+          : 'Corporate Annual Paid Time Off Policy (Sec 2.1)')
+      const remainingDays = targetReq.aiAnalysis?.employeeRemainingDays ?? 2
+
+      const response: AIMessage = {
+        id: `ai-msg-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: `### 🔍 Investigation Report: Leave Request #${targetReq.id}
+**Employee:** **${targetReq.employeeName}** • **Department:** ${targetReq.department} • **Status:** Pending Supervisory Review
+
+---
+
+#### 1. Request Details & Stated Reason
+• **Leave Category:** ${targetReq.leaveTypeName} ${isEmergency ? '(Emergency Priority)' : '(Discretionary PTO)'}
+• **Requested Dates:** ${targetReq.startDate} ${targetReq.startDate !== targetReq.endDate ? `to ${targetReq.endDate}` : ''} (${targetReq.requestedDays} business day${targetReq.requestedDays > 1 ? 's' : ''})
+• **Employee's Stated Reason:** "${targetReq.reason}"
+
+#### 2. Policy & Entitlement Verification
+• **Applicable Policy:** ${policyName}
+• **Quota Balance:** ${remainingDays} days available in quota balance. Request is **100% policy compliant**.
+• **Notice Guidelines:** ${isEmergency ? 'Emergency exemption applies; same-day notification requirements met.' : 'Standard advance notice window verified.'}
+
+#### 3. Department Staffing & Capacity Impact
+• **Concurrent Absences:** 2 other engineering personnel scheduled for leave during this window (Marcus Vance, Priya Patel).
+• **Team Coverage:** Active workplace presence projects at **75% (9 of 12 present)**, maintaining above the **70% core threshold**.
+
+#### 4. Supervisory Assessment
+**Verdict:** **Low-to-Moderate operational risk**. Request meets authentic eligibility criteria.
+
+---
+
+### 💡 Suggested Decision Options:
+• **Option 1: Approve Full Request** — Grant full ${targetReq.requestedDays} day(s) leave, deduct from quota, and notify ${targetReq.employeeName}.
+• **Option 2: Approve with Workload Reassignment** — Grant leave and auto-reassign critical daily duties to standby staff member.
+• **Option 3: Request Clarification / Alternative Schedule** — Solicit additional information or propose alternate dates.
+• **Option 4: Reject Due to Staffing Threshold** — Decline request citing current department presence constraints.`,
+        sources: [
+          {
+            title: policyName,
+            snippet: 'Guidelines on leave entitlement, quota allocation, and team coverage standards.',
+          },
+        ],
+        suggestedOptions: [
+          {
+            id: 'opt-1',
+            label: 'Option 1: Approve Full Request',
+            actionValue: 'approve',
+            description: `Grant full ${targetReq.requestedDays} day(s) leave, deduct from quota, and notify ${targetReq.employeeName}.`,
+          },
+          {
+            id: 'opt-2',
+            label: 'Option 2: Approve with Workload Reassignment',
+            actionValue: 'approve_reassign',
+            description: 'Grant leave and automatically reassign critical daily duties to standby staff member.',
+          },
+          {
+            id: 'opt-3',
+            label: 'Option 3: Request Clarification',
+            actionValue: 'clarify',
+            description: 'Send prompt to employee requesting additional documentation or alternative schedule.',
+          },
+          {
+            id: 'opt-4',
+            label: 'Option 4: Reject Due to Staffing Threshold',
+            actionValue: 'reject',
+            description: 'Decline request citing current department presence and coverage limits.',
+          },
+        ],
       }
 
       callback?.onComplete?.(response)
@@ -216,7 +340,7 @@ Under **Kinetic HR Compensation & Standby Guidelines (v2.1)**:
           {
             title: 'Overtime & Standby Compensation Guidelines (Sec 5.4)',
             policyId: 'pol-overtime',
-            snippet: 'Manager pre-approval required for overtime exceeding 10 hours per sprint.',
+            snippet: 'Manager pre-approval required for overtime exceeding 10 hours per pay period.',
           },
         ],
         toolExecutions: [

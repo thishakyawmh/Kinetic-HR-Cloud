@@ -660,7 +660,7 @@ export const MOCK_LEAVE_REQUESTS: LeaveRequest[] = [
     submittedAt: '2026-09-15T10:00:00Z',
     reviewedAt: '2026-09-16T14:20:00Z',
     reviewedBy: 'David Wilson',
-    reviewerComment: 'Approved. Advance sprint tasks delegated to Priya.',
+    reviewerComment: 'Approved. Advance workload handover delegated to Priya.',
     isEmergency: false,
   },
   {
@@ -817,7 +817,7 @@ export const MOCK_PAYSLIPS: Payslip[] = [
     salaryDiffExplanation: 'September included 6 hours overtime ($337.50).',
     breakdown: [
       { name: 'Base Salary (80 hrs @ $37.50)', amount: 3000, category: 'earning', description: 'Regular bi-weekly base salary' },
-      { name: 'Overtime Pay (6 hrs @ $56.25)', amount: 337.5, category: 'earning', description: 'Sprint deployment overtime' },
+      { name: 'Overtime Pay (6 hrs @ $56.25)', amount: 337.5, category: 'earning', description: 'Scheduled maintenance overtime' },
       { name: 'Pre-Tax Benefits Deductions', amount: 265, category: 'deduction', description: 'Health, dental, 401(k)' },
       { name: 'Statutory Taxes', amount: 738.81, category: 'deduction', description: 'Federal, FICA, State' },
     ],

@@ -10,7 +10,7 @@ export const employeeService = {
       return apiClient.get<User[]>('/employees', { params: { tenantId, department } })
     }
     await new Promise(r => setTimeout(r, 120))
-    let list = appDataStore.getUsers(tenantId)
+    let list = appDataStore.getUsers(tenantId).filter(u => u.role !== 'platform_admin')
     if (department && department !== 'all') {
       list = list.filter(u => u.department.toLowerCase() === department.toLowerCase())
     }
@@ -55,7 +55,7 @@ export const employeeService = {
       return apiClient.get<any[]>('/departments', { params: { tenantId } })
     }
     await new Promise(r => setTimeout(r, 120))
-    const users = appDataStore.getUsers(tenantId)
+    const users = appDataStore.getUsers(tenantId).filter(u => u.role !== 'platform_admin')
     const headcountMap: Record<string, number> = {}
     users.forEach(u => {
       headcountMap[u.department] = (headcountMap[u.department] || 0) + 1

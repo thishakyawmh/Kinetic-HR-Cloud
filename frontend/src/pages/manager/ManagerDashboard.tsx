@@ -5,7 +5,7 @@ import { approvalService } from '@/services/approvalService'
 import { employeeService } from '@/services/employeeService'
 import { PageHeader } from '@/components/common/PageHeader'
 import { StatCard } from '@/components/common/StatCard'
-import { ApprovalCard } from '@/components/approvals/ApprovalCard'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,9 +15,10 @@ import {
   Clock,
   AlertTriangle,
   ArrowRight,
-  Bot,
   CheckCircle,
   CalendarCheck,
+  Calendar,
+  SearchAlert,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -42,26 +43,7 @@ export const ManagerDashboard: React.FC = () => {
       <PageHeader
         title={`Manager Command Center - ${user?.name || 'David Wilson'}`}
         subtitle={`Engineering Department Overview • ${tenant?.name || 'Alyxra Digital'}`}
-      >
-        <Button
-          variant="ai"
-          size="sm"
-          onClick={() => navigate('/manager/assistant')}
-          className="gap-1.5 text-xs rounded-xl shadow-xs transition-all cursor-pointer"
-        >
-          <Bot className="h-3.5 w-3.5" />
-          <span>Manager AI Agent</span>
-        </Button>
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => navigate('/manager/approvals')}
-          className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1da0d4] text-white rounded-xl shadow-xs transition-all cursor-pointer"
-        >
-          <Clock className="h-3.5 w-3.5" />
-          <span>Review Approvals ({pendingApprovals.length})</span>
-        </Button>
-      </PageHeader>
+      />
 
       {/* Metrics Row (Section 19) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -78,11 +60,6 @@ export const ManagerDashboard: React.FC = () => {
           subtitle="Scheduled authorized absences"
           icon={CalendarDays}
           iconColor="text-indigo-600 dark:text-indigo-400 bg-indigo-500/15"
-          badge={
-            <Badge variant="outline" className="text-[10px] border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10">
-              Marcus & Priya
-            </Badge>
-          }
         />
         <StatCard
           title="Pending Approvals"
@@ -102,38 +79,12 @@ export const ManagerDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Staffing Alert Callout */}
-      <Card className="border-[#ef8d46]/30 bg-[#ef8d46]/10 p-5 rounded-2xl shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2 rounded-xl bg-[#ef8d46]/20 text-[#c86b25] dark:text-[#ef8d46] shrink-0">
-            <AlertTriangle className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-sm font-bold text-foreground">
-              Department Staffing Alert: Overlapping Leaves Detected (Oct 7 - Oct 8)
-            </h4>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              Marcus Chen and Priya Patel have approved absences on October 7. Any additional emergency or personal leave will reduce Engineering core sprint velocity below the 70% minimum threshold.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/manager/team')}
-            className="text-xs shrink-0 border-[#ef8d46]/50 text-[#c86b25] dark:text-[#ef8d46] hover:bg-[#ef8d46]/20 rounded-xl transition-all cursor-pointer"
-          >
-            <span>View Team Roster</span>
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
-        </div>
-      </Card>
-
       {/* Priority Pending Approval Highlight (Section 20 & Demo Step 7) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-foreground">
-              Pending Team Approvals Requiring Action
+              Approvals Requiring Action
             </h3>
             <p className="text-xs text-muted-foreground">
               Review requests augmented with Kinetic AI policy retrieval & staffing impact calculations.
@@ -159,15 +110,96 @@ export const ManagerDashboard: React.FC = () => {
             </p>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {pendingApprovals.map(req => (
-              <ApprovalCard
-                key={req.id}
-                request={req}
-                onStatusChange={() => refetch()}
-              />
-            ))}
-          </div>
+          <Card className="border border-border/70 bg-card/90 backdrop-blur-xs rounded-2xl shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border/60 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <th className="py-3.5 px-4">Employee</th>
+                    <th className="py-3.5 px-4">Leave Type</th>
+                    <th className="py-3.5 px-4">Schedule & Duration</th>
+                    <th className="py-3.5 px-4 max-w-xs">Employee Reason</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {pendingApprovals.map(req => (
+                    <tr key={req.id} className="hover:bg-muted/20 transition-colors">
+                      {/* Employee Info */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#23ace3]/20 to-[#23ace3]/5 text-[#23ace3] border border-[#23ace3]/25 flex items-center justify-center font-bold text-xs shrink-0">
+                            {req.employeeName.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-foreground text-xs">{req.employeeName}</span>
+                              {req.isEmergency && (
+                                <Badge variant="destructive" className="text-[9.5px] px-1.5 py-0 leading-tight">
+                                  Emergency
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                              <span>{req.department}</span>
+                              <span>•</span>
+                              <span className="font-mono">ID: {req.id}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Leave Type */}
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold text-foreground text-xs block">
+                          {req.leaveTypeName}
+                        </span>
+                      </td>
+
+                      {/* Schedule & Duration */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5 text-foreground font-medium">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span>
+                            {req.startDate} {req.startDate !== req.endDate ? `to ${req.endDate}` : ''}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {req.requestedDays} business day{req.requestedDays > 1 ? 's' : ''}
+                        </div>
+                      </td>
+
+                      {/* Employee Reason */}
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <p className="text-xs text-foreground/80 italic line-clamp-2">
+                          "{req.reason}"
+                        </p>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-4">
+                        <StatusBadge status={req.status} />
+                      </td>
+
+                      {/* Action: Investigate */}
+                      <td className="py-3.5 px-4 text-right">
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/manager/assistant?investigate=${req.id}`, { state: { request: req } })}
+                          className="bg-gradient-to-r from-[#23ace3] to-[#0284c7] hover:from-[#1da0d4] hover:to-[#0369a1] text-white font-semibold text-xs h-8 px-3 rounded-lg gap-1.5 shadow-xs hover:shadow-md hover:shadow-[#23ace3]/20 transition-all cursor-pointer group"
+                        >
+                          <SearchAlert className="h-3.5 w-3.5 text-cyan-200 transition-transform group-hover:rotate-12" />
+                          <span>Investigate</span>
+                          <ArrowRight className="h-3 w-3 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
       </div>
     </div>

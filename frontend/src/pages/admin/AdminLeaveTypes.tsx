@@ -14,7 +14,7 @@ export const AdminLeaveTypes: React.FC = () => {
       approval: 'Required (Direct Manager)',
       carryForward: 'Max 5 days into Q1',
       emergency: 'No',
-      thresholdRule: 'Checked against 70% sprint quota',
+      thresholdRule: 'Checked against 70% department presence quota',
     },
     {
       name: 'Sick Leave',

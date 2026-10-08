@@ -3,17 +3,14 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { payrollService } from '@/services/payrollService'
 import { PageHeader } from '@/components/common/PageHeader'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   FileSpreadsheet,
   Download,
-  ArrowRight,
   Sparkles,
   DollarSign,
-  TrendingDown,
   ShieldCheck,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -53,64 +50,7 @@ export const EmployeePayslips: React.FC = () => {
         defaultHealthDental={(latestPayslip?.preTaxMedical || 100) + (latestPayslip?.preTaxDental || 15)}
       />
 
-      {/* Payslip History Cards */}
-      <div className="space-y-3 pt-2">
-        <h3 className="text-base font-bold text-foreground">Recent Statements</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {payslips.map((p, idx) => (
-            <Card
-              key={p.id}
-              onClick={() => navigate(`/employee/payslips/${p.id}`)}
-              className={`cursor-pointer transition-all hover:border-[#23ace3]/50 hover:shadow-md bg-card border-border/60 ${
-                idx === 0 ? 'border-[#23ace3]/40 bg-[#23ace3]/5' : ''
-              }`}
-            >
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">
-                    {p.periodMonth} {p.periodYear}
-                  </span>
-                  <Badge
-                    variant={idx === 0 ? 'info' : 'outline'}
-                    className={`text-[10px] ${idx === 0 ? 'bg-[#23ace3]/15 text-[#23ace3] border-[#23ace3]/30' : ''}`}
-                  >
-                    {p.status}
-                  </Badge>
-                </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Gross Salary:</span>
-                    <span className="font-semibold text-foreground">{formatCurrency(p.grossSalary)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Total Deductions:</span>
-                    <span className="font-semibold text-rose-500">
-                      -{formatCurrency(p.tax + p.deductions)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm font-bold pt-2 border-t border-border/50">
-                    <span className="text-foreground">Take-Home Pay:</span>
-                    <span className="text-[#23ace3] font-mono">{formatCurrency(p.netSalary)}</span>
-                  </div>
-                </div>
-
-                {idx === 0 && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 flex items-center gap-2">
-                    <TrendingDown className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                    <span>$120 delta from Sep due to Q4 tax tier adjustments.</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-2 text-xs font-medium text-[#23ace3] hover:underline">
-                  <span>View itemized statement</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
 
       {/* Comprehensive Statement Ledger Table */}
       <div className="space-y-3 pt-2">

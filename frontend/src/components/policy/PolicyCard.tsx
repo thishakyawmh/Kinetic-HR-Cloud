@@ -2,14 +2,15 @@ import React from 'react'
 import { PolicyDocument } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { BookOpen, FileText, ArrowRight } from 'lucide-react'
+import { BookOpen, FileText, ArrowRight, Edit2, Download } from 'lucide-react'
 
 interface PolicyCardProps {
   policy: PolicyDocument
   onSelect?: (policy: PolicyDocument) => void
+  onEdit?: (policy: PolicyDocument) => void
 }
 
-export const PolicyCard: React.FC<PolicyCardProps> = ({ policy, onSelect }) => {
+export const PolicyCard: React.FC<PolicyCardProps> = ({ policy, onSelect, onEdit }) => {
   return (
     <Card
       onClick={() => onSelect?.(policy)}
@@ -27,6 +28,19 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy, onSelect }) => {
             <Badge variant="secondary" className="text-[10px]">
               {policy.category}
             </Badge>
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit(policy)
+                }}
+                className="p-1 rounded-lg text-muted-foreground hover:text-[#23ace3] hover:bg-[#23ace3]/10 transition-colors cursor-pointer"
+                title="Edit Policy Document"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -37,6 +51,39 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy, onSelect }) => {
           <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
             {policy.summary}
           </p>
+        </div>
+
+        {/* Uploaded Document File Pill */}
+        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 flex items-center justify-between gap-2 group-hover:border-[#23ace3]/40 transition-colors">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 shrink-0">
+              <FileText className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold text-foreground truncate font-mono">
+                {policy.fileName || `${policy.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_v${policy.version}.pdf`}
+              </div>
+              <div className="text-[10px] text-muted-foreground font-mono">
+                <span>{policy.fileSize || '340 KB'}</span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              const blob = new Blob([policy.contentExcerpt || policy.summary], { type: 'application/pdf' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = policy.fileName || `${policy.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_v${policy.version}.pdf`
+              a.click()
+            }}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-[#23ace3] hover:bg-[#23ace3]/10 transition-colors cursor-pointer shrink-0"
+            title="Download Document"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         {/* Key Terms */}

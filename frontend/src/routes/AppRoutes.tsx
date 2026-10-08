@@ -24,8 +24,11 @@ import { ManagerDashboard } from '@/pages/manager/ManagerDashboard'
 import { ManagerTeam } from '@/pages/manager/ManagerTeam'
 import { ManagerApprovals } from '@/pages/manager/ManagerApprovals'
 import { ManagerAssistant } from '@/pages/manager/ManagerAssistant'
+import { ManagerWorkforce } from '@/pages/manager/ManagerWorkforce'
+import { ManagerRoles } from '@/pages/manager/ManagerRoles'
 
 // Admin Pages
+import { AdminAssistant } from '@/pages/admin/AdminAssistant'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminEmployees } from '@/pages/admin/AdminEmployees'
 import { AdminDepartments } from '@/pages/admin/AdminDepartments'
@@ -82,11 +85,14 @@ export const AppRoutes: React.FC = () => {
 
         {/* Manager Experience */}
         <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+        <Route path="/manager/workforce" element={<ManagerWorkforce />} />
+        <Route path="/manager/roles" element={<ManagerRoles />} />
         <Route path="/manager/team" element={<ManagerTeam />} />
         <Route path="/manager/approvals" element={<ManagerApprovals />} />
         <Route path="/manager/assistant" element={<ManagerAssistant />} />
 
         {/* HR Administrator Experience */}
+        <Route path="/admin/assistant" element={<AdminAssistant />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/workforce" element={<AdminEmployees />} />
         <Route path="/admin/workforce/create-workspace" element={<AdminCreateWorkspace />} />

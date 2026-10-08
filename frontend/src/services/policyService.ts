@@ -42,12 +42,22 @@ export const policyService = {
     summary: string
     keyTerms: string[]
     contentExcerpt?: string
+    fileName?: string
+    department?: string
   }): Promise<PolicyDocument> {
     if (!useMock()) {
       return apiClient.post<PolicyDocument>('/policies', data)
     }
     await new Promise(r => setTimeout(r, 300))
     return appDataStore.addPolicy(data)
+  },
+
+  async updatePolicy(id: string, updates: Partial<PolicyDocument>): Promise<PolicyDocument | undefined> {
+    if (!useMock()) {
+      return apiClient.patch<PolicyDocument>(`/policies/${id}`, updates)
+    }
+    await new Promise(r => setTimeout(r, 200))
+    return appDataStore.updatePolicy(id, updates)
   },
 
   async getDownloadUrl(policyId: string): Promise<{ downloadUrl: string }> {

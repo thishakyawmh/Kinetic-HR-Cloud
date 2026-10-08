@@ -18,6 +18,7 @@ import {
   Layers,
   Sliders,
   Shield,
+  Briefcase,
   Zap,
 } from 'lucide-react'
 import { PlanUpgradeModal } from '@/components/subscription/PlanUpgradeModal'
@@ -51,23 +52,25 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     { label: 'Assistant', to: '/employee/dashboard', icon: Sparkles },
     { label: 'Leaves & Balances', to: '/employee/leave', icon: CalendarDays },
     { label: 'Payslips', to: '/employee/payslips', icon: FileSpreadsheet },
-    { label: 'Requests', to: '/employee/requests', icon: FileCheck2 },
+    { label: 'Document Requests', to: '/employee/requests', icon: FileCheck2 },
     { label: 'Company Policies', to: '/employee/policies', icon: BookOpen },
     { label: 'Profile', to: '/employee/profile', icon: User },
   ]
 
   const managerNav: NavItem[] = [
-    { label: 'Manager Assistant', to: '/manager/assistant', icon: Sparkles },
-    { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Team Approvals', to: '/manager/approvals', icon: CheckSquare, badge: '1 pending' },
-    { label: 'Team Availability', to: '/manager/team', icon: Users },
+    { label: 'Assistant', to: '/manager/assistant', icon: Sparkles },
+    { label: 'Overview', to: '/manager/dashboard', icon: LayoutDashboard },
+    { label: 'Roles', to: '/manager/roles', icon: Briefcase },
+    { label: 'Workforce Management', to: '/manager/workforce', icon: Users },
+    { label: 'Document Approvals', to: '/manager/approvals', icon: FileCheck2, badge: '1 pending' },
+    { label: 'Team Availability', to: '/manager/team', icon: CalendarDays },
   ]
 
   const adminNav: NavItem[] = [
-    { label: 'Command Center', to: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Workforce & Departments', to: '/admin/workforce', icon: Users },
-    { label: 'Leave Rules & Quotas', to: '/admin/leave-types', icon: CalendarDays },
-    { label: 'Policy Documents & RAG', to: '/admin/policies', icon: BookOpen },
+    { label: 'Assistant', to: '/admin/assistant', icon: Sparkles },
+    { label: 'Overview', to: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Workforce Directory', to: '/admin/employees', icon: Users },
+    { label: 'Workspace Directory', to: '/admin/departments', icon: Building },
     { label: 'Audit & Compliance Logs', to: '/admin/audit-logs', icon: History },
     { label: 'AI Usage & Observability', to: '/admin/ai-usage', icon: Activity, badge: 'Live' },
     { label: 'Cloud Integrations', to: '/admin/integrations', icon: Layers },

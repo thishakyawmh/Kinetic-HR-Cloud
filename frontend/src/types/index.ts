@@ -160,7 +160,7 @@ export interface PolicyDocument {
   id: string
   tenantId: string
   title: string
-  category: 'Leave & Attendance' | 'Compensation & Benefits' | 'Workplace & Remote' | 'Conduct & Compliance'
+  category: 'Leave & Attendance' | 'Compensation & Benefits' | 'Workplace & Remote' | 'Conduct & Compliance' | 'Statutory' | 'Operational' | 'Health & Safety' | string
   version: string
   uploadedDate: string
   status: 'Indexed' | 'Processing' | 'Failed'
@@ -168,6 +168,8 @@ export interface PolicyDocument {
   summary: string
   keyTerms: string[]
   contentExcerpt?: string
+  fileName?: string
+  department?: string
 }
 
 export interface AuditEvent {
@@ -207,6 +209,13 @@ export interface AIActionCard {
   status?: 'ready' | 'submitted' | 'approved'
 }
 
+export interface AIMessageSuggestedOption {
+  id: string
+  label: string
+  actionValue: string
+  description?: string
+}
+
 export interface AIMessage {
   id: string
   sender: 'user' | 'assistant' | 'system'
@@ -220,6 +229,12 @@ export interface AIMessage {
     approvalRole?: string
   }
   actionCard?: AIActionCard
+  suggestedOptions?: AIMessageSuggestedOption[]
+  investigationData?: {
+    requestId: string
+    employeeName: string
+    status: string
+  }
 }
 
 export interface AppNotification {
@@ -300,5 +315,19 @@ export interface HRDocumentRequest {
     phoneNumberMasked: string
     signatureHash: string
   }
+}
+
+export interface WorkspaceRole {
+  id: string
+  name: string
+  department?: string
+  baseSalary: number
+  currency: string
+  salaryPeriod: 'annual' | 'monthly' | 'hourly'
+  overtimeMultiplier: number
+  description?: string
+  responsibilities?: string[]
+  assignedCount?: number
+  updatedAt?: string
 }
 

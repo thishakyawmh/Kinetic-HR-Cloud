@@ -22,6 +22,7 @@ import {
   Activity,
   Layers,
   Sliders,
+  Briefcase,
   LogOut,
   X,
   Sun,
@@ -58,22 +59,24 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
     { label: 'Overview', to: '/employee/overview', icon: LayoutDashboard },
     { label: 'My Leaves', to: '/employee/leave', icon: CalendarDays },
     { label: 'Payslips', to: '/employee/payslips', icon: FileSpreadsheet },
-    { label: 'My Requests', to: '/employee/requests', icon: FileCheck2 },
+    { label: 'Document Requests', to: '/employee/requests', icon: FileCheck2 },
     { label: 'Company Policies', to: '/employee/policies', icon: BookOpen },
   ]
 
   const managerNav = [
-    { label: 'Manager Assistant', to: '/manager/assistant', icon: Sparkles },
-    { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Team Approvals', to: '/manager/approvals', icon: CheckSquare, badge: '1' },
-    { label: 'Team Availability', to: '/manager/team', icon: Users },
+    { label: 'Assistant', to: '/manager/assistant', icon: Sparkles },
+    { label: 'Overview', to: '/manager/dashboard', icon: LayoutDashboard },
+    { label: 'Roles', to: '/manager/roles', icon: Briefcase },
+    { label: 'Workforce Management', to: '/manager/workforce', icon: Users },
+    { label: 'Document Approvals', to: '/manager/approvals', icon: FileCheck2, badge: '1' },
+    { label: 'Team Availability', to: '/manager/team', icon: CalendarDays },
   ]
 
   const adminNav = [
-    { label: 'Command Center', to: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Workforce & Departments', to: '/admin/workforce', icon: Users },
-    { label: 'Leave Rules', to: '/admin/leave-types', icon: CalendarDays },
-    { label: 'Policy Documents', to: '/admin/policies', icon: BookOpen },
+    { label: 'Assistant', to: '/admin/assistant', icon: Sparkles },
+    { label: 'Overview', to: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Workforce Directory', to: '/admin/employees', icon: Users },
+    { label: 'Workspace Directory', to: '/admin/departments', icon: Building },
     { label: 'Audit Logs', to: '/admin/audit-logs', icon: History },
     { label: 'AI Observability', to: '/admin/ai-usage', icon: Activity },
     { label: 'Integrations', to: '/admin/integrations', icon: Layers },
@@ -104,6 +107,8 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
     }
     if (role === 'manager') {
       navigate(`/manager/assistant?new=${Date.now()}`)
+    } else if (role === 'admin') {
+      navigate(`/admin/assistant?new=${Date.now()}`)
     } else {
       navigate(`/employee/dashboard?new=${Date.now()}`)
     }

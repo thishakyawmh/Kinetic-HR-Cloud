@@ -410,6 +410,15 @@ class AppDataStore {
     this.save()
     return newPol
   }
+  updatePolicy(id: string, updates: Partial<PolicyDocument>): PolicyDocument | undefined {
+    const idx = this.policies.findIndex(p => p.id === id)
+    if (idx !== -1) {
+      this.policies[idx] = { ...this.policies[idx], ...updates }
+      this.save()
+      return this.policies[idx]
+    }
+    return undefined
+  }
 
   // Audit Logs
   getAuditLogs(tenantId: string): AuditEvent[] {

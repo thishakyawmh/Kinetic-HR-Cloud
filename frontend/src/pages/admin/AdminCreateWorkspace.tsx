@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { employeeService } from '@/services/employeeService'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Card, CardContent } from '@/components/ui/card'
@@ -25,6 +25,12 @@ export const AdminCreateWorkspace: React.FC = () => {
   const navigate = useNavigate()
   const { tenant, user } = useAuth()
   const queryClient = useQueryClient()
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees', tenant?.id],
+    queryFn: () => employeeService.getEmployees(tenant!.id),
+    enabled: !!tenant,
+  })
 
   // Form state
   const [deptName, setDeptName] = useState('')
@@ -160,12 +166,23 @@ export const AdminCreateWorkspace: React.FC = () => {
                 <label className="block font-bold text-foreground tracking-wide">
                   Designated Department Lead / Manager
                 </label>
-                <Input
+                <Select
                   value={deptHead}
                   onChange={e => setDeptHead(e.target.value)}
-                  placeholder="E.g., David Wilson or Sarah Miller"
                   className="h-10 rounded-xl bg-background text-xs border-border/80 focus:border-[#23ace3]"
-                />
+                >
+                  <option value="">-- Select Manager as Department Lead --</option>
+                  {deptHead && !employees.filter(e => e.role?.toLowerCase() === 'manager').some(m => m.name === deptHead) && (
+                    <option value={deptHead}>{deptHead} (Selected Lead)</option>
+                  )}
+                  {employees
+                    .filter(e => e.role?.toLowerCase() === 'manager')
+                    .map(emp => (
+                      <option key={emp.id} value={emp.name}>
+                        {emp.name} — {emp.jobTitle} ({emp.employeeNumber || emp.id})
+                      </option>
+                    ))}
+                </Select>
                 <p className="text-[11px] text-muted-foreground">
                   Manager responsible for approving leave requests and team staffing SLAs.
                 </p>

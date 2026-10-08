@@ -44,24 +44,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Kinetic AI Assistant', to: '/employee/dashboard', icon: Sparkles, badge: 'Main' },
     { label: 'My Leaves & Balances', to: '/employee/leave', icon: CalendarDays },
     { label: 'My Payslips', to: '/employee/payslips', icon: FileSpreadsheet },
-    { label: 'My Requests', to: '/employee/requests', icon: FileCheck2 },
+    { label: 'Document Requests', to: '/employee/requests', icon: FileCheck2 },
     { label: 'Company Policies', to: '/employee/policies', icon: BookOpen },
     { label: 'My Profile', to: '/employee/profile', icon: User },
     { label: 'HR Overview Hub', to: '/employee/overview', icon: LayoutDashboard },
   ]
 
   const managerNav: NavItem[] = [
-    { label: 'Manager Assistant', to: '/manager/assistant', icon: Sparkles, badge: 'AI' },
-    { label: 'Manager Overview', to: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Team Approvals', to: '/manager/approvals', icon: CheckSquare, badge: '1 Pending' },
-    { label: 'Team Availability', to: '/manager/team', icon: Users },
+    { label: 'Assistant', to: '/manager/assistant', icon: Sparkles, badge: 'AI' },
+    { label: 'Overview', to: '/manager/dashboard', icon: LayoutDashboard },
+    { label: 'Roles', to: '/manager/roles', icon: Briefcase },
+    { label: 'Workforce Management', to: '/manager/workforce', icon: Users },
+    { label: 'Document Approvals', to: '/manager/approvals', icon: FileCheck2, badge: '1 Pending' },
+    { label: 'Team Availability', to: '/manager/team', icon: CalendarDays },
   ]
 
   const adminNav: NavItem[] = [
-    { label: 'Admin Command Center', to: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Workforce & Departments', to: '/admin/workforce', icon: Users },
-    { label: 'Leave Types & Rules', to: '/admin/leave-types', icon: CalendarDays },
-    { label: 'Policy Management', to: '/admin/policies', icon: BookOpen },
+    { label: 'Assistant', to: '/admin/assistant', icon: Sparkles },
+    { label: 'Overview', to: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Workforce Directory', to: '/admin/employees', icon: Users },
+    { label: 'Workspace Directory', to: '/admin/departments', icon: Building },
     { label: 'Company Holidays', to: '/admin/holidays', icon: CalendarCheck },
     { label: 'Global Approvals', to: '/admin/approvals', icon: CheckSquare },
     { label: 'Audit & Compliance Logs', to: '/admin/audit-logs', icon: History },

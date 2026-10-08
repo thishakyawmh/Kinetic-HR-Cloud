@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { leaveService } from '@/services/leaveService'
+import { useQuery } from '@tanstack/react-query'
 import { documentService } from '@/services/documentService'
 import { PageHeader } from '@/components/common/PageHeader'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -14,43 +13,26 @@ import {
   FileText,
   CheckCircle2,
   Clock,
-  XCircle,
   ShieldCheck,
-  PlusCircle,
-  CalendarDays,
   Send,
   Sparkles,
-  RefreshCw,
   FileCheck,
   Paperclip,
   Printer,
   Download,
-  Eye,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import { HRDocumentRequest } from '@/types'
-import { DocumentCardView } from '@/components/documents/DocumentCardView'
 
 export const EmployeeRequests: React.FC = () => {
   const { user, tenant } = useAuth()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
 
-  const [activeTab, setActiveTab] = useState<'all' | 'leaves' | 'documents'>('all')
   const [isDocModalOpen, setIsDocModalOpen] = useState(false)
   const [docType, setDocType] = useState('Employment Verification Letter')
   const [docPurpose, setDocPurpose] = useState('')
   const [isAiProcessing, setIsAiProcessing] = useState(false)
   const [aiProgressStep, setAiProgressStep] = useState(0)
-  const [createdDocSuccess, setCreatedDocSuccess] = useState<HRDocumentRequest | null>(null)
+  const [, setCreatedDocSuccess] = useState<HRDocumentRequest | null>(null)
   const [selectedAttachmentDoc, setSelectedAttachmentDoc] = useState<HRDocumentRequest | null>(null)
-
-  // Fetch real leave requests
-  const { data: leaveRequests = [] } = useQuery({
-    queryKey: ['leaveRequests', tenant?.id, user?.id],
-    queryFn: () => (tenant?.id && user?.id ? leaveService.getLeaveRequests(tenant.id, user.id) : []),
-    enabled: !!tenant?.id && !!user?.id,
-  })
 
   // Fetch real HR document requests
   const { data: documentRequests = [], refetch: refetchDocs } = useQuery({
@@ -83,7 +65,6 @@ export const EmployeeRequests: React.FC = () => {
             setDocPurpose('')
             setCreatedDocSuccess(null)
             setAiProgressStep(0)
-            setActiveTab('documents')
           }, 1200)
         } catch (err) {
           console.error('Document request creation error:', err)
@@ -93,46 +74,38 @@ export const EmployeeRequests: React.FC = () => {
     }, 800)
   }
 
-  const pendingLeavesCount = leaveRequests.filter(r => r.status === 'pending').length
   const pendingDocsCount = documentRequests.filter(d => d.status === 'pending_manager_signature').length
-  const totalPending = pendingLeavesCount + pendingDocsCount
+  const approvedDocsCount = documentRequests.filter(
+    d => d.status === 'approved_and_signed' || d.status === 'auto_issued'
+  ).length
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <PageHeader
-        title="My HR Requests"
-        subtitle="Track the real-time status of your leave submissions and AI-verified official HR document applications."
+        title="Document Requests"
+        subtitle="Track the real-time status of your AI-verified official HR document applications."
       >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsDocModalOpen(true)}
-          className="gap-1.5 text-xs rounded-xl border-border hover:bg-muted text-foreground cursor-pointer"
-        >
-          <FileText className="h-3.5 w-3.5 text-[#23ace3]" />
-          <span>Request HR Document</span>
-        </Button>
         <Button
           variant="default"
           size="sm"
-          onClick={() => navigate('/employee/leave/apply')}
-          className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl shadow-xs cursor-pointer"
+          onClick={() => setIsDocModalOpen(true)}
+          className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl shadow-xs cursor-pointer font-bold"
         >
-          <PlusCircle className="h-3.5 w-3.5" />
-          <span>New Leave Request</span>
+          <FileText className="h-3.5 w-3.5" />
+          <span>Request HR Document</span>
         </Button>
       </PageHeader>
 
       {/* Summary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-4 bg-card border-border/60 rounded-2xl shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-400">
               <Clock className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-2xl font-bold font-mono text-foreground">{totalPending}</div>
-              <div className="text-xs text-muted-foreground">Pending Requests</div>
+              <div className="text-2xl font-bold font-mono text-foreground">{pendingDocsCount}</div>
+              <div className="text-xs text-muted-foreground">Pending Manager Signature</div>
             </div>
           </div>
         </Card>
@@ -143,10 +116,8 @@ export const EmployeeRequests: React.FC = () => {
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-2xl font-bold font-mono text-foreground">
-                {leaveRequests.filter(r => r.status === 'approved').length + documentRequests.filter(d => d.status === 'approved_and_signed' || d.status === 'auto_issued').length}
-              </div>
-              <div className="text-xs text-muted-foreground">Approved & Issued</div>
+              <div className="text-2xl font-bold font-mono text-foreground">{approvedDocsCount}</div>
+              <div className="text-xs text-muted-foreground">Approved & Digitally Signed</div>
             </div>
           </div>
         </Card>
@@ -158,183 +129,80 @@ export const EmployeeRequests: React.FC = () => {
             </div>
             <div>
               <div className="text-2xl font-bold font-mono text-foreground">{documentRequests.length}</div>
-              <div className="text-xs text-muted-foreground">HR Documents</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-card border-border/60 rounded-2xl shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-500/15 text-indigo-400">
-              <CalendarDays className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold font-mono text-foreground">{leaveRequests.length}</div>
-              <div className="text-xs text-muted-foreground">Leave Submissions</div>
+              <div className="text-xs text-muted-foreground">Total HR Documents</div>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Navigation Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-border/50 pb-2">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'all'
-                ? 'bg-[#23ace3] text-white shadow-xs'
-                : 'text-muted-foreground hover:bg-muted'
-            }`}
-          >
-            All Requests ({leaveRequests.length + documentRequests.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('documents')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'documents'
-                ? 'bg-[#23ace3] text-white shadow-xs'
-                : 'text-muted-foreground hover:bg-muted'
-            }`}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            <span>Official HR Documents ({documentRequests.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('leaves')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'leaves'
-                ? 'bg-[#23ace3] text-white shadow-xs'
-                : 'text-muted-foreground hover:bg-muted'
-            }`}
-          >
-            <CalendarDays className="h-3.5 w-3.5" />
-            <span>Leave Applications ({leaveRequests.length})</span>
-          </button>
+      {/* HR DOCUMENTS SECTION */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+            <FileCheck className="h-4 w-4 text-[#23ace3]" />
+            Official HR Documents (AI Verified & 2FA Signed)
+          </h3>
+          <span className="text-xs text-muted-foreground">
+            Includes cryptographic digital signatures & 4-stage tracking
+          </span>
         </div>
-      </div>
 
-      {/* SECTION 1: HR DOCUMENTS (AI Verified & 2FA Signed) */}
-      {(activeTab === 'all' || activeTab === 'documents') && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <FileCheck className="h-4 w-4 text-[#23ace3]" />
-              Official HR Documents (AI Verified & 2FA Signed)
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              Includes cryptographic digital signatures & 4-stage tracking
-            </span>
+        {documentRequests.length === 0 ? (
+          <div className="p-12 text-center bg-card border border-dashed border-border/70 rounded-2xl text-xs text-muted-foreground space-y-3">
+            <FileText className="h-8 w-8 text-muted-foreground/60 mx-auto" />
+            <div className="font-bold text-foreground">No official HR documents requested yet</div>
+            <p>Click "Request HR Document" above to generate letters for banking, lease, or travel.</p>
           </div>
-
-          {documentRequests.length === 0 ? (
-            <div className="p-8 text-center bg-card border border-border/60 rounded-2xl text-xs text-muted-foreground">
-              No official HR documents requested yet. Click "Request HR Document" above to get started.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {documentRequests.map(doc => {
-                const isApproved = doc.status === 'approved_and_signed' || doc.status === 'auto_issued'
-                return (
-                  <Card key={doc.id} className="p-4 bg-card border-border/60 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-foreground">{doc.documentType}</span>
-                        <Badge variant="outline" className="text-[10px] font-mono border-border">
-                          #{doc.referenceCode}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {doc.submittedAt ? doc.submittedAt.substring(0, 10) : '2026-10-07'} • "{doc.purpose}"
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-lg ${
-                          isApproved
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}
-                      >
-                        {isApproved ? 'APPROVED' : 'PENDING'}
-                      </Badge>
-
-                      {isApproved && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedAttachmentDoc(doc)}
-                          className="text-xs rounded-xl gap-1.5 border-[#23ace3]/40 text-[#23ace3] hover:bg-[#23ace3]/10 font-bold cursor-pointer"
-                        >
-                          <Paperclip className="h-3.5 w-3.5" />
-                          <span>See Attachment</span>
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* SECTION 2: LEAVE APPLICATIONS */}
-      {(activeTab === 'all' || activeTab === 'leaves') && (
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-[#23ace3]" />
-              Leave Applications & Time Off Submissions
-            </h3>
-          </div>
-
-          {leaveRequests.length === 0 ? (
-            <div className="p-8 text-center bg-card border border-border/60 rounded-2xl text-xs text-muted-foreground">
-              No leave requests submitted yet.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {leaveRequests.map(l => (
-                <Card key={l.id} className="p-4 bg-card border-border/60 rounded-2xl shadow-xs flex items-center justify-between gap-4">
+        ) : (
+          <div className="space-y-3">
+            {documentRequests.map(doc => {
+              const isApproved = doc.status === 'approved_and_signed' || doc.status === 'auto_issued'
+              return (
+                <Card
+                  key={doc.id}
+                  className="p-4 bg-card border-border/60 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-foreground">{l.leaveTypeName}</span>
-                      <Badge variant="outline" className="text-[10px] font-mono">
-                        {l.requestedDays} {l.requestedDays === 1 ? 'day' : 'days'}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold text-foreground">{doc.documentType}</span>
+                      <Badge variant="outline" className="text-[10px] font-mono border-border">
+                        #{doc.referenceCode}
                       </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {l.startDate} to {l.endDate} • "{l.reason}"
+                      {doc.submittedAt ? doc.submittedAt.substring(0, 10) : '2026-10-07'} • "{doc.purpose}"
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Badge
-                      variant={l.status === 'approved' ? 'success' : l.status === 'pending' ? 'warning' : 'destructive'}
-                      className={`text-[10px] uppercase font-bold ${
-                        l.status === 'approved'
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : l.status === 'pending'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                          : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                      className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-lg ${
+                        isApproved
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}
                     >
-                      {l.status}
+                      {isApproved ? 'APPROVED' : 'PENDING'}
                     </Badge>
+
+                    {isApproved && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedAttachmentDoc(doc)}
+                        className="text-xs rounded-xl gap-1.5 border-[#23ace3]/40 text-[#23ace3] hover:bg-[#23ace3]/10 font-bold cursor-pointer"
+                      >
+                        <Paperclip className="h-3.5 w-3.5" />
+                        <span>See Attachment</span>
+                      </Button>
+                    )}
                   </div>
                 </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* REQUEST OFFICIAL HR DOCUMENT MODAL WITH REAL-TIME AI PROCESSING */}
       <Dialog open={isDocModalOpen} onOpenChange={setIsDocModalOpen}>
@@ -471,13 +339,18 @@ export const EmployeeRequests: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground font-mono">
                   <div>
-                    <strong className="text-foreground">Signed By:</strong> {selectedAttachmentDoc.managerSignatureDetails?.signedBy || selectedAttachmentDoc.managerName}
+                    <strong className="text-foreground">Signed By:</strong>{' '}
+                    {selectedAttachmentDoc.managerSignatureDetails?.signedBy || selectedAttachmentDoc.managerName}
                   </div>
                   <div>
-                    <strong className="text-foreground">Authentication:</strong> {selectedAttachmentDoc.managerSignatureDetails?.mobile2faVerified ? '2-Step Mobile SMS OTP' : 'Executive 2FA Key'}
+                    <strong className="text-foreground">Authentication:</strong>{' '}
+                    {selectedAttachmentDoc.managerSignatureDetails?.mobile2faVerified
+                      ? '2-Step Mobile SMS OTP'
+                      : 'Executive 2FA Key'}
                   </div>
                   <div className="sm:col-span-2">
-                    <strong className="text-foreground">Signature Hash:</strong> {selectedAttachmentDoc.managerSignatureDetails?.signatureHash || 'SIG-2FA-I5YH-8105'}
+                    <strong className="text-foreground">Signature Hash:</strong>{' '}
+                    {selectedAttachmentDoc.managerSignatureDetails?.signatureHash || 'SIG-2FA-I5YH-8105'}
                   </div>
                 </div>
               </div>
@@ -495,6 +368,7 @@ export const EmployeeRequests: React.FC = () => {
 
             <DialogFooter className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50">
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedAttachmentDoc(null)}
@@ -504,6 +378,7 @@ export const EmployeeRequests: React.FC = () => {
               </Button>
               <div className="flex items-center gap-2">
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => window.print()}
@@ -513,6 +388,7 @@ export const EmployeeRequests: React.FC = () => {
                   <span>Print Hardcopy</span>
                 </Button>
                 <Button
+                  type="button"
                   variant="default"
                   size="sm"
                   onClick={() => window.print()}

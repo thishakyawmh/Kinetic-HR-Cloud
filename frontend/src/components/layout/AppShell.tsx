@@ -47,6 +47,7 @@ export const AppShell: React.FC = () => {
     location.pathname === '/employee/dashboard' ||
     location.pathname === '/employee/assistant' ||
     location.pathname === '/manager/assistant' ||
+    location.pathname === '/admin/assistant' ||
     location.pathname === '/'
 
   return (
