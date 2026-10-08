@@ -103,7 +103,9 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
                   <StatusBadge status={req.status} />
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(req.submittedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                  {req.submittedAt && !isNaN(new Date(req.submittedAt).getTime())
+                    ? new Date(req.submittedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })
+                    : (req.startDate || 'Recent')}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1.5">

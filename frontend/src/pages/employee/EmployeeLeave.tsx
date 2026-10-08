@@ -38,6 +38,7 @@ export const EmployeeLeave: React.FC = () => {
   })
 
   const pendingRequests = requests.filter(r => r.status === 'pending')
+  const upcomingApprovedRequests = requests.filter(r => r.status === 'approved')
   const historyRequests = requests.filter(r => r.status !== 'pending')
 
   return (
@@ -74,7 +75,7 @@ export const EmployeeLeave: React.FC = () => {
           <TabsTrigger value="history">Leave History ({historyRequests.length})</TabsTrigger>
         </TabsList>
 
-        {/* Tab 1: Overview */}
+        {/* Tab 1: Overview & Upcoming Leaves Only */}
         <TabsContent value="overview" className="space-y-6">
           {/* Emergency Leave Assistance Highlight */}
           <div className="p-4 rounded-2xl border border-[#ef8d46]/30 bg-[#ef8d46]/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -93,20 +94,12 @@ export const EmployeeLeave: React.FC = () => {
             </div>
           </div>
 
-          {/* Pending Requests Section */}
-          <div className="space-y-3">
-            <h3 className="text-base font-bold text-foreground">Pending Requests</h3>
-            <LeaveHistoryTable
-              requests={pendingRequests}
-              onDeleteRequest={id => deleteMutation.mutate(id)}
-            />
-          </div>
-
-          {/* Upcoming & Recent History */}
+          {/* Approved & Upcoming Leaves Only */}
           <div className="space-y-3">
             <h3 className="text-base font-bold text-foreground">Approved & Upcoming Leaves</h3>
             <LeaveHistoryTable
-              requests={historyRequests.slice(0, 5)}
+              requests={upcomingApprovedRequests}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: ['leaveRequests'] })}
             />
           </div>
         </TabsContent>
@@ -116,12 +109,16 @@ export const EmployeeLeave: React.FC = () => {
           <LeaveHistoryTable
             requests={pendingRequests}
             onDeleteRequest={id => deleteMutation.mutate(id)}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['leaveRequests'] })}
           />
         </TabsContent>
 
-        {/* Tab 3: History */}
+        {/* Tab 3: Complete Leave History (Approved, Rejected, Appealed) */}
         <TabsContent value="history" className="space-y-4">
-          <LeaveHistoryTable requests={historyRequests} />
+          <LeaveHistoryTable
+            requests={historyRequests}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['leaveRequests'] })}
+          />
         </TabsContent>
       </Tabs>
     </div>
