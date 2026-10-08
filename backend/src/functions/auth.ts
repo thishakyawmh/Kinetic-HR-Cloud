@@ -102,7 +102,7 @@ export async function loginEmployee(
     let users = await queryTenantItems<any>(
       'users',
       tenantId,
-      'SELECT * FROM c WHERE c.tenantId = @tenantId AND (LOWER(c.employeeNumber) = @empId OR LOWER(c.email) = @empId OR LOWER(c.id) = @empId)',
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND (LOWER(c.employeeNumber) = @empId OR LOWER(c.email) = @empId OR LOWER(c.id) = @empId OR LOWER(c.role) = @empId OR CONTAINS(LOWER(c.name), @empId))',
       [
         { name: '@tenantId', value: tenantId },
         { name: '@empId', value: cleanEmp },
