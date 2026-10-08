@@ -4,21 +4,16 @@ import { useQuery } from '@tanstack/react-query'
 import { payrollService } from '@/services/payrollService'
 import { useAuth } from '@/contexts/AuthContext'
 import { PageHeader } from '@/components/common/PageHeader'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   ArrowLeft,
-  Sparkles,
   Download,
-  Building,
-  Calendar,
-  AlertCircle,
-  TrendingDown,
   Printer,
+  FileCheck,
 } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+
+import { PayslipStatementView } from '@/components/payroll/PayslipStatementView'
 
 export const EmployeePayslipDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -34,23 +29,29 @@ export const EmployeePayslipDetail: React.FC = () => {
   if (isLoading || !payslip) {
     return (
       <div className="p-12 text-center text-sm text-muted-foreground">
-        Loading payslip statement...
+        Loading payslip statement & earnings data...
       </div>
     )
   }
 
-  const handleAskAI = () => {
-    const prompt =
-      payslip.periodMonth === 'October'
-        ? 'Explain why my October take-home salary is lower than September.'
-        : `Explain the tax and benefits breakdown for my ${payslip.periodMonth} ${payslip.periodYear} payslip.`
-    navigate(`/employee/assistant?prompt=${encodeURIComponent(prompt)}&payslipId=${payslip.id}`)
+  const handleDownloadPDF = async () => {
+    try {
+      const res = await payrollService.getDownloadUrl(payslip.id)
+      if (res?.downloadUrl) {
+        window.open(res.downloadUrl, '_blank')
+        return
+      }
+    } catch (e) {
+      console.warn('Backend PDF download URL unavailable, launching browser PDF print viewer:', e)
+    }
+    // Browser print to PDF fallback
+    window.print()
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <PageHeader
-        title={`Payslip: ${payslip.periodMonth} ${payslip.periodYear}`}
+        title={`Payslip Statement: ${payslip.periodMonth} ${payslip.periodYear}`}
         subtitle={`Disbursement Date: ${payslip.payDate} • Reference #${payslip.id}`}
         badge={<Badge variant="success">{payslip.status}</Badge>}
         backButton={
@@ -65,157 +66,44 @@ export const EmployeePayslipDetail: React.FC = () => {
         }
       />
 
-      {/* Payslip Header Card */}
-      <Card className="border border-border/60 shadow-sm bg-card rounded-2xl overflow-hidden">
-        <CardContent className="p-6 space-y-6">
-          {/* Company & Employee Identity Banner */}
-          <div className="flex flex-col sm:flex-row justify-between pb-6 border-b border-border/50 gap-4">
-            <div>
-              <h3 className="text-lg font-extrabold text-foreground">{tenant?.name}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Corporate HR & Payroll Administration</p>
-              <div className="text-xs text-muted-foreground mt-2 space-y-0.5 font-mono">
-                <div>Employer Tax ID: US-EIN-9482104</div>
-                <div className="text-[#23ace3]">Payroll Engine: ADP Vantage Connector (Synced)</div>
-              </div>
-            </div>
-            <div className="sm:text-right">
-              <div className="text-sm font-bold text-foreground">{user?.name}</div>
-              <div className="text-xs text-muted-foreground">{user?.jobTitle}</div>
-              <div className="text-xs text-muted-foreground mt-2 space-y-0.5 font-mono">
-                <div>Employee ID: {user?.employeeNumber}</div>
-                <div>Department: {user?.department}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Salary Summary Key Metric Tiles */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-muted/30 p-4 rounded-2xl border border-border/50">
-            <div>
-              <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-                Basic Contract
-              </span>
-              <span className="text-base font-bold text-foreground">
-                {formatCurrency(payslip.basicSalary)}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-                Gross Earnings
-              </span>
-              <span className="text-base font-bold text-foreground">
-                {formatCurrency(payslip.grossSalary)}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-                Total Deductions
-              </span>
-              <span className="text-base font-bold text-rose-500">
-                -{formatCurrency(payslip.tax + payslip.deductions)}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold text-[#23ace3] block">
-                Net Take-Home Pay
-              </span>
-              <span className="text-lg font-extrabold text-[#23ace3] font-mono">
-                {formatCurrency(payslip.netSalary)}
-              </span>
-            </div>
-          </div>
-
-          {/* Detailed Itemized Ledger */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-bold text-foreground">Earnings & Deductions Itemization</h4>
-            <div className="rounded-2xl border border-border/60 overflow-hidden bg-card/60">
-              <Table>
-                <TableHeader className="bg-muted/40">
-                  <TableRow className="border-border/50">
-                    <TableHead>Line Item Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payslip.breakdown.map((item, idx) => (
-                    <TableRow key={idx} className="border-border/40">
-                      <TableCell className="font-medium text-xs text-foreground">
-                        {item.name}
-                        {item.description && (
-                          <span className="block text-[11px] text-muted-foreground font-normal">
-                            {item.description}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={item.category === 'earning' ? 'success' : 'destructive'}
-                          className={`text-[10px] capitalize font-medium ${
-                            item.category === 'earning'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          }`}
-                        >
-                          {item.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold text-xs text-foreground font-mono">
-                        {item.category === 'deduction' ? '-' : '+'}
-                        {formatCurrency(item.amount)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {/* Totals Row */}
-                  <TableRow className="bg-muted/30 font-bold border-t border-border/60">
-                    <TableCell colSpan={2} className="text-xs text-foreground font-semibold">
-                      Total Net Disbursed via Direct Deposit
-                    </TableCell>
-                    <TableCell className="text-right text-sm text-[#23ace3] font-extrabold font-mono">
-                      {formatCurrency(payslip.netSalary)}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* Statement Actions Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border/50">
-            <span className="text-xs text-muted-foreground">
-              Official electronic payroll document generated under IRS Form W-2 compliance.
+      {/* Top Action Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border/60 shadow-xs">
+        <div className="flex items-center gap-2">
+          <FileCheck className="h-5 w-5 text-[#23ace3]" />
+          <div>
+            <span className="text-xs font-bold text-foreground block">
+              Official Authorized Earnings Record
             </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const res = await payrollService.getDownloadUrl(payslip.id)
-                    if (res?.downloadUrl) {
-                      window.open(res.downloadUrl, '_blank')
-                    }
-                  } catch (e) {
-                    console.error('Download failed', e)
-                  }
-                }}
-                className="text-xs gap-1.5 rounded-xl border-border bg-[#23ace3]/10 text-[#23ace3] hover:bg-[#23ace3]/20"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Download PDF</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.print()}
-                className="text-xs gap-1.5 rounded-xl border-border hover:bg-muted/60"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                <span>Print Statement</span>
-              </Button>
-            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {tenant?.name || 'Acme Corp'} • Employee ID: {user?.employeeNumber || '10459'}
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDownloadPDF}
+            className="text-xs gap-1.5 rounded-xl bg-[#23ace3] text-white hover:bg-[#23ace3]/90 font-semibold cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Download PDF</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+            className="text-xs gap-1.5 rounded-xl border-border hover:bg-muted/60 cursor-pointer"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            <span>Print Statement</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* EXCLUSIVE 4-SECTION ITEMIZED STATEMENT DOCUMENT */}
+      <PayslipStatementView payslip={payslip} user={user} tenant={tenant} />
     </div>
   )
 }

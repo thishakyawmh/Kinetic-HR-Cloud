@@ -119,14 +119,36 @@ export interface Payslip {
   employeeId: string
   periodMonth: string // e.g. "October"
   periodYear: number // e.g. 2026
+  payPeriod?: string // e.g. "10/01/2026 - 10/14/2026"
   payDate: string
+  filingStatus?: string
+  allowancesCount?: number
   basicSalary: number
   allowances: number
   overtime: number
+  overtimeHours?: number
+  overtimeRate?: number
+  overtimePay?: number
   grossSalary: number
+  grossPay?: number
+  ytdGrossPay?: number
+  preTaxMedical?: number
+  preTaxDental?: number
+  preTax401k?: number
+  totalPreTaxDeductions?: number
+  ytdPreTaxDeductions?: number
+  taxFederal?: number
+  taxSocialSecurity?: number
+  taxMedicare?: number
+  taxState?: number
+  statutoryTaxes?: number
   tax: number
   deductions: number
+  totalDeductionsAndTaxes?: number
+  ytdTotalDeductionsAndTaxes?: number
   netSalary: number
+  netPay?: number
+  ytdNetPay?: number
   currency: string
   status: 'Published' | 'Processing'
   notes?: string
@@ -237,3 +259,46 @@ export interface AIUsageMetrics {
     total: number
   }
 }
+
+export type HRDocumentStatus =
+  | 'submitted'
+  | 'ai_verifying'
+  | 'pending_manager_signature'
+  | 'approved_and_signed'
+  | 'auto_issued'
+  | 'rejected'
+
+export interface HRDocumentRequest {
+  id: string
+  tenantId: string
+  employeeId: string
+  employeeName: string
+  employeeNumber: string
+  department: string
+  jobTitle: string
+  managerId?: string
+  managerName?: string
+  documentType: string
+  purpose: string
+  status: HRDocumentStatus
+  requiresManagerSignature: boolean
+  submittedAt: string
+  issuedAt?: string
+  referenceCode: string
+  aiVerification: {
+    identityVerified: boolean
+    verificationNotes: string
+    policyCheckPassed: boolean
+    generatedContent: string
+    verifiedAt: string
+  }
+  managerSignatureDetails?: {
+    signedBy: string
+    signedById: string
+    signedAt: string
+    mobile2faVerified: boolean
+    phoneNumberMasked: string
+    signatureHash: string
+  }
+}
+

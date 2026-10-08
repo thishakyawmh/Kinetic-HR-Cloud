@@ -10,6 +10,12 @@ import {
 import { getEmployees, getEmployeeById } from './functions/employees'
 import { getPayslips, getPayslipDownloadUrl } from './functions/payroll'
 import { getPolicies, createPolicy } from './functions/policies'
+import {
+  createDocumentRequest,
+  getDocumentRequests,
+  verify2faAndSignDocument,
+  sendDocumentSoftcopy,
+} from './functions/documents'
 
 // Auth Routes
 app.http('validateOrganization', {
@@ -105,4 +111,33 @@ app.http('createPolicy', {
   authLevel: 'anonymous',
   route: 'policies',
   handler: createPolicy,
+})
+
+// HR Document Requests & Manager 2FA Signing
+app.http('createDocumentRequest', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'documents/request',
+  handler: createDocumentRequest,
+})
+
+app.http('getDocumentRequests', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'documents',
+  handler: getDocumentRequests,
+})
+
+app.http('verify2faAndSignDocument', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'documents/{id}/verify-2fa-sign',
+  handler: verify2faAndSignDocument,
+})
+
+app.http('sendDocumentSoftcopy', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'documents/{id}/send-softcopy',
+  handler: sendDocumentSoftcopy,
 })

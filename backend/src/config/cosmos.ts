@@ -269,16 +269,99 @@ const LOCAL_MEMORY_DATA: Record<string, any[]> = {
   ],
   payslips: [
     {
-      id: 'ps-2026-09',
+      id: 'pay-2026-10',
       tenantId: 'tenant-kinetic',
       employeeId: 'user-Alice',
-      payPeriod: 'September 2026',
-      payDate: '2026-09-30',
-      grossPay: 9500,
-      netPay: 7125,
-      taxDeductions: 1900,
-      otherDeductions: 475,
+      periodMonth: 'October',
+      periodYear: 2026,
+      payPeriod: '10/01/2026 - 10/14/2026',
+      payDate: '2026-10-16',
+      filingStatus: 'Single',
+      allowancesCount: 1,
+      basicSalary: 3000,
+      overtimeHours: 0,
+      overtimeRate: 0,
+      overtimePay: 0,
+      grossSalary: 3000,
+      grossPay: 3000,
+      ytdGrossPay: 60450,
+      preTaxMedical: 100,
+      preTaxDental: 15,
+      preTax401k: 150,
+      totalPreTaxDeductions: 265,
+      ytdPreTaxDeductions: 5300,
+      taxFederal: 320,
+      taxSocialSecurity: 186,
+      taxMedicare: 43.5,
+      taxState: 120,
+      statutoryTaxes: 669.5,
+      tax: 669.5,
+      taxDeductions: 669.5,
+      otherDeductions: 265,
+      deductions: 265,
+      totalDeductionsAndTaxes: 934.5,
+      ytdTotalDeductionsAndTaxes: 18690,
+      netSalary: 2065.5,
+      netPay: 2065.5,
+      ytdNetPay: 41760,
       currency: 'USD',
+      status: 'Published',
+      notes: 'Bi-weekly standard disbursement cycle.',
+      salaryDiffExplanation: 'Net take-home pay is $2,065.50 after pre-tax deductions ($265.00) and statutory taxes ($669.50).',
+      breakdown: [
+        { name: 'Base Salary (80 hrs @ $37.50)', amount: 3000, category: 'earning', description: 'Bi-weekly regular pay' },
+        { name: 'Medical Insurance', amount: 100, category: 'deduction', description: 'Pre-tax health coverage' },
+        { name: 'Dental Insurance', amount: 15, category: 'deduction', description: 'Pre-tax dental coverage' },
+        { name: '401(k) Retirement (5%)', amount: 150, category: 'deduction', description: 'Pre-tax retirement contribution' },
+        { name: 'Federal Income Tax', amount: 320, category: 'deduction', description: 'Statutory federal withholding' },
+        { name: 'Social Security (6.2%)', amount: 186, category: 'deduction', description: 'Statutory FICA' },
+        { name: 'Medicare (1.45%)', amount: 43.5, category: 'deduction', description: 'Statutory FICA' },
+        { name: 'State Income Tax (approx 4%)', amount: 120, category: 'deduction', description: 'Statutory state tax' },
+      ],
+    },
+    {
+      id: 'pay-2026-09',
+      tenantId: 'tenant-kinetic',
+      employeeId: 'user-Alice',
+      periodMonth: 'September',
+      periodYear: 2026,
+      payPeriod: '09/16/2026 - 09/30/2026',
+      payDate: '2026-09-30',
+      filingStatus: 'Single',
+      allowancesCount: 1,
+      basicSalary: 3000,
+      overtimeHours: 6,
+      overtimeRate: 56.25,
+      overtimePay: 337.5,
+      grossSalary: 3337.5,
+      grossPay: 3337.5,
+      ytdGrossPay: 57450,
+      preTaxMedical: 100,
+      preTaxDental: 15,
+      preTax401k: 150,
+      totalPreTaxDeductions: 265,
+      taxFederal: 350,
+      taxSocialSecurity: 206.92,
+      taxMedicare: 48.39,
+      taxState: 133.5,
+      statutoryTaxes: 738.81,
+      tax: 738.81,
+      taxDeductions: 738.81,
+      otherDeductions: 265,
+      deductions: 265,
+      totalDeductionsAndTaxes: 1003.81,
+      netSalary: 2333.69,
+      netPay: 2333.69,
+      ytdNetPay: 39694.5,
+      currency: 'USD',
+      status: 'Published',
+      notes: 'Included 6 hours approved overtime.',
+      breakdown: [
+        { name: 'Base Salary (80 hrs @ $37.50)', amount: 3000, category: 'earning', description: 'Bi-weekly regular pay' },
+        { name: 'Overtime Pay (6 hrs @ $56.25)', amount: 337.5, category: 'earning', description: 'Sprint release overtime' },
+        { name: 'Pre-Tax Benefits Deductions', amount: 265, category: 'deduction', description: 'Health, dental, 401(k)' },
+        { name: 'Statutory Taxes', amount: 738.81, category: 'deduction', description: 'Federal, FICA, State' },
+      ],
     },
   ],
   departments: [
@@ -372,6 +455,65 @@ const LOCAL_MEMORY_DATA: Record<string, any[]> = {
       details: 'Detected 2 overlapping absences for Engineering; triggered staffing alert flag.',
     },
   ],
+  document_requests: [
+    {
+      id: 'doc-req-9041',
+      tenantId: 'tenant-kinetic',
+      employeeId: 'user-Alice',
+      employeeName: 'Alice Johnson',
+      employeeNumber: 'KT-8842',
+      department: 'Engineering',
+      jobTitle: 'Senior Frontend Engineer',
+      managerId: 'user-david',
+      managerName: 'David Wilson',
+      documentType: 'Employment Verification Letter',
+      purpose: 'For Chase Bank Home Mortgage Application',
+      status: 'pending_manager_signature',
+      requiresManagerSignature: true,
+      submittedAt: '2026-10-07T14:20:00Z',
+      referenceCode: 'DOC-2026-9041',
+      aiVerification: {
+        identityVerified: true,
+        verificationNotes: 'AI Identity Verified: Active Senior Frontend Engineer in Engineering Dept (Hired April 15, 2023). Salary $78,000/yr.',
+        policyCheckPassed: true,
+        generatedContent: 'OFFICIAL EMPLOYMENT VERIFICATION LETTER\n\nDate: October 7, 2026\nTo Whom It May Concern:\n\nThis letter serves as official verification that Alice Johnson (Employee ID: KT-8842) is employed full-time with Alyxra Digital as a Senior Frontend Engineer since April 15, 2023.\n\nAlice Johnson is in good standing with a current annual gross salary of $78,000.00 disbursed bi-weekly.\n\nThis document is issued under corporate policy compliance reference #DOC-2026-9041.\n\nAlyxra Digital HR & Payroll Operations.',
+        verifiedAt: '2026-10-07T14:20:05Z',
+      },
+    },
+    {
+      id: 'doc-req-9040',
+      tenantId: 'tenant-kinetic',
+      employeeId: 'user-Alice',
+      employeeName: 'Alice Johnson',
+      employeeNumber: 'KT-8842',
+      department: 'Engineering',
+      jobTitle: 'Senior Frontend Engineer',
+      managerId: 'user-david',
+      managerName: 'David Wilson',
+      documentType: 'Salary Certificate',
+      purpose: 'Car Loan Verification',
+      status: 'approved_and_signed',
+      requiresManagerSignature: true,
+      submittedAt: '2026-09-28T09:10:00Z',
+      issuedAt: '2026-09-28T10:15:22Z',
+      referenceCode: 'DOC-2026-9040',
+      aiVerification: {
+        identityVerified: true,
+        verificationNotes: 'AI Identity Verified: Active Full-Time Employee.',
+        policyCheckPassed: true,
+        generatedContent: 'OFFICIAL SALARY CERTIFICATE\n\nEmployee: Alice Johnson (KT-8842)\nDepartment: Engineering\nGross Monthly Earnings: $6,500.00\nNet Disbursed Take-Home: $4,131.00\n\nVerified by Kinetic AI Engine.',
+        verifiedAt: '2026-09-28T09:10:04Z',
+      },
+      managerSignatureDetails: {
+        signedBy: 'David Wilson',
+        signedById: 'user-david',
+        signedAt: '2026-09-28T10:15:22Z',
+        mobile2faVerified: true,
+        phoneNumberMasked: '+1 (555) ***-8901',
+        signatureHash: 'SIG-2FA-98F4-41A8-88A2',
+      },
+    },
+  ],
 }
 
 /**
@@ -405,12 +547,14 @@ function createMockContainer(name: string): Container {
                 (u.id && u.id.toLowerCase() === eVal)
               )
             }
-            // Filter by userId
+            // Filter by userId (check userId, managerId, employeeId, or id)
             const userParam = querySpec.parameters.find((p: any) => p.name === '@userId')
             if (userParam) {
               const uVal = String(userParam.value).toLowerCase()
               results = results.filter((item: any) =>
                 (item.userId && item.userId.toLowerCase() === uVal) ||
+                (item.managerId && item.managerId.toLowerCase() === uVal) ||
+                (item.employeeId && item.employeeId.toLowerCase() === uVal) ||
                 (item.id && item.id.toLowerCase() === uVal)
               )
             }
@@ -428,6 +572,12 @@ function createMockContainer(name: string): Container {
       }),
       create: async (item: any) => {
         store.push(item)
+        return { resource: item }
+      },
+      upsert: async (item: any) => {
+        const idx = store.findIndex((i: any) => i.id === item.id)
+        if (idx >= 0) store[idx] = item
+        else store.push(item)
         return { resource: item }
       },
     },
@@ -467,6 +617,10 @@ export function getTenantContainer(containerName: string): Container {
         create: async (item: any) => {
           console.log(`🟡 [MOCK DATA] Created item "${item?.id || 'new'}" in container "${containerName}" (In-Memory Mock Store)`)
           return mockContainer.items.create(item)
+        },
+        upsert: async (item: any) => {
+          console.log(`🟡 [MOCK DATA] Upserted item "${item?.id || 'new'}" in container "${containerName}" (In-Memory Mock Store)`)
+          return mockContainer.items.upsert(item)
         },
       },
       item: (id: string, partitionKey?: string) => ({
@@ -528,6 +682,22 @@ export function getTenantContainer(containerName: string): Container {
           console.log(
             `🟡 [MOCK DATA FALLBACK] Created item "${item?.id || 'new'}" in "${containerName}" (In-Memory Mock Store)`
           )
+          return fallbackResult
+        }
+      },
+      upsert: async (item: any, options?: any) => {
+        try {
+          const result = await realContainer.items.upsert(item, options)
+          console.log(
+            `🟢 [AZURE COSMOS DB] Upserted item "${item?.id || 'new'}" into container "${containerName}" (Live Azure Cloud)`
+          )
+          try { await mockContainer.items.upsert(item) } catch (_) {}
+          return result
+        } catch (err: any) {
+          console.warn(
+            `⚠️  [AZURE COSMOS DB ERROR] Upsert failed on "${containerName}": ${err.message}. Saving to In-Memory Mock Store!`
+          )
+          const fallbackResult = await mockContainer.items.upsert(item)
           return fallbackResult
         }
       },

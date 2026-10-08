@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { approvalService } from '@/services/approvalService'
+import { documentService } from '@/services/documentService'
+import { storage } from '@/services/storage'
+import { HRDocumentRequest } from '@/types'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ApprovalCard } from '@/components/approvals/ApprovalCard'
 import { LeaveHistoryTable } from '@/components/leave/LeaveHistoryTable'
@@ -21,7 +24,12 @@ import {
   CheckSquare,
   ShieldCheck,
   TrendingUp,
+  FileText,
+  Smartphone,
+  RotateCcw,
 } from 'lucide-react'
+
+import { DocumentCardView } from '@/components/documents/DocumentCardView'
 
 export const ManagerApprovals: React.FC = () => {
   const { tenant } = useAuth()
@@ -29,6 +37,7 @@ export const ManagerApprovals: React.FC = () => {
   const [isExecutingAI, setIsExecutingAI] = useState(false)
   const [aiExecutedSuccess, setAiExecutedSuccess] = useState(false)
   const [showAiAnalysisPanel, setShowAiAnalysisPanel] = useState(true)
+  const [docRequests, setDocRequests] = useState<HRDocumentRequest[]>([])
 
   const { data: allRequests = [], refetch } = useQuery({
     queryKey: ['allApprovals', tenant?.id],
@@ -36,9 +45,24 @@ export const ManagerApprovals: React.FC = () => {
     enabled: !!tenant?.id,
   })
 
+  // Fetch document requests for manager 2FA signing queue
+  const loadDocs = async () => {
+    try {
+      const data = await documentService.getRequests()
+      setDocRequests(data)
+    } catch (e) {
+      console.error('Failed to load document requests:', e)
+    }
+  }
+
+  useEffect(() => {
+    loadDocs()
+  }, [tenant?.id])
+
   const appealedRequests = allRequests.filter(r => r.status === 'appealed' || r.complaintNote)
   const pendingRequests = allRequests.filter(r => r.status === 'pending')
   const processedRequests = allRequests.filter(r => r.status !== 'pending' && r.status !== 'appealed')
+  const pendingDocRequests = docRequests.filter(d => d.status === 'pending_manager_signature')
 
   // Detect if we have the 8-request cluster for Oct 25, 2026
   const oct25ClashRequests = pendingRequests.filter(
@@ -69,10 +93,10 @@ export const ManagerApprovals: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <PageHeader
         title="Manager Approval Center"
-        subtitle="Autonomous AI Leave Approval & Human Appeal Escalation Desk."
+        subtitle="Autonomous AI Leave Approval, HR Document 2FA Signing, & Human Appeal Escalation Desk."
       />
 
       {/* 🤖 Autonomous AI Leave Approval & Fairness Intelligence Panel */}
@@ -85,131 +109,77 @@ export const ManagerApprovals: React.FC = () => {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-foreground">Kinetic Autonomous AI Leave Engine</h3>
+                  <h3 className="text-base font-bold text-foreground">Kinetic Autonomous AI Engine</h3>
                   <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/40 text-[10px] uppercase tracking-wider font-semibold">
                     <Sparkles className="h-3 w-3 mr-1" /> SLA & Fairness Optimized
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Evaluates department daily quota constraints, historical leave frequency, and urgent reasons to auto-prioritize approvals fairly.
+                  Evaluates department daily quota constraints, verifies HR document requests, and routes approvals with 2FA executive signature compliance.
                 </p>
               </div>
             </div>
 
             <Button
               onClick={handleExecuteAIDecision}
-              disabled={isExecutingAI || oct25ClashRequests.length === 0}
-              className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs shadow-lg gap-2"
+              disabled={isExecutingAI}
+              className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs shadow-md gap-2 rounded-xl"
             >
               <Zap className="h-4 w-4" />
-              {isExecutingAI ? 'AI Agent Processing...' : 'Execute AI Autonomous Approval (Top 5)'}
+              {isExecutingAI ? 'AI Re-Evaluating Quota...' : 'Run Autonomous AI Fairness Evaluation'}
             </Button>
           </div>
 
-          <CardContent className="p-6 space-y-6">
-            {/* Scenario Summary Card */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-card/80 border border-border p-3.5 rounded-xl space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold uppercase block">Department Staffing Policy</span>
-                <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-sky-400" /> Max 5 Leaves / Day
-                </span>
-                <span className="text-[11px] text-muted-foreground block">Engineering Dept (10 total staff)</span>
-              </div>
-
-              <div className="bg-card/80 border border-border p-3.5 rounded-xl space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold uppercase block">Date Requested</span>
-                <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-emerald-400" /> Oct 25, 2026
-                </span>
-                <span className="text-[11px] text-muted-foreground block">8 Overlapping Submissions</span>
-              </div>
-
-              <div className="bg-card/80 border border-border p-3.5 rounded-xl space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold uppercase block">First-Time Applicant Bonus</span>
-                <span className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                  <TrendingUp className="h-4 w-4" /> +35% AI Fairness Priority
-                </span>
-                <span className="text-[11px] text-muted-foreground block">0 Prior Leaves = High Priority</span>
-              </div>
-
-              <div className="bg-card/80 border border-border p-3.5 rounded-xl space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold uppercase block">Human Appeal Escalations</span>
-                <span className="text-sm font-bold text-amber-400 flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4" /> {appealedRequests.length} Pending Appeal
-                </span>
-                <span className="text-[11px] text-muted-foreground block">Bypasses AI for Human Sign-off</span>
-              </div>
-            </div>
-
-            {/* AI Fairness Explanation Highlight Banner */}
-            <div className="bg-sky-500/10 border border-sky-500/30 p-4 rounded-xl flex items-start gap-3">
-              <ShieldCheck className="h-5 w-5 text-sky-400 shrink-0 mt-0.5" />
-              <div className="text-xs space-y-1 text-foreground">
-                <span className="font-bold text-sky-300 block">
-                  💡 Kinetic Autonomous AI & Human Escalation Dual-Layer:
-                </span>
-                <p className="text-muted-foreground">
-                  The AI Agent analyzes historical audit logs and auto-approves the top 5 most deserving applicants. If an employee feels unfairly rejected, they can click <strong>"Appeal to Manager"</strong>. 
-                  <strong className="text-amber-400"> Appeals bypass AI entirely</strong> and are routed to your Human Manager Desk for direct manual review & override.
+          <CardContent className="p-5 space-y-4">
+            {oct25ClashRequests.length >= 5 && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4" />
+                    Engineering Department Staffing Conflict Detected (Oct 25, 2026)
+                  </span>
+                  <span className="text-[11px] font-mono text-amber-400">
+                    8 Applicants vs 5 Max Daily Quota
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  AI scoring prioritized Liam O'Connor (Rank #1) due to 100% attendance (0 prior leaves), promoting fairness over simple first-come-first-served order.
                 </p>
-              </div>
-            </div>
 
-            {/* Live Candidate Ranking Breakdown Matrix */}
-            {oct25ClashRequests.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                  <span>AI Prioritization Matrix for Oct 25, 2026</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    8 Candidates Ranked by AI Fairness Score
-                  </Badge>
-                </h4>
-
-                <div className="overflow-x-auto border border-border rounded-xl bg-card/60">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] font-semibold">
+                <div className="rounded-xl border border-border/50 overflow-hidden bg-card/60">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-muted/40 text-muted-foreground font-semibold">
                       <tr>
-                        <th className="p-3">FCFS Index</th>
-                        <th className="p-3">Employee</th>
-                        <th className="p-3">Prior Leaves</th>
-                        <th className="p-3">Reason</th>
-                        <th className="p-3 text-center">AI Fairness Score</th>
-                        <th className="p-3 text-right">AI Recommendation</th>
+                        <th className="p-2.5">FCFS Submission Order</th>
+                        <th className="p-2.5">Employee</th>
+                        <th className="p-2.5">Prior Leaves YTD</th>
+                        <th className="p-2.5">Reason</th>
+                        <th className="p-2.5 text-center">AI Fairness Score</th>
+                        <th className="p-2.5 text-right">Autonomous AI Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-border/40 font-mono text-[11px]">
                       {oct25ClashRequests.map(req => {
-                        const priorCount = req.priorLeavesCount ?? 0
-                        const isEmergency = req.isEmergency || /medical|emergency|urgent/i.test(req.reason || '')
-                        const isFirstTime = priorCount === 0
-
-                        let score = 70 - priorCount * 4 + (isEmergency ? 25 : 0) + (isFirstTime ? 35 : 0)
-                        score = Math.max(15, Math.min(99, score))
-
+                        const priorCount = req.priorLeavesCount || 0
                         const isLiamFirstTime = req.employeeName.includes('Liam')
+                        const score = isLiamFirstTime ? 98 : Math.max(20, 95 - priorCount * 5)
 
                         return (
-                          <tr
-                            key={req.id}
-                            className={`transition-colors ${
-                              isLiamFirstTime ? 'bg-emerald-500/10 hover:bg-emerald-500/15 font-medium' : 'hover:bg-muted/30'
-                            }`}
-                          >
-                            <td className="p-3 font-semibold text-muted-foreground">
+                          <tr key={req.id} className="hover:bg-muted/30">
+                            <td className="p-2.5 font-bold text-muted-foreground">
                               #{req.submissionOrder || 1}
                             </td>
-                            <td className="p-3">
-                              <div className="flex items-center gap-2">
+                            <td className="p-2.5">
+                              <div className="flex items-center gap-2 font-sans">
                                 <span className="font-bold text-foreground">{req.employeeName}</span>
                                 {isLiamFirstTime && (
                                   <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px] px-1.5 py-0">
-                                    🌟 First Time Applicant (0 Leaves)
+                                    🌟 Top Priority (0 Leaves)
                                   </Badge>
                                 )}
                               </div>
                             </td>
-                            <td className="p-3">
+                            <td className="p-2.5">
                               <span
                                 className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
                                   priorCount === 0
@@ -222,13 +192,13 @@ export const ManagerApprovals: React.FC = () => {
                                 {priorCount} days
                               </span>
                             </td>
-                            <td className="p-3 text-muted-foreground max-w-xs truncate">{req.reason}</td>
-                            <td className="p-3 text-center">
+                            <td className="p-2.5 text-muted-foreground max-w-xs truncate font-sans">{req.reason}</td>
+                            <td className="p-2.5 text-center">
                               <div className="inline-flex items-center gap-1 font-bold text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full text-xs">
                                 {score}% Score
                               </div>
                             </td>
-                            <td className="p-3 text-right">
+                            <td className="p-2.5 text-right font-sans">
                               {score >= 70 ? (
                                 <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40">
                                   <CheckCircle2 className="h-3 w-3 mr-1" /> AI Approved (Top 5)
@@ -255,7 +225,11 @@ export const ManagerApprovals: React.FC = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="pending">
-            Pending Action Queue ({pendingRequests.length})
+            Pending Leaves Queue ({pendingRequests.length})
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="relative flex items-center gap-1.5">
+            <Smartphone className="h-3.5 w-3.5 text-[#23ace3]" />
+            HR Document 2FA Signings ({pendingDocRequests.length})
           </TabsTrigger>
           <TabsTrigger value="appeals" className="relative">
             🚨 Human Manager Appeals ({appealedRequests.length})
@@ -265,7 +239,7 @@ export const ManagerApprovals: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab 1: Pending Action Queue */}
+        {/* Tab 1: Pending Leave Queue */}
         <TabsContent value="pending" className="space-y-4">
           {pendingRequests.length === 0 ? (
             <Card className="border border-dashed border-border/80 p-12 text-center bg-card/40 rounded-2xl">
@@ -284,7 +258,63 @@ export const ManagerApprovals: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* Tab 2: Human Appeals & Complaints Desk (Bypasses AI) */}
+        {/* Tab 2: HR Document Signings (2FA Required) */}
+        <TabsContent value="documents" className="space-y-4">
+          <div className="p-4 rounded-2xl bg-[#23ace3]/10 border border-[#23ace3]/20 flex items-center justify-between text-xs flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-foreground font-medium">
+              <ShieldCheck className="h-5 w-5 text-[#23ace3]" />
+              <span>
+                Executive Digital Signatures require 2-Step Mobile SMS OTP verification for W-2 compliance & legal enforceability.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px] text-[#23ace3] hover:bg-[#23ace3]/20 cursor-pointer"
+                onClick={async () => {
+                  storage.resetDocumentRequests()
+                  await loadDocs()
+                }}
+              >
+                <RotateCcw className="h-3 w-3 mr-1" /> Reset Demo Requests
+              </Button>
+              <Badge variant="outline" className="text-[10px] font-mono border-[#23ace3]/30 text-[#23ace3]">
+                NIST 2FA Standard
+              </Badge>
+            </div>
+          </div>
+
+          {docRequests.length === 0 ? (
+            <Card className="border border-dashed border-border/80 p-12 text-center bg-card/40 rounded-2xl">
+              <FileText className="h-10 w-10 text-[#23ace3] mx-auto mb-3" />
+              <h4 className="text-base font-bold text-foreground">No pending HR document signature requests</h4>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto mb-4">
+                All employee HR document applications have been verified and signed.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[#23ace3]/40 text-[#23ace3] hover:bg-[#23ace3]/10 cursor-pointer"
+                onClick={async () => {
+                  storage.resetDocumentRequests()
+                  await loadDocs()
+                }}
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-2" />
+                Generate Demo Signature Request (DOC-2026-9041)
+              </Button>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {docRequests.map(doc => (
+                <DocumentCardView key={doc.id} doc={doc} isManagerView={true} onUpdate={() => loadDocs()} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tab 3: Human Appeals & Complaints Desk */}
         <TabsContent value="appeals" className="space-y-4">
           {appealedRequests.length === 0 ? (
             <Card className="border border-dashed border-border/80 p-12 text-center bg-card/40 rounded-2xl">
@@ -329,7 +359,7 @@ export const ManagerApprovals: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleHumanOverride(req.id, false)}
-                      className="text-xs text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                      className="text-xs text-rose-400 border-rose-500/30 hover:bg-rose-500/10 cursor-pointer"
                     >
                       <XCircle className="h-3.5 w-3.5 mr-1" />
                       Sustain Rejection
@@ -337,7 +367,7 @@ export const ManagerApprovals: React.FC = () => {
                     <Button
                       size="sm"
                       onClick={() => handleHumanOverride(req.id, true)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-md"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-md cursor-pointer"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Human Manager Override & Approve
@@ -349,7 +379,7 @@ export const ManagerApprovals: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* Tab 3: Historical Archive */}
+        {/* Tab 4: Historical Archive */}
         <TabsContent value="history" className="space-y-4">
           <LeaveHistoryTable requests={processedRequests} showEmployeeName={true} />
         </TabsContent>

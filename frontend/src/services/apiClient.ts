@@ -72,6 +72,9 @@ class ApiClient {
       })
 
       if (response.status === 401) {
+        if (import.meta.env.VITE_USE_MOCK_SERVICES !== 'false') {
+          throw new ApiError(401, 'Backend API returned 401 in mock mode; falling back to local storage.')
+        }
         // Token expired or invalid
         sessionStorage.removeItem('kinetic_auth_session')
         sessionStorage.setItem('kinetic_logged_out', 'true')

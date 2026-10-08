@@ -9,7 +9,8 @@ import {
   MOCK_AUDIT_LOGS,
   MOCK_NOTIFICATIONS,
   MOCK_INTEGRATIONS,
-  MOCK_AI_USAGE
+  MOCK_AI_USAGE,
+  MOCK_DOCUMENT_REQUESTS
 } from '@/mock/data'
 import {
   Tenant,
@@ -23,7 +24,8 @@ import {
   AuditEvent,
   AppNotification,
   IntegrationStatusItem,
-  AIUsageMetrics
+  AIUsageMetrics,
+  HRDocumentRequest
 } from '@/types'
 
 class AppDataStore {
@@ -38,6 +40,7 @@ class AppDataStore {
   private notifications: AppNotification[] = []
   private integrations: IntegrationStatusItem[] = []
   private aiUsage: AIUsageMetrics = MOCK_AI_USAGE
+  private documentRequests: HRDocumentRequest[] = []
 
   constructor() {
     this.init()
@@ -58,6 +61,7 @@ class AppDataStore {
         this.auditLogs = parsed.auditLogs || MOCK_AUDIT_LOGS
         this.notifications = parsed.notifications || MOCK_NOTIFICATIONS
         this.integrations = parsed.integrations || MOCK_INTEGRATIONS
+        this.documentRequests = (parsed.documentRequests && parsed.documentRequests.length > 0) ? parsed.documentRequests : MOCK_DOCUMENT_REQUESTS
         this.aiUsage = parsed.aiUsage || MOCK_AI_USAGE
 
         // Merge any new default mock users (e.g. separate employee accounts)
@@ -78,6 +82,12 @@ class AppDataStore {
             this.payslips.push(mp)
           }
         })
+        // Merge missing document requests
+        MOCK_DOCUMENT_REQUESTS.forEach(md => {
+          if (!this.documentRequests.some(d => d.id === md.id)) {
+            this.documentRequests.push(md)
+          }
+        })
         this.save()
         return
       } catch (e) {
@@ -96,6 +106,7 @@ class AppDataStore {
     this.auditLogs = [...MOCK_AUDIT_LOGS]
     this.notifications = [...MOCK_NOTIFICATIONS]
     this.integrations = [...MOCK_INTEGRATIONS]
+    this.documentRequests = [...MOCK_DOCUMENT_REQUESTS]
     this.aiUsage = { ...MOCK_AI_USAGE }
     this.save()
   }
@@ -436,6 +447,78 @@ class AppDataStore {
     this.aiUsage.ragSearchesCount += ragSearches
     this.save()
   }
+
+  // Document Requests
+  getDocumentRequests(): HRDocumentRequest[] {
+    if (!this.documentRequests || this.documentRequests.length === 0) {
+      this.documentRequests = JSON.parse(JSON.stringify(MOCK_DOCUMENT_REQUESTS))
+      this.save()
+    }
+    return this.documentRequests
+  }
+
+  resetDocumentRequests(): HRDocumentRequest[] {
+    this.documentRequests = JSON.parse(JSON.stringify(MOCK_DOCUMENT_REQUESTS))
+    this.save()
+    return this.documentRequests
+  }
+
+  createDocumentRequest(documentType: string, purpose: string): HRDocumentRequest {
+    const nowIso = new Date().toISOString()
+    const randomRef = Math.floor(1000 + Math.random() * 9000)
+    const newDoc: HRDocumentRequest = {
+      id: `doc-req-${Date.now()}`,
+      tenantId: 'tenant-kinetic',
+      employeeId: 'user-Alice',
+      employeeName: 'Alice Johnson',
+      employeeNumber: 'KT-8842',
+      department: 'Engineering',
+      jobTitle: 'Senior Frontend Engineer',
+      managerId: 'user-david',
+      managerName: 'David Wilson',
+      documentType,
+      purpose,
+      status: 'pending_manager_signature',
+      requiresManagerSignature: true,
+      submittedAt: nowIso,
+      referenceCode: `DOC-2026-${randomRef}`,
+      aiVerification: {
+        identityVerified: true,
+        verificationNotes: 'AI Identity Verified: Active Senior Frontend Engineer in Engineering Dept.',
+        policyCheckPassed: true,
+        generatedContent: `OFFICIAL ${documentType.toUpperCase()}\n\nDate: ${new Date().toLocaleDateString('en-US')}\nTo Whom It May Concern:\n\nThis letter confirms that Alice Johnson (KT-8842) is employed full-time as Senior Frontend Engineer.\n\nPurpose: ${purpose}\n\nIssued under corporate compliance reference #DOC-2026-${randomRef}.\nKinetic HR Cloud Administration.`,
+        verifiedAt: nowIso,
+      },
+    }
+    if (!this.documentRequests) this.documentRequests = []
+    this.documentRequests.unshift(newDoc)
+    this.save()
+    return newDoc
+  }
+
+  verify2faAndSignDocument(id: string, otpCode: string): HRDocumentRequest {
+    if (!this.documentRequests) this.documentRequests = []
+    const doc = this.documentRequests.find((d: HRDocumentRequest) => d.id === id)
+    const nowIso = new Date().toISOString()
+    if (doc) {
+      doc.status = 'approved_and_signed'
+      doc.issuedAt = nowIso
+      doc.managerSignatureDetails = {
+        signedBy: 'David Wilson',
+        signedById: 'user-david',
+        signedAt: nowIso,
+        mobile2faVerified: true,
+        phoneNumberMasked: '+1 (555) ***-8901',
+        signatureHash: `SIG-2FA-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`,
+      }
+      this.save()
+      return doc
+    }
+    throw new Error('Document request not found')
+  }
 }
 
 export const appDataStore = new AppDataStore()
+export const storage = appDataStore
+
+

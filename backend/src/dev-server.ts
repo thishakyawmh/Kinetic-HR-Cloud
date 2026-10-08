@@ -38,6 +38,12 @@ import {
   getAdminAuditLogs,
   getAdminIntegrations,
 } from './functions/admin'
+import {
+  createDocumentRequest,
+  getDocumentRequests,
+  verify2faAndSignDocument,
+  sendDocumentSoftcopy,
+} from './functions/documents'
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { isCosmosConfigured, getCosmosDatabase } from './config/cosmos'
 
@@ -133,6 +139,12 @@ addRoute('POST', '/api/policies', createPolicy)
 addRoute('GET', '/api/admin/stats', getAdminDashboardStats)
 addRoute('GET', '/api/admin/audit-logs', getAdminAuditLogs)
 addRoute('GET', '/api/admin/integrations', getAdminIntegrations)
+
+// HR Documents
+addRoute('POST', '/api/documents/request', createDocumentRequest)
+addRoute('GET', '/api/documents', getDocumentRequests)
+addRoute('POST', '/api/documents/{id}/verify-2fa-sign', verify2faAndSignDocument)
+addRoute('POST', '/api/documents/{id}/send-softcopy', sendDocumentSoftcopy)
 
 
 const server = http.createServer(async (req, res) => {
