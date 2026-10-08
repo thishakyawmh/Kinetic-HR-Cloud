@@ -424,6 +424,11 @@ class AppDataStore {
   getNotifications(userId: string): AppNotification[] {
     return this.notifications.filter(n => n.userId === userId)
   }
+  addNotification(notif: AppNotification) {
+    if (!this.notifications) this.notifications = []
+    this.notifications.unshift(notif)
+    this.save()
+  }
   markNotificationRead(id: string) {
     const n = this.notifications.find(item => item.id === id)
     if (n) {

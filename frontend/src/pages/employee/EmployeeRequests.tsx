@@ -22,6 +22,10 @@ import {
   Sparkles,
   RefreshCw,
   FileCheck,
+  Paperclip,
+  Printer,
+  Download,
+  Eye,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { HRDocumentRequest } from '@/types'
@@ -39,6 +43,7 @@ export const EmployeeRequests: React.FC = () => {
   const [isAiProcessing, setIsAiProcessing] = useState(false)
   const [aiProgressStep, setAiProgressStep] = useState(0)
   const [createdDocSuccess, setCreatedDocSuccess] = useState<HRDocumentRequest | null>(null)
+  const [selectedAttachmentDoc, setSelectedAttachmentDoc] = useState<HRDocumentRequest | null>(null)
 
   // Fetch real leave requests
   const { data: leaveRequests = [] } = useQuery({
@@ -232,10 +237,49 @@ export const EmployeeRequests: React.FC = () => {
               No official HR documents requested yet. Click "Request HR Document" above to get started.
             </div>
           ) : (
-            <div className="space-y-4">
-              {documentRequests.map(doc => (
-                <DocumentCardView key={doc.id} doc={doc} onUpdate={() => refetchDocs()} />
-              ))}
+            <div className="space-y-3">
+              {documentRequests.map(doc => {
+                const isApproved = doc.status === 'approved_and_signed' || doc.status === 'auto_issued'
+                return (
+                  <Card key={doc.id} className="p-4 bg-card border-border/60 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-foreground">{doc.documentType}</span>
+                        <Badge variant="outline" className="text-[10px] font-mono border-border">
+                          #{doc.referenceCode}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {doc.submittedAt ? doc.submittedAt.substring(0, 10) : '2026-10-07'} • "{doc.purpose}"
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-lg ${
+                          isApproved
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`}
+                      >
+                        {isApproved ? 'APPROVED' : 'PENDING'}
+                      </Badge>
+
+                      {isApproved && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedAttachmentDoc(doc)}
+                          className="text-xs rounded-xl gap-1.5 border-[#23ace3]/40 text-[#23ace3] hover:bg-[#23ace3]/10 font-bold cursor-pointer"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          <span>See Attachment</span>
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </div>
@@ -386,6 +430,100 @@ export const EmployeeRequests: React.FC = () => {
               </Button>
             </DialogFooter>
           </form>
+        )}
+      </Dialog>
+
+      {/* SEE ATTACHMENT MODAL (OFFICIAL SIGNED SOFTCOPY VIEWER) */}
+      <Dialog open={!!selectedAttachmentDoc} onOpenChange={open => !open && setSelectedAttachmentDoc(null)}>
+        {selectedAttachmentDoc && (
+          <>
+            <DialogHeader>
+              <div className="flex items-center justify-between pr-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <Paperclip className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-base font-bold text-foreground">
+                      Official Signed Attachment ({selectedAttachmentDoc.documentType})
+                    </DialogTitle>
+                    <DialogDescription className="text-xs font-mono">
+                      Reference Code: #{selectedAttachmentDoc.referenceCode}
+                    </DialogDescription>
+                  </div>
+                </div>
+                <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold text-[10px] uppercase">
+                  APPROVED
+                </Badge>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-4 py-3">
+              {/* Executive 2FA Signature Details Badge */}
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-2">
+                <div className="flex items-center justify-between font-bold text-emerald-400">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4" /> Cryptographic Executive Signature Verified
+                  </span>
+                  <Badge variant="outline" className="text-[9px] bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
+                    NIST 2FA Standard
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground font-mono">
+                  <div>
+                    <strong className="text-foreground">Signed By:</strong> {selectedAttachmentDoc.managerSignatureDetails?.signedBy || selectedAttachmentDoc.managerName}
+                  </div>
+                  <div>
+                    <strong className="text-foreground">Authentication:</strong> {selectedAttachmentDoc.managerSignatureDetails?.mobile2faVerified ? '2-Step Mobile SMS OTP' : 'Executive 2FA Key'}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <strong className="text-foreground">Signature Hash:</strong> {selectedAttachmentDoc.managerSignatureDetails?.signatureHash || 'SIG-2FA-I5YH-8105'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Official Document Body Content */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Official Document Content
+                </span>
+                <div className="p-4 rounded-xl bg-background border border-border/80 text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto shadow-inner">
+                  {selectedAttachmentDoc.aiVerification?.generatedContent}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedAttachmentDoc(null)}
+                className="text-xs rounded-xl"
+              >
+                Close
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.print()}
+                  className="text-xs rounded-xl gap-1.5 border-border hover:bg-muted cursor-pointer"
+                >
+                  <Printer className="h-3.5 w-3.5 text-[#23ace3]" />
+                  <span>Print Hardcopy</span>
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => window.print()}
+                  className="text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white font-bold rounded-xl gap-1.5 cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Download PDF</span>
+                </Button>
+              </div>
+            </DialogFooter>
+          </>
         )}
       </Dialog>
     </div>

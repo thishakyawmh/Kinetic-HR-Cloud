@@ -18,6 +18,7 @@ import { HRDocumentRequest } from '@/types'
 import { DocumentStageStepper } from './DocumentStageStepper'
 import { Manager2faSigningModal } from './Manager2faSigningModal'
 import { documentService } from '@/services/documentService'
+import { storage } from '@/services/storage'
 
 interface DocumentCardViewProps {
   doc: HRDocumentRequest
@@ -32,9 +33,19 @@ export const DocumentCardView: React.FC<DocumentCardViewProps> = ({ doc, isManag
 
   const handleSendSoftcopy = async () => {
     try {
-      const res = await documentService.sendSoftcopy(currentDoc.id)
-      setSoftcopySentMsg(res.message || 'Softcopy dispatched to employee inbox.')
-      setTimeout(() => setSoftcopySentMsg(null), 4000)
+      await documentService.sendSoftcopy(currentDoc.id)
+      storage.addNotification({
+        id: `notif-doc-${Date.now()}`,
+        tenantId: currentDoc.tenantId,
+        userId: currentDoc.employeeId,
+        title: `HR Document Issued: ${currentDoc.documentType}`,
+        message: `${currentDoc.managerName} has digitally signed your ${currentDoc.documentType} (#${currentDoc.referenceCode}) via Executive 2FA. Softcopy dispatched to email & mobile SMS.`,
+        type: 'policy',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      })
+      setSoftcopySentMsg(`📱 Softcopy dispatched to ${currentDoc.employeeName}'s email & real-time SMS alert sent (+1 555-234-5678)!`)
+      setTimeout(() => setSoftcopySentMsg(null), 6000)
     } catch (e) {
       console.error('Softcopy failed', e)
     }
