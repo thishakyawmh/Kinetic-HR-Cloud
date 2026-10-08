@@ -18,6 +18,15 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     )
   }
 
+  if (s === 'appealed' || s === 'complaint') {
+    return (
+      <Badge className="gap-1 font-medium text-xs bg-amber-500/20 text-amber-400 border border-amber-500/40">
+        <AlertCircle className="h-3 w-3" />
+        Appealed to Manager
+      </Badge>
+    )
+  }
+
   if (s === 'pending' || s === 'processing' || s === 'syncing') {
     return (
       <Badge variant="warning" className="gap-1 font-medium text-xs">

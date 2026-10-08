@@ -34,7 +34,7 @@ interface HRRequestItem {
   type: string
   details: string
   dateSubmitted: string
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'appealed' | string
   reviewer: string
   riskLevel: 'Low Risk' | 'Medium Risk' | 'High Risk'
 }

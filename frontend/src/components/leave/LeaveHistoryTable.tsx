@@ -3,7 +3,8 @@ import { LeaveRequest } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { Calendar, Eye, Trash2 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Calendar, Eye, Trash2, AlertCircle, ShieldAlert, Send } from 'lucide-react'
 import {
   Dialog,
   DialogHeader,
@@ -11,12 +12,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { leaveService } from '@/services/leaveService'
 
 interface LeaveHistoryTableProps {
   requests: LeaveRequest[]
   onCancelRequest?: (id: string) => void
   onDeleteRequest?: (id: string) => void
   showEmployeeName?: boolean
+  onRefresh?: () => void
 }
 
 export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
@@ -24,9 +27,26 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
   onCancelRequest,
   onDeleteRequest,
   showEmployeeName = false,
+  onRefresh,
 }) => {
   const handleDelete = onDeleteRequest || onCancelRequest
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null)
+  const [complaintModalReq, setComplaintModalReq] = useState<LeaveRequest | null>(null)
+  const [complaintText, setComplaintText] = useState('')
+  const [isSubmittingComplaint, setIsSubmittingComplaint] = useState(false)
+
+  const handleSubmitComplaint = async () => {
+    if (!complaintModalReq || !complaintText.trim()) return
+    setIsSubmittingComplaint(true)
+    try {
+      await leaveService.submitComplaint(complaintModalReq.id, complaintText)
+      setComplaintModalReq(null)
+      setComplaintText('')
+      if (onRefresh) onRefresh()
+    } finally {
+      setIsSubmittingComplaint(false)
+    }
+  }
 
   if (requests.length === 0) {
     return (
@@ -97,6 +117,23 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
                       <Eye className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>View</span>
                     </Button>
+
+                    {/* If rejected or deferred, offer Complain / Appeal to Human Manager */}
+                    {req.status === 'rejected' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setComplaintModalReq(req)
+                          setComplaintText('')
+                        }}
+                        className="h-7 px-2 text-[11px] font-semibold text-amber-400 hover:bg-amber-500/10 border-amber-500/40 rounded-lg cursor-pointer gap-1"
+                        title="Appeal directly to Human Manager (Bypasses AI)"
+                      >
+                        <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
+                        <span>Appeal to Manager</span>
+                      </Button>
+                    )}
 
                     {req.status === 'pending' && handleDelete && (
                       <Button
@@ -206,7 +243,34 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
                   )}
                 </div>
               )}
+
+              {/* Complaint Note if filed */}
+              {selectedRequest.complaintNote && (
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-1">
+                  <span className="font-bold text-amber-400 block flex items-center gap-1">
+                    <ShieldAlert className="h-3.5 w-3.5" /> Human Manager Appeal Submitted
+                  </span>
+                  <p className="text-foreground italic">"{selectedRequest.complaintNote}"</p>
+                </div>
+              )}
             </div>
+
+            {selectedRequest.status === 'rejected' && (
+              <DialogFooter className="flex items-center justify-between w-full pt-3 mt-4 border-t border-border/60">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setComplaintModalReq(selectedRequest)
+                    setSelectedRequest(null)
+                  }}
+                  className="h-8 text-xs text-amber-400 border-amber-500/40 hover:bg-amber-500/10 cursor-pointer"
+                >
+                  <ShieldAlert className="h-3.5 w-3.5 mr-1.5" />
+                  Complain / Appeal to Manager
+                </Button>
+              </DialogFooter>
+            )}
 
             {selectedRequest.status === 'pending' && handleDelete && (
               <DialogFooter className="flex items-center justify-start w-full pt-3 mt-4 border-t border-border/60">
@@ -224,6 +288,65 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
                 </Button>
               </DialogFooter>
             )}
+          </div>
+        )}
+      </Dialog>
+
+      {/* Employee Dispute / Appeal Modal (Bypasses AI) */}
+      <Dialog open={!!complaintModalReq} onOpenChange={open => !open && setComplaintModalReq(null)}>
+        {complaintModalReq && (
+          <div>
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <ShieldAlert className="h-5 w-5 text-amber-400" />
+                <DialogTitle className="text-base font-bold text-foreground">
+                  Appeal Leave Rejection to Human Manager
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-xs text-muted-foreground">
+                This complaint will <strong>bypass AI arbitration</strong> and go directly to your Human HR/Manager for manual review & override.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 my-4">
+              <div className="p-3 bg-muted/30 rounded-xl border border-border text-xs space-y-1">
+                <div className="text-muted-foreground">Disputed Request:</div>
+                <div className="font-bold text-foreground">
+                  {complaintModalReq.leaveTypeName} ({complaintModalReq.startDate})
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Why are you appealing this decision? (Explain your circumstance to the Manager):
+                </label>
+                <Textarea
+                  value={complaintText}
+                  onChange={e => setComplaintText(e.target.value)}
+                  placeholder="E.g., I have critical family circumstances that require my presence on this date. AI rejected me due to quota, but I request a manual human manager override."
+                  className="text-xs min-h-[100px]"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setComplaintModalReq(null)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitComplaint}
+                disabled={isSubmittingComplaint || !complaintText.trim()}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5"
+              >
+                <Send className="h-3.5 w-3.5" />
+                {isSubmittingComplaint ? 'Escalating...' : 'Submit Appeal to Manager'}
+              </Button>
+            </DialogFooter>
           </div>
         )}
       </Dialog>

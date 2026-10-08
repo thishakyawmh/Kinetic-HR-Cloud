@@ -17,6 +17,7 @@ import {
   LeaveType,
   LeaveBalance,
   LeaveRequest,
+  LeaveStatus,
   Payslip,
   PolicyDocument,
   AuditEvent,
@@ -247,7 +248,7 @@ class AppDataStore {
 
   updateLeaveRequestStatus(
     id: string,
-    status: 'approved' | 'rejected' | 'cancelled',
+    status: LeaveStatus,
     reviewerName: string,
     comment?: string
   ): LeaveRequest | undefined {
@@ -297,11 +298,58 @@ class AppDataStore {
         tenantId: current.tenantId,
         userId: current.employeeId,
         title: `Leave Request ${status === 'approved' ? 'Approved' : 'Declined'}`,
-        message: `Your ${current.leaveTypeName} for ${current.startDate} has been ${status}.`,
+        message: `Your ${current.leaveTypeName} for ${current.startDate} has been ${status}. ${comment ? 'Note: ' + comment : ''}`,
         type: 'leave',
         isRead: false,
         createdAt: new Date().toISOString(),
         link: '/employee/leave',
+      })
+
+      this.save()
+      return updated
+    }
+    return undefined
+  }
+
+  submitLeaveComplaint(id: string, complaintNote: string): LeaveRequest | undefined {
+    const idx = this.leaveRequests.findIndex(r => r.id === id)
+    if (idx !== -1) {
+      const current = this.leaveRequests[idx]
+      const updated: LeaveRequest = {
+        ...current,
+        status: 'appealed',
+        complaintNote,
+        complaintStatus: 'pending_human_review',
+        complaintSubmittedAt: new Date().toISOString(),
+      }
+      this.leaveRequests[idx] = updated
+
+      // Notify manager directly (Bypasses AI)
+      this.notifications.unshift({
+        id: `notif-appeal-${Date.now()}`,
+        tenantId: current.tenantId,
+        userId: 'user-david',
+        title: `🚨 Employee Appeal Filed: ${current.employeeName}`,
+        message: `${current.employeeName} appealed AI/System rejection for ${current.startDate}. Reason: "${complaintNote}". Requires Human Manager Review!`,
+        type: 'leave',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        link: '/manager/approvals',
+      })
+
+      this.addAuditEvent({
+        id: `aud-appeal-${Date.now()}`,
+        tenantId: current.tenantId,
+        tenantName: 'Kinetic Technologies',
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        userId: current.employeeId,
+        userName: current.employeeName,
+        userRole: 'employee',
+        action: 'Employee Dispute / Human Appeal Filed',
+        resource: `Leave #${current.id} (${current.employeeName})`,
+        result: 'Pending Approval',
+        riskLevel: 'High',
+        details: `Employee appealed AI/System decision directly to Human Manager: ${complaintNote}`,
       })
 
       this.save()

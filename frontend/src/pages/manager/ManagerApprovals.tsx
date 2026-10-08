@@ -36,8 +36,9 @@ export const ManagerApprovals: React.FC = () => {
     enabled: !!tenant?.id,
   })
 
+  const appealedRequests = allRequests.filter(r => r.status === 'appealed' || r.complaintNote)
   const pendingRequests = allRequests.filter(r => r.status === 'pending')
-  const processedRequests = allRequests.filter(r => r.status !== 'pending')
+  const processedRequests = allRequests.filter(r => r.status !== 'pending' && r.status !== 'appealed')
 
   // Detect if we have the 8-request cluster for Oct 25, 2026
   const oct25ClashRequests = pendingRequests.filter(
@@ -58,11 +59,20 @@ export const ManagerApprovals: React.FC = () => {
     }
   }
 
+  const handleHumanOverride = async (reqId: string, approved: boolean) => {
+    if (approved) {
+      await approvalService.approveRequest(reqId, 'David Wilson (Human Manager)', 'Human Manager Override: Appeal approved after manual review.')
+    } else {
+      await approvalService.rejectRequest(reqId, 'David Wilson (Human Manager)', 'Human Manager Sustained Rejection: Department capacity is full.')
+    }
+    await refetch()
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Manager Approval Center"
-        subtitle="Autonomous AI Leave Approval & Department Staffing Optimization Engine."
+        subtitle="Autonomous AI Leave Approval & Human Appeal Escalation Desk."
       />
 
       {/* 🤖 Autonomous AI Leave Approval & Fairness Intelligence Panel */}
@@ -124,19 +134,11 @@ export const ManagerApprovals: React.FC = () => {
               </div>
 
               <div className="bg-card/80 border border-border p-3.5 rounded-xl space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold uppercase block">AI Execution Status</span>
-                <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  {aiExecutedSuccess || oct25ClashRequests.length === 0 ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="h-4 w-4" /> Fully Autonomous Executed
-                    </span>
-                  ) : (
-                    <span className="text-amber-400 flex items-center gap-1">
-                      <AlertTriangle className="h-4 w-4" /> Ready for AI Batch Action
-                    </span>
-                  )}
+                <span className="text-[10px] text-muted-foreground font-semibold uppercase block">Human Appeal Escalations</span>
+                <span className="text-sm font-bold text-amber-400 flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4" /> {appealedRequests.length} Pending Appeal
                 </span>
-                <span className="text-[11px] text-muted-foreground block">Audit logs re-calculated</span>
+                <span className="text-[11px] text-muted-foreground block">Bypasses AI for Human Sign-off</span>
               </div>
             </div>
 
@@ -145,12 +147,11 @@ export const ManagerApprovals: React.FC = () => {
               <ShieldCheck className="h-5 w-5 text-sky-400 shrink-0 mt-0.5" />
               <div className="text-xs space-y-1 text-foreground">
                 <span className="font-bold text-sky-300 block">
-                  💡 How the Kinetic AI Fairness Engine Solves the Overlapping Leave Dilemma:
+                  💡 Kinetic Autonomous AI & Human Escalation Dual-Layer:
                 </span>
                 <p className="text-muted-foreground">
-                  When 8 employees request leave on the same date with a 5-person company limit, a traditional First-Come-First-Served (FCFS) system blindly approves applicants #1-#5 and rejects applicant #8. 
-                  <strong className="text-foreground"> Kinetic AI inspects historical leave logs</strong>. Employee #8 (Liam O'Connor) has taken <strong>0 prior leaves this year</strong>, whereas Employees #1 & #2 take leaves frequently (14 and 11 prior leaves). 
-                  The AI automatically elevates Employee #8 into the Top 5 Approved list based on equity and attendance merit!
+                  The AI Agent analyzes historical audit logs and auto-approves the top 5 most deserving applicants. If an employee feels unfairly rejected, they can click <strong>"Appeal to Manager"</strong>. 
+                  <strong className="text-amber-400"> Appeals bypass AI entirely</strong> and are routed to your Human Manager Desk for direct manual review & override.
                 </p>
               </div>
             </div>
@@ -254,7 +255,10 @@ export const ManagerApprovals: React.FC = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="pending">
-            Pending Approvals Queue ({pendingRequests.length})
+            Pending Action Queue ({pendingRequests.length})
+          </TabsTrigger>
+          <TabsTrigger value="appeals" className="relative">
+            🚨 Human Manager Appeals ({appealedRequests.length})
           </TabsTrigger>
           <TabsTrigger value="history">
             Processed History & Audit Archive ({processedRequests.length})
@@ -280,7 +284,72 @@ export const ManagerApprovals: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* Tab 2: Historical Archive */}
+        {/* Tab 2: Human Appeals & Complaints Desk (Bypasses AI) */}
+        <TabsContent value="appeals" className="space-y-4">
+          {appealedRequests.length === 0 ? (
+            <Card className="border border-dashed border-border/80 p-12 text-center bg-card/40 rounded-2xl">
+              <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-3" />
+              <h4 className="text-base font-bold text-foreground">No active employee complaints or appeals</h4>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                All employee disputes have been reviewed and resolved by Human Management.
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {appealedRequests.map(req => (
+                <Card key={req.id} className="border-2 border-amber-500/40 bg-card p-5 space-y-4 rounded-2xl shadow-md">
+                  <div className="flex items-start justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 font-bold text-amber-400 border border-amber-500/40">
+                        {req.employeeName.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-base font-bold text-foreground">{req.employeeName}</h4>
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px]">
+                            🚨 Direct Human Manager Appeal
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {req.department} • Requested Date: <strong>{req.startDate}</strong> ({req.requestedDays} day)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5 text-xs text-foreground">
+                    <span className="font-bold text-amber-300 block">
+                      💬 Employee Complaint Note (Bypassed AI):
+                    </span>
+                    <p className="italic text-foreground/90">"{req.complaintNote || req.reason}"</p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2 border-t border-border">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleHumanOverride(req.id, false)}
+                      className="text-xs text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                    >
+                      <XCircle className="h-3.5 w-3.5 mr-1" />
+                      Sustain Rejection
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleHumanOverride(req.id, true)}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-md"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Human Manager Override & Approve
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tab 3: Historical Archive */}
         <TabsContent value="history" className="space-y-4">
           <LeaveHistoryTable requests={processedRequests} showEmployeeName={true} />
         </TabsContent>

@@ -77,7 +77,7 @@ export interface AIAnalysisSummary {
   requiresHumanApproval: boolean
 }
 
-export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
+export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'appealed'
 
 export interface LeaveRequest {
   id: string
@@ -100,6 +100,9 @@ export interface LeaveRequest {
   isEmergency: boolean
   priorLeavesCount?: number
   submissionOrder?: number
+  complaintNote?: string
+  complaintStatus?: 'pending_human_review' | 'resolved_override' | 'sustained'
+  complaintSubmittedAt?: string
   aiAnalysis?: AIAnalysisSummary
 }
 

@@ -74,4 +74,12 @@ export const leaveService = {
     await new Promise(r => setTimeout(r, 150))
     return appDataStore.deleteLeaveRequest(requestId)
   },
+
+  async submitComplaint(requestId: string, complaintNote: string): Promise<LeaveRequest | undefined> {
+    if (!useMock()) {
+      return apiClient.post<LeaveRequest>(`/leaves/${requestId}/complaint`, { complaintNote })
+    }
+    await new Promise(r => setTimeout(r, 200))
+    return appDataStore.submitLeaveComplaint(requestId, complaintNote)
+  },
 }
