@@ -556,10 +556,10 @@ export function generateProductionSeedData(): GeneratedSeedData {
       location: 'Colombo Fort Head Office Branch',
     },
     {
-      id: 'user-dinesh',
+      id: 'user-dinuka',
       tenantId: 'tenant-sampath',
-      name: 'Dinesh Weerasinghe',
-      email: 'dinesh.weerasinghe@sampath.lk',
+      name: 'Dinuka Perera',
+      email: 'dinuka.perera@sampath.lk',
       role: 'employee',
       department: 'Retail Banking & Branches',
       jobTitle: 'Senior Credit Officer', // SAME ROLE AS KASUN

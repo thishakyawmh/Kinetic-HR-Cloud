@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leaveService } from '@/services/leaveService'
@@ -93,13 +94,18 @@ const DEFAULT_PLANS: LeavePlanEntry[] = []
 
 export const EmployeeLeavePlans: React.FC = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [selectedDaysCount, setSelectedDaysCount] = useState<number>(2)
+  const [selectedDaysCount, setSelectedDaysCount] = useState<number>(1)
   const [aiWarning, setAiWarning] = useState<string | null>(null)
   const [syncStatus, setSyncStatus] = useState<string>('REALTIME_SYNCED')
   const [selectedPlanDetails, setSelectedPlanDetails] = useState<LeavePlanEntry | null>(null)
   const [cancellingPlan, setCancellingPlan] = useState<LeavePlanEntry | null>(null)
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null)
+  const [conflictModalData, setConflictModalData] = useState<{
+    day: number
+    coverageDuty: LeavePlanEntry
+  } | null>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
 
   const currentRole = user?.jobTitle || 'Senior Frontend Engineer'
@@ -119,17 +125,20 @@ export const EmployeeLeavePlans: React.FC = () => {
 
   const isPlanOwner = (p: LeavePlanEntry) => {
     if (!user) return true
-    const uName = user.name?.toLowerCase() || ''
-    const pName = p.employeeName?.toLowerCase() || ''
+    const uName = (user.name || '').toLowerCase()
+    const pName = (p.employeeName || '').toLowerCase()
+    const uFirstName = uName.split(' ')[0]
+    const pFirstName = pName.split(' ')[0]
     const uId = user.id
-    return (
-      p.employeeId === uId ||
-      (uName && pName && (pName.includes(uName) || uName.includes(pName))) ||
-      (uName.includes('kasun') && pName.includes('kasun')) ||
-      (uId === 'user-kasun' && p.employeeId === 'user-kasun') ||
-      (uName.includes('alice') && pName.includes('alice')) ||
-      (uId === 'user-Alice' && p.employeeId === 'user-Alice')
-    )
+
+    if (p.employeeId === uId) return true
+    if (uFirstName && pFirstName && uFirstName === pFirstName && uFirstName.length > 2) return true
+    if (uName.includes('dinuka') && pName.includes('dinuka')) return true
+    if (uName.includes('kasun') && pName.includes('kasun')) return true
+    if (uId === 'user-dinuka' || uId === 'user-sb-emp-1007') {
+      if (p.employeeId === 'user-dinuka' || p.employeeId === 'user-sb-emp-1007' || pName.includes('dinuka')) return true
+    }
+    return false
   }
 
   const [selectedLeaveType, setSelectedLeaveType] = useState<'Annual Leave' | 'Casual Leave'>('Annual Leave')
@@ -206,13 +215,20 @@ export const EmployeeLeavePlans: React.FC = () => {
   // Days in October 2026
   const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1)
 
-  // Get plans for a specific day (Deduplicated and excluding cancelled)
+  // Get plans for a specific day (Deduplicated per employee so Dinuka/Kasun appears ONLY ONCE per day)
   const getPlansForDay = (day: number) => {
     const dateStr = `2026-10-${day < 10 ? '0' + day : day}`
     const activeItems = plans.filter(p => p.status !== 'cancelled' && p.startDate <= dateStr && p.endDate >= dateStr)
     const uniqueMap = new Map<string, LeavePlanEntry>()
     activeItems.forEach(p => {
-      const key = p.id || `${p.employeeId}-${p.startDate}-${p.endDate}`
+      const empName = (p.employeeName || '').toLowerCase()
+      const key = empName.includes('dinuka')
+        ? 'dinuka'
+        : empName.includes('kasun')
+        ? 'kasun'
+        : empName.includes('dinesh')
+        ? 'dinesh'
+        : (p.employeeId || p.id)
       if (!uniqueMap.has(key)) {
         uniqueMap.set(key, p)
       }
@@ -225,6 +241,26 @@ export const EmployeeLeavePlans: React.FC = () => {
     const myPlan = dayPlans.find(p => isPlanOwner(p))
     if (myPlan) {
       setCancellingPlan(myPlan)
+      return
+    }
+
+    // Check if logged-in user (Dinuka) is assigned to cover someone else on this date
+    const uName = (user?.name || '').toLowerCase()
+    const uId = user?.id || ''
+    const coverageDuty = dayPlans.find(p => {
+      const bId = p.assignedBackupId || ''
+      const bName = (p.assignedBackupName || '').toLowerCase()
+      return (
+        bId === uId ||
+        bId === 'user-dinuka' ||
+        bId === 'user-sb-emp-1007' ||
+        (uName && bName && (bName.includes(uName) || uName.includes(bName))) ||
+        (bName.includes('dinuka') && (uName.includes('dinuka') || uId.includes('dinuka') || uId.includes('1007') || !uId))
+      )
+    })
+
+    if (coverageDuty) {
+      setConflictModalData({ day, coverageDuty })
     } else {
       handleMarkAnnualLeave(day)
     }
@@ -304,7 +340,7 @@ export const EmployeeLeavePlans: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Columns: Real-Time Interactive Team Calendar */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border border-border/60 bg-card p-6 rounded-3xl shadow-sm relative overflow-hidden">
+          <Card className="border border-border/60 bg-card p-6 rounded-3xl shadow-sm relative overflow-visible">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
@@ -387,11 +423,19 @@ export const EmployeeLeavePlans: React.FC = () => {
                   const isMyPlan = dayPlans.some(p => isPlanOwner(p))
                   const hasCasualAbsence = dayPlans.some(p => p.isCasualAbsence)
 
+                  // Smart tooltip position based on column index to prevent edge clipping
+                  const colIndex = (day + 3) % 7
+                  const tooltipPosClass = colIndex <= 1
+                    ? 'left-0 translate-x-0'
+                    : colIndex >= 5
+                    ? 'right-0 left-auto translate-x-0'
+                    : 'left-1/2 -translate-x-1/2'
+
                   return (
                     <div
                       key={day}
                       onClick={() => handleCellClick(day)}
-                      className={`h-24 p-2 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between ${
+                      className={`h-24 p-2 rounded-2xl border transition-all cursor-pointer relative group hover:z-40 flex flex-col justify-between ${
                         isMyPlan
                           ? 'border-sky-500/80 bg-sky-500/5 shadow-xs'
                           : hasCasualAbsence
@@ -414,8 +458,8 @@ export const EmployeeLeavePlans: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Render Leave Chips with Role Color Bar (Displayed ONCE per plan) */}
-                      <div className="space-y-1 my-1 overflow-hidden">
+                      {/* Render Leave Chips with Role Color Bar & Rich Hover Card Tooltip */}
+                      <div className="space-y-1 my-1 overflow-visible">
                         {dayPlans.map(dp => {
                           const roleCfg = ROLE_COLORS[dp.role || 'Senior Frontend Engineer'] || ROLE_COLORS['Senior Frontend Engineer']
                           const isCoverageNeeded = dp.status === 'Coverage Needed' || dp.assignedBackupName?.includes('Coverage Needed')
@@ -423,28 +467,56 @@ export const EmployeeLeavePlans: React.FC = () => {
                           const isCasual = dp.type?.toLowerCase().includes('casual') || dp.leaveTypeCode === 'casual' || dp.isCasualAbsence
 
                           return (
-                            <div
-                              key={dp.id}
-                              onClick={e => {
-                                e.stopPropagation()
-                                if (isPlanOwner(dp)) {
-                                  setCancellingPlan(dp)
-                                } else {
-                                  setSelectedPlanDetails(dp)
-                                }
-                              }}
-                              className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold truncate flex items-center justify-between border shadow-2xs cursor-pointer hover:scale-[1.02] transition-transform"
-                              style={{
-                                backgroundColor: isCoverageNeeded ? '#ef444420' : isReassigned ? '#a855f720' : isCasual ? '#f59e0b25' : `${roleCfg.color}15`,
-                                borderColor: isCoverageNeeded ? '#ef444460' : isReassigned ? '#a855f760' : isCasual ? '#f59e0b60' : `${roleCfg.color}40`,
-                                color: isCoverageNeeded ? '#f87171' : isReassigned ? '#c084fc' : isCasual ? '#fbbf24' : roleCfg.color,
-                              }}
-                              title={`${dp.employeeName} (${dp.type || 'Annual Leave'}) -> Backup: ${dp.assignedBackupName}`}
-                            >
-                              <span className="truncate">{dp.employeeName.split(' ')[0]}</span>
-                              <span className="text-[9px] opacity-80">
-                                {isCasual ? '⚡ Casual' : isCoverageNeeded ? '⚠️ Needed' : `➔ ${dp.assignedBackupName.split(' ')[0]}`}
-                              </span>
+                            <div key={dp.id} className="relative group/chip">
+                              <div
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  if (isPlanOwner(dp)) {
+                                    setCancellingPlan(dp)
+                                  } else {
+                                    setSelectedPlanDetails(dp)
+                                  }
+                                }}
+                                className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold truncate flex items-center justify-between border shadow-2xs cursor-pointer hover:scale-[1.02] transition-transform"
+                                style={{
+                                  backgroundColor: isCoverageNeeded ? '#ef444420' : isReassigned ? '#a855f720' : isCasual ? '#f59e0b25' : `${roleCfg.color}15`,
+                                  borderColor: isCoverageNeeded ? '#ef444460' : isReassigned ? '#a855f760' : isCasual ? '#f59e0b60' : `${roleCfg.color}40`,
+                                  color: isCoverageNeeded ? '#f87171' : isReassigned ? '#c084fc' : isCasual ? '#fbbf24' : roleCfg.color,
+                                }}
+                              >
+                                <span className="truncate">{dp.employeeName.split(' ')[0]}</span>
+                                <span className="text-[9px] opacity-80">
+                                  {isCasual ? '⚡ Casual' : isCoverageNeeded ? '⚠️ Needed' : `➔ ${dp.assignedBackupName.split(' ')[0]}`}
+                                </span>
+                              </div>
+
+                              {/* Rich Hover Card Tooltip with Smart Alignment */}
+                              <div className={`hidden group-hover/chip:flex flex-col gap-1.5 absolute bottom-full ${tooltipPosClass} mb-2 w-64 p-3 bg-slate-900/95 dark:bg-slate-900/95 backdrop-blur-md text-white border border-sky-500/40 rounded-2xl shadow-2xl z-50 text-xs pointer-events-none animate-in fade-in zoom-in-95 duration-150`}>
+                                <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                                  <span className="font-bold text-sky-300">{dp.employeeName}</span>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 font-semibold">
+                                    {dp.type || 'Annual Leave'}
+                                  </span>
+                                </div>
+                                <div className="space-y-1 text-[11px] text-slate-300">
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">Employee Role:</span>
+                                    <span className="font-semibold text-slate-200">{dp.role || 'Senior Credit Officer'}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">Period:</span>
+                                    <span className="font-semibold text-slate-200">{dp.startDate} to {dp.endDate} ({dp.days || 1} day)</span>
+                                  </div>
+                                  <div className="mt-1 pt-1 border-t border-white/10 flex items-center justify-between font-semibold">
+                                    <span className="text-slate-400">Assigned Backup:</span>
+                                    <span className="text-emerald-400">{dp.assignedBackupName}</span>
+                                  </div>
+                                  <div className="flex justify-between text-[10px]">
+                                    <span className="text-slate-400">Backup Role:</span>
+                                    <span className="text-slate-300 font-medium">{dp.assignedBackupRole || 'Senior Credit Officer'}</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           )
                         })}
@@ -737,6 +809,78 @@ export const EmployeeLeavePlans: React.FC = () => {
                 className="text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
               >
                 {cancelPlanMutation.isPending ? 'Cancelling Plan...' : 'Yes, Cancel Leave Plan & Refund Days'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* On-Call Duty Assignment Conflict Warning Modal Popup */}
+      {conflictModalData && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <Card className="max-w-md w-full bg-card border border-amber-500/50 rounded-[28px] shadow-2xl p-6 space-y-5 relative">
+            <button
+              onClick={() => setConflictModalData(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted/60 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
+                <AlertTriangle className="h-6 w-6 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">On-Call Duty Assignment Warning</h3>
+                <p className="text-xs text-amber-400 font-semibold">Coverage Assignment Conflict Detected</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/30 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Assigned Duty On Date:</span>
+                <span className="font-semibold text-foreground">2026-10-{conflictModalData.day < 10 ? '0' + conflictModalData.day : conflictModalData.day}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Colleague On Leave:</span>
+                <span className="font-semibold text-amber-300">{conflictModalData.coverageDuty.employeeName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Your Duty Assignment:</span>
+                <span className="font-semibold text-emerald-400">Assigned On-Call Backup Coverage</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              You are assigned to cover <strong>{conflictModalData.coverageDuty.employeeName}</strong> on this date. If your leave is approved, a replacement must be arranged by Kinetic AI Arbitration.
+            </p>
+
+            <div className="pt-2 flex items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConflictModalData(null)}
+                className="text-xs rounded-xl border-border/80 hover:bg-muted"
+              >
+                Cancel Applying Leave
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  const targetDay = conflictModalData.day
+                  setConflictModalData(null)
+                  handleMarkAnnualLeave(targetDay)
+                  navigate(
+                    '/employee/assistant?prompt=' +
+                      encodeURIComponent(
+                        `I am applying for leave on Oct ${targetDay}, 2026, but I am assigned to cover Kasun Perera. Please run Kinetic AI Priority Arbitration.`
+                      )
+                  )
+                }}
+                className="text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold cursor-pointer"
+              >
+                Apply & Trigger AI Arbitration
               </Button>
             </div>
           </Card>

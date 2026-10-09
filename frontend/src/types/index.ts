@@ -111,6 +111,7 @@ export interface LeaveRequest {
   complaintNote?: string
   complaintStatus?: 'pending_human_review' | 'resolved_override' | 'sustained'
   complaintSubmittedAt?: string
+  autoApproved?: boolean
   aiAnalysis?: AIAnalysisSummary
 }
 

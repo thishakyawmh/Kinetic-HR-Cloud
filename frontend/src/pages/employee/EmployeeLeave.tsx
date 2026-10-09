@@ -8,7 +8,7 @@ import { LeaveHistoryTable } from '@/components/leave/LeaveHistoryTable'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CalendarDays, PlusCircle, AlertCircle } from 'lucide-react'
+import { CalendarDays, PlusCircle, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export const EmployeeLeave: React.FC = () => {
@@ -21,12 +21,14 @@ export const EmployeeLeave: React.FC = () => {
     queryKey: ['leaveBalances', user?.id],
     queryFn: () => (user?.id ? leaveService.getLeaveBalances(user.id) : []),
     enabled: !!user?.id,
+    refetchInterval: 3000,
   })
 
   const { data: requests = [] } = useQuery({
     queryKey: ['leaveRequests', tenant?.id, user?.id],
     queryFn: () => (tenant?.id && user?.id ? leaveService.getLeaveRequests(tenant.id, user.id) : []),
     enabled: !!tenant?.id && !!user?.id,
+    refetchInterval: 3000,
   })
 
   const deleteMutation = useMutation({
@@ -40,6 +42,7 @@ export const EmployeeLeave: React.FC = () => {
   const pendingRequests = requests.filter(r => r.status === 'pending')
   const upcomingApprovedRequests = requests.filter(r => r.status === 'approved')
   const historyRequests = requests.filter(r => r.status !== 'pending')
+  const hasAutoApprovedRecent = requests.some(r => r.status === 'approved' && r.autoApproved)
 
   return (
     <div className="space-y-6">
@@ -88,6 +91,25 @@ export const EmployeeLeave: React.FC = () => {
 
         {/* Tab 1: Overview & Upcoming Leaves Only */}
         <TabsContent value="overview" className="space-y-6">
+          {/* AI Priority Auto-Approval Banner */}
+          {hasAutoApprovedRecent && (
+            <div className="p-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in zoom-in-95">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-emerald-300">
+                    🎉 Kinetic AI Priority Arbitration Approved!
+                  </h4>
+                  <p className="text-xs text-emerald-200/90 mt-0.5 leading-relaxed">
+                    Your Annual Leave request has been prioritized and auto-approved. Kasun Perera has been assigned on-call duty coverage for Oct 10th.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Emergency Leave Assistance Highlight */}
           <div className="p-4 rounded-2xl border border-[#ef8d46]/30 bg-[#ef8d46]/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">

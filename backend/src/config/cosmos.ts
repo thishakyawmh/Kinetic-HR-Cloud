@@ -163,7 +163,8 @@ function generateSeedDataset() {
     departments: data.DEPARTMENTS,
     users: data.USERS,
     leave_balances: data.LEAVE_BALANCES,
-    leaves: data.LEAVE_REQUESTS,
+    leaves: [],
+    leave_plans: [],
     attendance: data.ATTENDANCE_RECORDS,
     payslips: data.PAYSLIPS,
     policies: data.POLICIES,
@@ -511,6 +512,14 @@ function createMockContainer(name: string): Container {
       query: (querySpec: any) => ({
         fetchAll: async () => {
           let results = [...store]
+          const qStr = (querySpec?.query || '').toLowerCase()
+          if (qStr.includes('c.status != "cancelled"') || qStr.includes("c.status != 'cancelled'")) {
+            results = results.filter((item: any) => item.status !== 'cancelled')
+          }
+          if (qStr.includes('c.status = "cancelled"') || qStr.includes("c.status = 'cancelled'")) {
+            results = results.filter((item: any) => item.status === 'cancelled')
+          }
+
           if (querySpec && querySpec.parameters) {
             // Filter by tenantId
             const tenantParam = querySpec.parameters.find((p: any) => p.name === '@tenantId')
