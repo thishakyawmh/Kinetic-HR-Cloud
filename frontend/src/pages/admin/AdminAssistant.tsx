@@ -2,13 +2,11 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from 'react-router-dom'
 import { aiService } from '@/services/aiService'
-import { chatHistoryService, AIChatSession } from '@/services/chatHistoryService'
 import { AIMessage } from '@/types'
 import { AIMessageItem } from '@/components/ai/AIMessageItem'
 import { AIThinkingIndicator } from '@/components/ai/AIThinkingIndicator'
-import { AIChatHistoryDrawer } from '@/components/ai/AIChatHistoryDrawer'
 import { VoiceModal } from '@/components/ai/VoiceModal'
-import { Mic, ArrowUp, History, Plus, Sparkles } from 'lucide-react'
+import { Mic, ArrowUp } from 'lucide-react'
 
 export const AdminAssistant: React.FC = () => {
   const { user, tenant, refreshUser } = useAuth()
@@ -19,9 +17,6 @@ export const AdminAssistant: React.FC = () => {
   const [isThinking, setIsThinking] = useState(false)
   const [thinkingStep, setThinkingStep] = useState('')
   const [isVoiceOpen, setIsVoiceOpen] = useState(false)
-  const [sessions, setSessions] = useState<AIChatSession[]>([])
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Calculate dynamic greeting based on current local hour
@@ -40,53 +35,15 @@ export const AdminAssistant: React.FC = () => {
     scrollToBottom()
   }, [messages, isThinking, thinkingStep])
 
-  // Load initial sessions
-  useEffect(() => {
-    if (tenant?.id && user?.id) {
-      setSessions(chatHistoryService.getSessions(tenant.id, user.id))
-    }
-  }, [tenant?.id, user?.id])
-
-  const handleStartNewChat = () => {
-    setActiveSessionId(null)
-    setMessages([])
-    setInputText('')
-  }
-
-  const handleSelectSession = (session: AIChatSession) => {
-    setActiveSessionId(session.id)
-    setMessages(session.messages || [])
-  }
-
-  const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!tenant?.id || !user?.id) return
-    const updated = chatHistoryService.deleteSession(tenant.id, user.id, sessionId)
-    setSessions(updated)
-    if (activeSessionId === sessionId) {
-      handleStartNewChat()
-    }
-  }
-
   // Handle URL prompt parameters from sidebar recent links or new chat reset
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const isNew = params.get('new')
     if (isNew) {
-      handleStartNewChat()
+      setMessages([])
+      setInputText('')
       return
     }
-
-    const chatId = params.get('chatId')
-    if (chatId && tenant?.id && user?.id) {
-      const all = chatHistoryService.getSessions(tenant.id, user.id)
-      const found = all.find(s => s.id === chatId)
-      if (found) {
-        handleSelectSession(found)
-        return
-      }
-    }
-
     const prompt = params.get('prompt')
     if (prompt && prompt.trim()) {
       handleSendMessage(prompt)
@@ -124,18 +81,7 @@ export const AdminAssistant: React.FC = () => {
         }
       )
 
-      setMessages(prev => {
-        const next = [...prev, response]
-        if (tenant?.id && user?.id) {
-          const saved = chatHistoryService.saveSession(tenant.id, user.id, {
-            id: activeSessionId || undefined,
-            messages: next,
-          })
-          setActiveSessionId(saved.id)
-          setSessions(chatHistoryService.getSessions(tenant.id, user.id))
-        }
-        return next
-      })
+      setMessages(prev => [...prev, response])
     } catch (err) {
       console.error('Response error', err)
     } finally {
@@ -201,49 +147,6 @@ export const AdminAssistant: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] w-full max-w-4xl mx-auto font-sans justify-between">
-      {/* Top Header Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 shrink-0 bg-card/40 backdrop-blur-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#23ace3]/15 text-[#23ace3]">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-foreground">Kinetic AI Administrator Copilot</span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Azure OpenAI GPT-4o
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Chat History Button */}
-          <button
-            type="button"
-            onClick={() => setIsHistoryOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-border/60 bg-muted/40 hover:bg-muted text-foreground transition-all cursor-pointer shadow-2xs hover:border-[#23ace3]/50"
-            title="Open Chat History (Limit: 5 chats)"
-          >
-            <History className="h-3.5 w-3.5 text-[#23ace3]" />
-            <span>Chat History</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#23ace3]/15 text-[#23ace3] font-bold">
-              {sessions.length} / 5
-            </span>
-          </button>
-
-          {/* New Chat Button */}
-          <button
-            type="button"
-            onClick={handleStartNewChat}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#23ace3] text-white hover:bg-[#1b97ca] transition-all cursor-pointer shadow-2xs"
-            title="Start new conversation"
-          >
-            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-            <span>New Chat</span>
-          </button>
-        </div>
-      </div>
-
       {messages.length === 0 ? (
         /* Fresh Chat State: Middle Greeting + Middle Typing Section */
         <div className="flex-1 flex flex-col items-center justify-center px-4 w-full animate-in fade-in duration-300">
@@ -300,17 +203,6 @@ export const AdminAssistant: React.FC = () => {
         isOpen={isVoiceOpen}
         onClose={() => setIsVoiceOpen(false)}
         onTranscriptReady={handleVoiceTranscript}
-      />
-
-      {/* Slide-over Chat History Drawer */}
-      <AIChatHistoryDrawer
-        isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        onSelectSession={handleSelectSession}
-        onNewChat={handleStartNewChat}
-        onDeleteSession={handleDeleteSession}
       />
     </div>
   )

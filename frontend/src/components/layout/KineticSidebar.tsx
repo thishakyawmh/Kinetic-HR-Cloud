@@ -33,10 +33,8 @@ import {
   ChevronRight,
   Zap,
   User as UserIcon,
-  MessageSquare,
 } from 'lucide-react'
 import { PlanUpgradeModal } from '@/components/subscription/PlanUpgradeModal'
-import { chatHistoryService } from '@/services/chatHistoryService'
 
 interface KineticSidebarProps {
   isExpanded: boolean
@@ -122,8 +120,6 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
       navigate(`/employee/dashboard?new=${Date.now()}`)
     }
   }
-
-  const recentChats = user && tenant ? chatHistoryService.getSessions(tenant.id, user.id) : []
 
   return (
     <aside
@@ -224,69 +220,39 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
             const isAssistant = item.label === 'Assistant' || item.label === 'Manager Assistant'
 
             return (
-              <div key={item.to} className="space-y-1">
-                <div className="relative group/nav flex items-center">
-                  <NavLink
-                    to={item.to}
-                    className={({ isActive }) =>
-                      `flex items-center w-full rounded-full transition-colors cursor-pointer ${
-                        isExpanded
-                          ? `gap-3 px-3.5 py-2 text-xs font-medium ${isAssistant ? 'pr-9' : ''}`
-                          : 'h-10 w-10 mx-auto justify-center'
-                      } ${
-                        isActive
-                          ? 'bg-muted text-foreground font-semibold shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                      }`
-                    }
-                    title={!isExpanded ? item.label : undefined}
+              <div key={item.to} className="relative group/nav flex items-center">
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center w-full rounded-full transition-colors cursor-pointer ${
+                      isExpanded
+                        ? `gap-3 px-3.5 py-2 text-xs font-medium ${isAssistant ? 'pr-9' : ''}`
+                        : 'h-10 w-10 mx-auto justify-center'
+                    } ${
+                      isActive
+                        ? 'bg-muted text-foreground font-semibold shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                    }`
+                  }
+                  title={!isExpanded ? item.label : undefined}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {isExpanded && <span className="truncate flex-1">{item.label}</span>}
+                </NavLink>
+
+                {/* + Mark Button at the corner of Assistant tab */}
+                {isAssistant && isExpanded && (
+                  <button
+                    onClick={e => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleStartNewChat()
+                    }}
+                    className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#23ace3]/15 text-[#23ace3] hover:bg-[#23ace3]/30 hover:scale-110 transition-all cursor-pointer border border-[#23ace3]/30"
+                    title="Start new chat"
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {isExpanded && <span className="truncate flex-1">{item.label}</span>}
-                  </NavLink>
-
-                  {/* + Mark Button at the corner of Assistant tab */}
-                  {isAssistant && isExpanded && (
-                    <button
-                      onClick={e => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        handleStartNewChat()
-                      }}
-                      className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#23ace3]/15 text-[#23ace3] hover:bg-[#23ace3]/30 hover:scale-110 transition-all cursor-pointer border border-[#23ace3]/30"
-                      title="Start new chat"
-                    >
-                      <Plus className="h-3 w-3 stroke-[2.5]" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Collapsible recent chat history preview (up to 5 chats) */}
-                {isAssistant && isExpanded && recentChats.length > 0 && (
-                  <div className="ml-3 pl-2.5 border-l border-border/40 space-y-0.5 pt-0.5">
-                    <div className="flex items-center justify-between px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      <span className="flex items-center gap-1">
-                        <History className="h-2.5 w-2.5 text-[#23ace3]" />
-                        <span>Recent</span>
-                      </span>
-                      <span className="text-[9px] font-medium text-muted-foreground/70">{recentChats.length}/5</span>
-                    </div>
-                    {recentChats.map(chat => (
-                      <button
-                        key={chat.id}
-                        onClick={() => {
-                          if (role === 'manager') navigate(`/manager/assistant?chatId=${chat.id}`)
-                          else if (role === 'admin') navigate(`/admin/assistant?chatId=${chat.id}`)
-                          else navigate(`/employee/dashboard?chatId=${chat.id}`)
-                        }}
-                        className="w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors text-left truncate cursor-pointer group"
-                        title={chat.title}
-                      >
-                        <MessageSquare className="h-2.5 w-2.5 shrink-0 text-[#23ace3]/70 group-hover:text-[#23ace3]" />
-                        <span className="truncate flex-1">{chat.title}</span>
-                      </button>
-                    ))}
-                  </div>
+                    <Plus className="h-3 w-3 stroke-[2.5]" />
+                  </button>
                 )}
               </div>
             )
