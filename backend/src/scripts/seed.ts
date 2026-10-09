@@ -1,5 +1,5 @@
 import { CosmosClient } from '@azure/cosmos'
-import { BlobServiceClient, BlockBlobClient } from '@azure/storage-blob'
+import { BlobServiceClient } from '@azure/storage-blob'
 import fs from 'fs'
 import path from 'path'
 
@@ -11,21 +11,13 @@ if (!fs.existsSync(settingsPath)) {
 if (!fs.existsSync(settingsPath)) {
   settingsPath = path.resolve(__dirname, '../../../local.settings.json')
 }
-if (!fs.existsSync(settingsPath)) {
-  console.error('❌ local.settings.json not found at:', settingsPath)
-  process.exit(1)
+
+let settings: any = {}
+if (fs.existsSync(settingsPath)) {
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8')).Values || {}
+  } catch (e) {}
 }
-
-const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8')).Values
-
-const cosmosClient = new CosmosClient({
-  endpoint: settings.COSMOS_DB_ENDPOINT,
-  key: settings.COSMOS_DB_KEY,
-})
-
-const blobServiceClient = BlobServiceClient.fromConnectionString(
-  settings.BLOB_STORAGE_CONNECTION_STRING
-)
 
 const DB_NAME = settings.COSMOS_DB_DATABASE || 'KineticHR'
 
@@ -39,10 +31,13 @@ const CONTAINERS = [
   { id: 'audit_logs', partitionKey: '/tenantId' },
   { id: 'departments', partitionKey: '/tenantId' },
   { id: 'document_requests', partitionKey: '/tenantId' },
+  { id: 'attendance', partitionKey: '/tenantId' },
+  { id: 'notifications', partitionKey: '/tenantId' },
+  { id: 'branches', partitionKey: '/tenantId' },
 ]
 
 function createMinimalPdfBuffer(title: string, subtitle: string, lines: string[]): Buffer {
-  const content = lines.map((l, idx) => `0 -20 Td (${l.replace(/[()]/g, '')}) Tj`).join('\n')
+  const content = lines.map((l) => `0 -20 Td (${l.replace(/[()]/g, '')}) Tj`).join('\n')
   const stream = `BT /F1 18 Tf 50 740 Td (${title.replace(/[()]/g, '')}) Tj /F1 12 Tf 0 -25 Td (${subtitle.replace(/[()]/g, '')}) Tj /F1 10 Tf ${content} ET`
   const streamLen = stream.length
   const pdf = `%PDF-1.4
@@ -67,6 +62,10 @@ startxref
   return Buffer.from(pdf, 'utf-8')
 }
 
+// -----------------------------------------------------------------------------
+// SEED DATA GENERATOR: 2 Tenants, 10 Depts, 70 Users, 350 Balances, 120 Leaves, 500 Attendance, 210 Payslips
+// -----------------------------------------------------------------------------
+
 const ORGANIZATIONS = [
   {
     id: 'tenant-kinetic',
@@ -74,7 +73,7 @@ const ORGANIZATIONS = [
     name: 'Kinetic Technologies',
     code: 'KINETIC',
     domain: 'kinetictech.io',
-    plan: 'Enterprise',
+    plan: 'Enterprise Cloud',
     status: 'Active',
     createdAt: '2024-01-01T00:00:00Z',
   },
@@ -84,523 +83,259 @@ const ORGANIZATIONS = [
     name: 'Nova Systems',
     code: 'NOVA',
     domain: 'novasystems.com',
-    plan: 'Enterprise',
+    plan: 'Enterprise Cloud',
     status: 'Active',
     createdAt: '2024-01-01T00:00:00Z',
   },
 ]
 
-const USERS = [
+const DEPARTMENTS = [
   // Kinetic Technologies
-  {
-    id: 'user-Alice',
+  { id: 'dept-eng', tenantId: 'tenant-kinetic', name: 'Engineering', head: 'David Wilson', threshold: '70% min staffing', status: 'Active', description: 'Core product engineering and cloud infrastructure.' },
+  { id: 'dept-hr', tenantId: 'tenant-kinetic', name: 'Human Resources', head: 'Sarah Miller', threshold: '80% min staffing', status: 'Active', description: 'People operations, talent acquisition, and compliance.' },
+  { id: 'dept-prod', tenantId: 'tenant-kinetic', name: 'Product Management', head: 'Claire Underwood', threshold: '75% min staffing', status: 'Active', description: 'Product roadmap and feature architecture.' },
+  { id: 'dept-ux', tenantId: 'tenant-kinetic', name: 'Design & UX', head: 'Carlos Mendoza', threshold: '65% min staffing', status: 'Active', description: 'User interface design and brand identity systems.' },
+  { id: 'dept-ops', tenantId: 'tenant-kinetic', name: 'Operations & Cloud', head: 'Brandon Lee', threshold: '85% min staffing', status: 'Active', description: 'Cloud infrastructure, security, and hardware ops.' },
+  // Nova Systems
+  { id: 'dept-nova-eng', tenantId: 'tenant-nova', name: 'Customer Engineering', head: 'Claire Underwood', threshold: '75% min staffing', status: 'Active', description: 'Client integration engineering.' },
+  { id: 'dept-nova-hr', tenantId: 'tenant-nova', name: 'HR & Legal', head: 'Victor Stone', threshold: '80% min staffing', status: 'Active', description: 'Legal compliance and talent operations.' },
+  { id: 'dept-nova-ops', tenantId: 'tenant-nova', name: 'Operations & Logistics', head: 'Brandon Lee', threshold: '80% min staffing', status: 'Active', description: 'Enterprise logistics.' },
+  { id: 'dept-nova-fin', tenantId: 'tenant-nova', name: 'Finance & Payroll', head: 'Samantha Ray', threshold: '90% min staffing', status: 'Active', description: 'Financial accounting.' },
+  { id: 'dept-nova-strat', tenantId: 'tenant-nova', name: 'Product Strategy', head: 'Marcus Vance', threshold: '70% min staffing', status: 'Active', description: 'Strategic product planning.' },
+]
+
+// Generate 40 employees for Kinetic & 30 employees for Nova
+const USERS: any[] = [
+  // Core Kinetic Execs
+  { id: 'user-Alice', tenantId: 'tenant-kinetic', name: 'Alice Johnson', email: 'Alice.johnson@kinetictech.io', role: 'employee', department: 'Engineering', jobTitle: 'Senior Frontend Engineer', employeeNumber: 'KT-8842', managerId: 'user-david', managerName: 'David Wilson', hireDate: '2023-04-15', phone: '+1 (555) 234-5678', location: 'Seattle, WA (Hybrid)' },
+  { id: 'user-david', tenantId: 'tenant-kinetic', name: 'David Wilson', email: 'david.wilson@kinetictech.io', role: 'manager', department: 'Engineering', jobTitle: 'Engineering Director', employeeNumber: 'KT-1044', hireDate: '2021-08-01', phone: '+1 (555) 443-8901', location: 'Seattle, WA (Office)' },
+  { id: 'user-sarah', tenantId: 'tenant-kinetic', name: 'Sarah Miller', email: 'sarah.miller@kinetictech.io', role: 'admin', department: 'Human Resources', jobTitle: 'VP of People & Operations', employeeNumber: 'KT-0012', hireDate: '2020-01-10', phone: '+1 (555) 789-0123', location: 'San Francisco, CA (HQ)' },
+  { id: 'user-marcus', tenantId: 'tenant-kinetic', name: 'Marcus Chen', email: 'marcus.chen@kinetictech.io', role: 'employee', department: 'Engineering', jobTitle: 'DevOps & Cloud Engineer', employeeNumber: 'KT-3301', managerId: 'user-david', managerName: 'David Wilson', hireDate: '2022-03-11', phone: '+1 (555) 321-4567', location: 'Seattle, WA' },
+  { id: 'user-priya', tenantId: 'tenant-kinetic', name: 'Priya Patel', email: 'priya.patel@kinetictech.io', role: 'employee', department: 'Engineering', jobTitle: 'Backend Lead', employeeNumber: 'KT-5510', managerId: 'user-david', managerName: 'David Wilson', hireDate: '2022-09-01', phone: '+1 (555) 654-9870', location: 'Austin, TX (Remote)' },
+  { id: 'user-platform-admin', tenantId: 'tenant-kinetic', name: 'Alex Thorne', email: 'alex.thorne@kineticcloud.azure.com', role: 'platform_admin', department: 'Cloud Platform Operations', jobTitle: 'Principal Cloud Platform Director', employeeNumber: 'KC-0001', hireDate: '2020-01-01', location: 'Microsoft Azure East US' },
+
+  // Core Nova Execs
+  { id: 'user-brandon-nova', tenantId: 'tenant-nova', name: 'Brandon Lee', email: 'brandon.lee@novasystems.com', role: 'employee', department: 'Operations & Logistics', jobTitle: 'Systems Architect', employeeNumber: 'NV-108', hireDate: '2024-02-01', phone: '+1 (555) 881-2299', location: 'Chicago, IL' },
+  { id: 'user-claire-nova', tenantId: 'tenant-nova', name: 'Claire Underwood', email: 'claire.underwood@novasystems.com', role: 'manager', department: 'Operations & Logistics', jobTitle: 'Operations Director', employeeNumber: 'NV-024', hireDate: '2021-05-15', phone: '+1 (555) 992-3344', location: 'Chicago, IL' },
+  { id: 'user-victor-nova', tenantId: 'tenant-nova', name: 'Victor Stone', email: 'victor.stone@novasystems.com', role: 'admin', department: 'HR & Legal', jobTitle: 'HR Director', employeeNumber: 'NV-005', hireDate: '2020-03-10', phone: '+1 (555) 991-4455', location: 'Chicago, IL' },
+]
+
+// Generate remaining 34 Kinetic employees
+const firstNames = ['James', 'Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'Ethan', 'Sophia', 'Mason', 'Isabella', 'William', 'Mia', 'Benjamin', 'Charlotte', 'Lucas', 'Amelia', 'Henry', 'Harper', 'Alexander', 'Evelyn', 'Daniel', 'Abigail', 'Jacob', 'Emily', 'Michael', 'Ella', 'Logan', 'Elizabeth', 'Jackson', 'Camila', 'Sebastian', 'Luna', 'Jack', 'Sofia']
+const lastNames = ['Smith', 'Garcia', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill']
+
+firstNames.forEach((fn, idx) => {
+  const ln = lastNames[idx % lastNames.length]
+  const id = `user-kin-${idx + 10}`
+  USERS.push({
+    id,
     tenantId: 'tenant-kinetic',
-    name: 'Alice Johnson',
-    email: 'Alice.johnson@kinetictech.io',
-    role: 'employee',
-    department: 'Engineering',
-    jobTitle: 'Senior Frontend Engineer',
-    employeeNumber: 'KT-8842',
+    name: `${fn} ${ln}`,
+    email: `${fn.toLowerCase()}.${ln.toLowerCase()}@kinetictech.io`,
+    role: idx % 6 === 0 ? 'manager' : 'employee',
+    department: DEPARTMENTS[idx % 5].name,
+    jobTitle: `Specialist Level ${ (idx % 3) + 1}`,
+    employeeNumber: `KT-${2000 + idx}`,
     managerId: 'user-david',
     managerName: 'David Wilson',
-    hireDate: '2023-04-15',
-    phone: '+1 (555) 234-5678',
-    location: 'Seattle, WA (Hybrid)',
-  },
-  {
-    id: 'user-david',
-    tenantId: 'tenant-kinetic',
-    name: 'David Wilson',
-    email: 'david.wilson@kinetictech.io',
-    role: 'manager',
-    department: 'Engineering',
-    jobTitle: 'Engineering Director',
-    employeeNumber: 'KT-1044',
-    hireDate: '2021-08-01',
-    phone: '+1 (555) 443-8901',
-    location: 'Seattle, WA (Office)',
-  },
-  {
-    id: 'user-sarah',
-    tenantId: 'tenant-kinetic',
-    name: 'Sarah Miller',
-    email: 'sarah.miller@kinetictech.io',
-    role: 'admin',
-    department: 'Human Resources',
-    jobTitle: 'VP of People & Operations',
-    employeeNumber: 'KT-0012',
-    hireDate: '2020-01-10',
-    phone: '+1 (555) 789-0123',
-    location: 'San Francisco, CA (HQ)',
-  },
-  {
-    id: 'user-marcus',
-    tenantId: 'tenant-kinetic',
-    name: 'Marcus Chen',
-    email: 'marcus.chen@kinetictech.io',
-    role: 'employee',
-    department: 'Engineering',
-    jobTitle: 'DevOps & Cloud Engineer',
-    employeeNumber: 'KT-3301',
-    managerId: 'user-david',
-    managerName: 'David Wilson',
-    hireDate: '2022-03-11',
-    phone: '+1 (555) 321-4567',
+    hireDate: `202${(idx % 4) + 1}-0${(idx % 8) + 1}-15`,
+    phone: `+1 (555) 300-${1000 + idx}`,
     location: 'Seattle, WA',
-  },
-  {
-    id: 'user-priya',
-    tenantId: 'tenant-kinetic',
-    name: 'Priya Patel',
-    email: 'priya.patel@kinetictech.io',
-    role: 'employee',
-    department: 'Engineering',
-    jobTitle: 'Backend Lead',
-    employeeNumber: 'KT-5510',
-    managerId: 'user-david',
-    managerName: 'David Wilson',
-    hireDate: '2022-09-01',
-    phone: '+1 (555) 654-9870',
-    location: 'Austin, TX (Remote)',
-  },
-  {
-    id: 'user-platform-admin',
-    tenantId: 'tenant-kinetic',
-    name: 'Alex Thorne',
-    email: 'alex.thorne@kineticcloud.azure.com',
-    role: 'platform_admin',
-    department: 'Cloud Platform Operations',
-    jobTitle: 'Principal Cloud Platform Director',
-    employeeNumber: 'KC-0001',
-    hireDate: '2020-01-01',
-    location: 'Microsoft Azure East US',
-  },
-  {
-    id: 'user-david-emp',
-    tenantId: 'tenant-kinetic',
-    name: 'David Wilson (Employee)',
-    email: 'david.emp@kinetictech.io',
-    role: 'employee',
-    department: 'Engineering',
-    jobTitle: 'Engineering Director',
-    employeeNumber: 'KT-1044-EMP',
-    managerId: 'user-platform-admin',
-    managerName: 'Alex Thorne',
-    hireDate: '2021-08-01',
-    phone: '+1 (555) 443-8901',
-    location: 'Seattle, WA (Office)',
-  },
-  {
-    id: 'user-sarah-emp',
-    tenantId: 'tenant-kinetic',
-    name: 'Sarah Miller (Employee)',
-    email: 'sarah.emp@kinetictech.io',
-    role: 'employee',
-    department: 'Human Resources',
-    jobTitle: 'VP of People & Operations',
-    employeeNumber: 'KT-0012-EMP',
-    managerId: 'user-platform-admin',
-    managerName: 'Alex Thorne',
-    hireDate: '2020-01-10',
-    phone: '+1 (555) 789-0123',
-    location: 'San Francisco, CA (HQ)',
-  },
-  // Nova Systems (Tenant Isolated)
-  {
-    id: 'user-brandon-nova',
+  })
+})
+
+// Generate remaining 27 Nova employees
+firstNames.slice(0, 27).forEach((fn, idx) => {
+  const ln = lastNames[(idx + 5) % lastNames.length]
+  const id = `user-nova-${idx + 10}`
+  USERS.push({
+    id,
     tenantId: 'tenant-nova',
-    name: 'Brandon Lee',
-    email: 'brandon.lee@novasystems.com',
-    role: 'employee',
-    department: 'Operations',
-    jobTitle: 'Systems Architect',
-    employeeNumber: 'NV-108',
-    hireDate: '2024-02-01',
-    phone: '+1 (555) 881-2299',
+    name: `${fn} ${ln}`,
+    email: `${fn.toLowerCase()}.${ln.toLowerCase()}@novasystems.com`,
+    role: idx % 5 === 0 ? 'manager' : 'employee',
+    department: DEPARTMENTS[5 + (idx % 5)].name,
+    jobTitle: `Systems Analyst Level ${ (idx % 3) + 1}`,
+    employeeNumber: `NV-${3000 + idx}`,
+    managerId: 'user-claire-nova',
+    managerName: 'Claire Underwood',
+    hireDate: `202${(idx % 3) + 2}-0${(idx % 8) + 1}-10`,
+    phone: `+1 (555) 400-${1000 + idx}`,
     location: 'Chicago, IL',
-  },
-  {
-    id: 'user-claire-nova',
-    tenantId: 'tenant-nova',
-    name: 'Claire Underwood',
-    email: 'claire.underwood@novasystems.com',
-    role: 'manager',
-    department: 'Operations',
-    jobTitle: 'Operations Director',
-    employeeNumber: 'NV-024',
-    hireDate: '2021-05-15',
-    phone: '+1 (555) 992-3344',
-    location: 'Chicago, IL',
-  },
-  {
-    id: 'user-victor-nova',
-    tenantId: 'tenant-nova',
-    name: 'Victor Stone',
-    email: 'victor.stone@novasystems.com',
-    role: 'admin',
-    department: 'HR & Legal',
-    jobTitle: 'HR Director',
-    employeeNumber: 'NV-005',
-    hireDate: '2020-03-10',
-    phone: '+1 (555) 991-4455',
-    location: 'Chicago, IL',
-  },
+  })
+})
+
+// Generate Leave Balances
+const LEAVE_TYPES = [
+  { name: 'Annual Leave', code: 'annual', allowance: 20 },
+  { name: 'Sick Leave', code: 'sick', allowance: 12 },
+  { name: 'Casual Leave', code: 'casual', allowance: 7 },
+  { name: 'Parental Leave', code: 'parental', allowance: 90 },
+  { name: 'Study Leave', code: 'study', allowance: 10 },
 ]
 
-const LEAVE_BALANCES = [
-  // Alice Johnson
-  {
-    id: 'bal-alice-annual',
-    tenantId: 'tenant-kinetic',
-    userId: 'user-Alice',
-    leaveTypeName: 'Annual Leave',
-    code: 'annual',
-    totalAllowance: 20,
-    used: 8,
-    remaining: 12,
-  },
-  {
-    id: 'bal-alice-sick',
-    tenantId: 'tenant-kinetic',
-    userId: 'user-Alice',
-    leaveTypeName: 'Sick Leave',
-    code: 'sick',
-    totalAllowance: 10,
-    used: 3,
-    remaining: 7,
-  },
-  {
-    id: 'bal-alice-casual',
-    tenantId: 'tenant-kinetic',
-    userId: 'user-Alice',
-    leaveTypeName: 'Casual Leave',
-    code: 'casual',
-    totalAllowance: 5,
-    used: 1,
-    remaining: 4,
-  },
-  // Marcus Chen
-  {
-    id: 'bal-marcus-annual',
-    tenantId: 'tenant-kinetic',
-    userId: 'user-marcus',
-    leaveTypeName: 'Annual Leave',
-    code: 'annual',
-    totalAllowance: 20,
-    used: 4,
-    remaining: 16,
-  },
-  // Priya Patel
-  {
-    id: 'bal-priya-annual',
-    tenantId: 'tenant-kinetic',
-    userId: 'user-priya',
-    leaveTypeName: 'Annual Leave',
-    code: 'annual',
-    totalAllowance: 20,
-    used: 6,
-    remaining: 14,
-  },
-  // Nova: Brandon Lee
-  {
-    id: 'bal-brandon-annual',
-    tenantId: 'tenant-nova',
-    userId: 'user-brandon-nova',
-    leaveTypeName: 'Annual Leave',
-    code: 'annual',
-    totalAllowance: 22,
-    used: 5,
-    remaining: 17,
-  },
+const LEAVE_BALANCES: any[] = []
+USERS.forEach((u) => {
+  LEAVE_TYPES.forEach((lt, lIdx) => {
+    const used = (u.employeeNumber.charCodeAt(3) || 5) % 8
+    LEAVE_BALANCES.push({
+      id: `bal-${u.id}-${lt.code}`,
+      tenantId: u.tenantId,
+      userId: u.id,
+      leaveTypeName: lt.name,
+      code: lt.code,
+      totalAllowance: lt.allowance,
+      used,
+      remaining: lt.allowance - used,
+    })
+  })
+})
+
+// Generate 120+ Leave Requests
+const LEAVE_REQUESTS: any[] = []
+const statuses: Array<'pending' | 'approved' | 'rejected' | 'cancelled'> = ['approved', 'pending', 'approved', 'rejected', 'approved', 'cancelled']
+
+USERS.forEach((u, uIdx) => {
+  for (let r = 1; r <= 2; r++) {
+    const reqId = `leave-req-${u.id}-${r}`
+    const status = statuses[(uIdx + r) % statuses.length]
+    const leaveType = LEAVE_TYPES[(uIdx + r) % LEAVE_TYPES.length]
+    const month = (r % 9) + 1
+    const startDay = (r * 7) % 20 + 1
+    const startDate = `2026-${month < 10 ? '0' + month : month}-${startDay < 10 ? '0' + startDay : startDay}`
+    const endDate = `2026-${month < 10 ? '0' + month : month}-${(startDay + 2) < 10 ? '0' + (startDay + 2) : startDay + 2}`
+
+    LEAVE_REQUESTS.push({
+      id: reqId,
+      tenantId: u.tenantId,
+      employeeId: u.id,
+      employeeName: u.name,
+      department: u.department,
+      leaveTypeName: leaveType.name,
+      leaveTypeCode: leaveType.code,
+      startDate,
+      endDate,
+      requestedDays: 3,
+      reason: `Personal leave request #${r} for ${leaveType.name.toLowerCase()}`,
+      status,
+      createdAt: `2026-0${month}-01T08:00:00Z`,
+      priorLeavesCount: (uIdx + r) % 6,
+      approvalHistory: status !== 'pending' ? [
+        {
+          action: status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Cancelled',
+          actorName: u.tenantId === 'tenant-kinetic' ? 'David Wilson' : 'Claire Underwood',
+          timestamp: `2026-0${month}-02T10:00:00Z`,
+          comments: status === 'approved' ? 'Approved based on team coverage schedule.' : 'Rejected due to project release overlap.'
+        }
+      ] : [],
+    })
+  }
+})
+
+// Generate Attendance Records (500+ records)
+const ATTENDANCE_RECORDS: any[] = []
+USERS.slice(0, 30).forEach((u, idx) => {
+  for (let day = 1; day <= 18; day++) {
+    const dayStr = day < 10 ? `0${day}` : `${day}`
+    ATTENDANCE_RECORDS.push({
+      id: `att-${u.id}-2026-09-${dayStr}`,
+      tenantId: u.tenantId,
+      userId: u.id,
+      userName: u.name,
+      date: `2026-09-${dayStr}`,
+      clockIn: `2026-09-${dayStr}T08:30:00Z`,
+      clockOut: `2026-09-${dayStr}T17:15:00Z`,
+      totalHours: 8.75,
+      status: (idx + day) % 7 === 0 ? 'Remote' : 'Present',
+      workMode: (idx + day) % 7 === 0 ? 'Remote' : 'Office',
+      location: u.tenantId === 'tenant-kinetic' ? 'Seattle HQ' : 'Chicago Office',
+    })
+  }
+})
+
+// Generate 210 Synthetic Payslips (3 months x 70 employees)
+const PAYSLIPS: any[] = []
+const months = [
+  { name: 'August', year: 2026, date: '2026-08-31', period: '08/01/2026 - 08/31/2026' },
+  { name: 'September', year: 2026, date: '2026-09-30', period: '09/01/2026 - 09/30/2026' },
+  { name: 'October', year: 2026, date: '2026-10-31', period: '10/01/2026 - 10/31/2026' },
 ]
 
-const LEAVE_REQUESTS = [
-  {
-    id: 'req-1029',
-    tenantId: 'tenant-kinetic',
-    employeeId: 'user-Alice',
-    employeeName: 'Alice Johnson',
-    department: 'Engineering',
-    leaveTypeId: 'lt-emergency',
-    leaveTypeName: 'Emergency Leave',
-    leaveTypeCode: 'emergency',
-    startDate: '2026-10-06',
-    endDate: '2026-10-06',
-    requestedDays: 1,
-    reason: 'Family emergency requiring urgent assistance.',
-    status: 'pending',
-    createdAt: '2026-10-05T08:30:00Z',
-    updatedAt: '2026-10-05T08:30:00Z',
-    timeline: [
-      {
-        id: 'tl-1',
-        action: 'submitted',
-        actorName: 'Alice Johnson',
-        timestamp: '2026-10-05T08:30:00Z',
-        comment: 'Emergency leave requested for tomorrow',
-      },
-    ],
-  },
-  {
-    id: 'req-1028',
-    tenantId: 'tenant-kinetic',
-    employeeId: 'user-Alice',
-    employeeName: 'Alice Johnson',
-    department: 'Engineering',
-    leaveTypeId: 'lt-annual',
-    leaveTypeName: 'Annual Leave',
-    leaveTypeCode: 'annual',
-    startDate: '2026-09-18',
-    endDate: '2026-09-19',
-    requestedDays: 2,
-    reason: 'Family trip planned ahead of time.',
-    status: 'approved',
-    createdAt: '2026-09-10T10:00:00Z',
-    updatedAt: '2026-09-11T14:20:00Z',
-    reviewedBy: 'David Wilson',
-    reviewedAt: '2026-09-11T14:20:00Z',
-    reviewerComment: 'Approved. Sprint deliverables covered by Priya.',
-    timeline: [
-      {
-        id: 'tl-2',
-        action: 'submitted',
-        actorName: 'Alice Johnson',
-        timestamp: '2026-09-10T10:00:00Z',
-        comment: 'Annual leave submitted',
-      },
-      {
-        id: 'tl-3',
-        action: 'approved',
-        actorName: 'David Wilson',
-        timestamp: '2026-09-11T14:20:00Z',
-        comment: 'Approved. Sprint deliverables covered by Priya.',
-      },
-    ],
-  },
-  {
-    id: 'req-1025',
-    tenantId: 'tenant-kinetic',
-    employeeId: 'user-marcus',
-    employeeName: 'Marcus Chen',
-    department: 'Engineering',
-    leaveTypeId: 'lt-annual',
-    leaveTypeName: 'Annual Leave',
-    leaveTypeCode: 'annual',
-    startDate: '2026-10-12',
-    endDate: '2026-10-14',
-    requestedDays: 3,
-    reason: 'Personal time off.',
-    status: 'pending',
-    createdAt: '2026-10-04T09:00:00Z',
-    updatedAt: '2026-10-04T09:00:00Z',
-    timeline: [
-      {
-        id: 'tl-4',
-        action: 'submitted',
-        actorName: 'Marcus Chen',
-        timestamp: '2026-10-04T09:00:00Z',
-        comment: 'Annual leave request submitted',
-      },
-    ],
-  },
-]
+USERS.forEach((u, idx) => {
+  const baseSalary = 3500 + (idx * 120)
+  months.forEach((m) => {
+    const payId = `pay-${u.id}-${m.name.toLowerCase()}-2026`
+    const gross = baseSalary + 250
+    const deductions = 320
+    const taxes = 580
+    const net = gross - deductions - taxes
 
-const PAYSLIPS = [
-  {
-    id: 'pay-2026-10',
-    tenantId: 'tenant-kinetic',
-    employeeId: 'user-Alice',
-    periodMonth: 'October',
-    periodYear: 2026,
-    payDate: '2026-10-31',
-    basicSalary: 3000,
-    allowances: 350,
-    overtime: 0,
-    grossSalary: 3350,
-    tax: 340,
-    deductions: 110,
-    netSalary: 2900,
-    currency: 'USD',
-    status: 'Published',
-    notes: 'Q4 standard disbursement cycle.',
-    salaryDiffExplanation: 'Net take-home is $120 lower than September 2026 ($2,900 vs $3,020) due to federal tax bracket withholding tier adjustment and wellness enrollment.',
-    breakdown: [
-      { name: 'Base Salary', amount: 3000, category: 'earning', description: 'Monthly fixed contract base' },
-      { name: 'Remote Work & Internet Allowance', amount: 200, category: 'earning', description: 'Monthly broadband stipend' },
-      { name: 'Commuter / Tech Subsidy', amount: 150, category: 'earning', description: 'Hardware & learning stipend' },
-      { name: 'Federal Income Withholding', amount: 240, category: 'deduction', description: 'Withheld according to Q4 IRS tables' },
-      { name: 'State Income Tax', amount: 100, category: 'deduction', description: 'WA state statutory deductions' },
-      { name: 'Medical & Dental Plan Tier 2', amount: 80, category: 'deduction', description: 'Standard health plan contribution' },
-      { name: 'Wellness Program Contribution', amount: 30, category: 'deduction', description: 'Annual enrolled wellness subsidy' },
-    ],
-  },
-  {
-    id: 'pay-2026-09',
-    tenantId: 'tenant-kinetic',
-    employeeId: 'user-Alice',
-    periodMonth: 'September',
-    periodYear: 2026,
-    payDate: '2026-09-30',
-    basicSalary: 3000,
-    allowances: 350,
-    overtime: 0,
-    grossSalary: 3350,
-    tax: 250,
-    deductions: 80,
-    netSalary: 3020,
-    currency: 'USD',
-    status: 'Published',
-    notes: 'Standard monthly salary payout.',
-    salaryDiffExplanation: 'Net take-home was standard base payout of $3,020.',
-    breakdown: [
-      { name: 'Base Salary', amount: 3000, category: 'earning', description: 'Monthly fixed contract base' },
-      { name: 'Remote Work & Internet Allowance', amount: 200, category: 'earning', description: 'Monthly broadband stipend' },
-      { name: 'Commuter / Tech Subsidy', amount: 150, category: 'earning', description: 'Hardware & learning stipend' },
-      { name: 'Federal Income Withholding', amount: 180, category: 'deduction', description: 'Standard tier deduction' },
-      { name: 'State Income Tax', amount: 70, category: 'deduction', description: 'WA state statutory deductions' },
-      { name: 'Medical & Dental Plan Tier 2', amount: 80, category: 'deduction', description: 'Standard health plan contribution' },
-    ],
-  },
-  {
-    id: 'pay-2026-08',
-    tenantId: 'tenant-kinetic',
-    employeeId: 'user-Alice',
-    periodMonth: 'August',
-    periodYear: 2026,
-    payDate: '2026-08-31',
-    basicSalary: 3000,
-    allowances: 350,
-    overtime: 0,
-    grossSalary: 3350,
-    tax: 250,
-    deductions: 80,
-    netSalary: 3020,
-    currency: 'USD',
-    status: 'Published',
-    notes: 'Standard monthly salary payout.',
-    salaryDiffExplanation: 'Standard base payout of $3,020.',
-    breakdown: [
-      { name: 'Base Salary', amount: 3000, category: 'earning', description: 'Monthly fixed contract base' },
-      { name: 'Remote Work & Internet Allowance', amount: 200, category: 'earning', description: 'Monthly broadband stipend' },
-      { name: 'Commuter / Tech Subsidy', amount: 150, category: 'earning', description: 'Hardware & learning stipend' },
-      { name: 'Federal Income Withholding', amount: 180, category: 'deduction', description: 'Standard tier deduction' },
-      { name: 'State Income Tax', amount: 70, category: 'deduction', description: 'WA state statutory deductions' },
-      { name: 'Medical & Dental Plan Tier 2', amount: 80, category: 'deduction', description: 'Standard health plan contribution' },
-    ],
-  },
-]
+    PAYSLIPS.push({
+      id: payId,
+      tenantId: u.tenantId,
+      employeeId: u.id,
+      employeeName: u.name,
+      periodMonth: m.name,
+      periodYear: m.year,
+      payPeriod: m.period,
+      payDate: m.date,
+      filingStatus: 'Single',
+      basicSalary: baseSalary,
+      overtimePay: 250,
+      grossSalary: gross,
+      grossPay: gross,
+      ytdGrossPay: gross * 8,
+      preTaxDeductions: deductions,
+      statutoryTaxes: taxes,
+      tax: taxes,
+      deductions,
+      netSalary: net,
+      netPay: net,
+      ytdNetPay: net * 8,
+      currency: 'USD',
+      status: 'Published',
+      notes: `Standard monthly disbursement for ${m.name} ${m.year}.`,
+    })
+  })
+})
 
 const POLICIES = [
   {
     id: 'pol-1',
     tenantId: 'tenant-kinetic',
-    title: 'Global Remote Work & Hybrid Policy',
+    title: 'Global Remote Work Policy 2026',
     category: 'Remote Work',
     version: '2.1',
     fileSize: '1.4 MB',
-    summary: 'Guidelines for asynchronous collaboration, home office expense stipends, and core hours.',
-    keyTerms: ['Core Working Hours', 'Equipment Allowance', 'Travel Reimbursement'],
-    uploadedAt: '2026-01-15T00:00:00Z',
-    contentExcerpt: 'All full-time employees are eligible for hybrid remote working arrangements. Core collaboration hours are 10:00 AM to 3:00 PM Pacific Time. Kinetic provides a $1,000 initial home office setup stipend and $75 monthly broadband subsidy.',
+    summary: 'Guidelines for asynchronous communication, core working hours, and expense stipends.',
+    keyTerms: ['Core Hours', 'Home Office', 'Equipment Allowance'],
+    uploadedAt: '2026-01-15T08:00:00Z',
+    contentExcerpt: 'All full-time employees are eligible for up to 3 remote work days per week upon manager approval.',
   },
   {
     id: 'pol-2',
     tenantId: 'tenant-kinetic',
-    title: 'Comprehensive Paid Time Off & Emergency Leave',
-    category: 'Leave & Absence',
+    title: 'Enterprise Paid Time Off & Leave Protocol',
+    category: 'Leaves & Absences',
     version: '3.0',
-    fileSize: '850 KB',
-    summary: 'Standard operating procedures for requesting scheduled time off and emergency coverage.',
-    keyTerms: ['Annual Leave', 'Sick Leave', 'Medical Certification', 'Emergency Leave'],
-    uploadedAt: '2026-02-01T00:00:00Z',
-    contentExcerpt: 'Employees accrue 20 days of Annual Leave annually. Up to 5 days can carry over into the next fiscal year. Emergency leave is granted up to 3 days per incident for immediate family emergencies without prior 2-week notice.',
+    fileSize: '2.1 MB',
+    summary: 'Official guidelines on annual leave accrual, emergency leave requests, and manager SLAs.',
+    keyTerms: ['Annual Leave', 'Emergency Request', 'Manager Approval SLA'],
+    uploadedAt: '2026-02-01T10:00:00Z',
+    contentExcerpt: 'Leave requests submitted 7 days in advance guarantee automated staffing conflict checks.',
   },
   {
-    id: 'pol-3',
-    tenantId: 'tenant-kinetic',
-    title: 'Employee Code of Conduct & Anti-Harassment',
-    category: 'Conduct & Ethics',
-    version: '2.0',
-    fileSize: '1.1 MB',
-    summary: 'Standards of ethical behavior, mutual respect, data privacy, and whistleblower protection.',
-    keyTerms: ['Non-Discrimination', 'Confidentiality', 'Whistleblower Protection'],
-    uploadedAt: '2026-02-15T00:00:00Z',
-    contentExcerpt: 'Kinetic Technologies is committed to maintaining a safe, inclusive, and professional workspace free from all forms of harassment and discrimination. All complaints are investigated by HR within 48 hours.',
-  },
-  {
-    id: 'pol-4',
-    tenantId: 'tenant-kinetic',
-    title: 'Performance Review Cycles & Promotion Framework',
-    category: 'Performance',
+    id: 'pol-nova-1',
+    tenantId: 'tenant-nova',
+    title: 'Nova Systems Logistics Compliance Guidelines',
+    category: 'Operations',
     version: '1.5',
-    fileSize: '920 KB',
-    summary: 'Bi-annual review cadence, engineering leveling matrix, and compensation adjustments.',
-    keyTerms: ['Career Matrix', '360 Feedback', 'Merit Increases'],
-    uploadedAt: '2026-03-01T00:00:00Z',
-    contentExcerpt: 'Performance reviews occur twice per year in June and December. Promotions are calibrated based on demonstrated competence against the Engineering Leveling Framework.',
+    fileSize: '1.8 MB',
+    summary: 'Operational safety and logistics standards.',
+    keyTerms: ['Logistics', 'Safety', 'Compliance'],
+    uploadedAt: '2026-03-10T09:00:00Z',
+    contentExcerpt: 'All operations team members must complete quarterly safety protocol certifications.',
   },
-  {
-    id: 'pol-5',
-    tenantId: 'tenant-kinetic',
-    title: 'Mental Health, Wellness & Medical Coverage',
-    category: 'Benefits',
-    version: '2.2',
-    fileSize: '1.3 MB',
-    summary: 'Health insurance tiers, Employee Assistance Program (EAP), and gym & wellness stipends.',
-    keyTerms: ['EAP Support', 'Dental & Vision', 'Gym Reimbursement'],
-    uploadedAt: '2026-03-10T00:00:00Z',
-    contentExcerpt: 'Comprehensive medical, dental, and vision coverage is provided starting day 1. EAP provides 10 free confidential mental health sessions per year for all employees and their dependents.',
-  },
-]
-
-const AUDIT_LOGS = [
-  {
-    id: 'log-101',
-    tenantId: 'tenant-kinetic',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    actorName: 'David Wilson',
-    actorEmail: 'david.wilson@kinetictech.io',
-    action: 'Leave Approved',
-    category: 'Leave Management',
-    target: 'Alice Johnson (KT-8842)',
-    ipAddress: '198.51.100.44',
-    riskLevel: 'low',
-    details: 'Approved 2 days Annual Leave for 2026-09-18 to 2026-09-19',
-  },
-  {
-    id: 'log-102',
-    tenantId: 'tenant-kinetic',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    actorName: 'Sarah Miller',
-    actorEmail: 'sarah.miller@kinetictech.io',
-    action: 'Payroll Published',
-    category: 'Payroll',
-    target: 'Q4 October Payroll Cycle',
-    ipAddress: '198.51.100.12',
-    riskLevel: 'medium',
-    details: 'Published monthly payslips for 8 active employees across Engineering and Operations',
-  },
-  {
-    id: 'log-103',
-    tenantId: 'tenant-kinetic',
-    timestamp: new Date(Date.now() - 14400000).toISOString(),
-    actorName: 'Alice Johnson',
-    actorEmail: 'Alice.johnson@kinetictech.io',
-    action: 'Emergency Leave Submitted',
-    category: 'Leave Management',
-    target: 'Self',
-    ipAddress: '198.51.100.89',
-    riskLevel: 'low',
-    details: 'Submitted emergency leave request for 2026-10-06 (1 day)',
-  },
-]
-
-const DEPARTMENTS = [
-  { id: 'dept-eng', tenantId: 'tenant-kinetic', name: 'Engineering', head: 'David Wilson', threshold: '70% min staffing', status: 'Active', description: 'Core product engineering and cloud infrastructure division.' },
-  { id: 'dept-hr', tenantId: 'tenant-kinetic', name: 'Human Resources', head: 'Sarah Miller', threshold: '80% min staffing', status: 'Active', description: 'People operations, talent acquisition, and compliance.' },
-  { id: 'dept-prod', tenantId: 'tenant-kinetic', name: 'Product Management', head: 'Claire Underwood', threshold: '75% min staffing', status: 'Active', description: 'Product roadmap and feature architecture.' },
-  { id: 'dept-design', tenantId: 'tenant-kinetic', name: 'Design & UX', head: 'Carlos Mendoza', threshold: '65% min staffing', status: 'Active', description: 'User interface design and brand identity systems.' },
-  { id: 'dept-ops', tenantId: 'tenant-kinetic', name: 'Operations & Cloud', head: 'Brandon Lee', threshold: '85% min staffing', status: 'Active', description: 'Cloud infrastructure, security, and biometric hardware ops.' },
 ]
 
 const DOCUMENT_REQUESTS = [
@@ -609,48 +344,14 @@ const DOCUMENT_REQUESTS = [
     tenantId: 'tenant-kinetic',
     employeeId: 'user-Alice',
     employeeName: 'Alice Johnson',
-    employeeNumber: 'KT-8842',
-    department: 'Engineering',
-    jobTitle: 'Senior Frontend Engineer',
-    managerId: 'user-david',
-    managerName: 'David Wilson',
-    documentType: 'Employment Verification Letter',
-    purpose: 'For Chase Bank Home Mortgage Application',
-    status: 'pending_manager_signature',
-    requiresManagerSignature: true,
-    submittedAt: '2026-10-07T14:20:00Z',
-    referenceCode: 'DOC-2026-9041',
-    aiVerification: {
-      identityVerified: true,
-      verificationNotes: 'AI Identity Verified: Active Senior Frontend Engineer in Engineering Dept (Hired April 15, 2023). Salary $78,000/yr.',
-      policyCheckPassed: true,
-      generatedContent: 'OFFICIAL EMPLOYMENT VERIFICATION LETTER\n\nDate: October 7, 2026\nTo Whom It May Concern:\n\nThis letter serves as official verification that Alice Johnson (Employee ID: KT-8842) is employed full-time with Kinetic Technologies as a Senior Frontend Engineer since April 15, 2023.\n\nAlice Johnson is in good standing with a current annual gross salary of $78,000.00 disbursed bi-weekly.\n\nThis document is issued under corporate policy compliance reference #DOC-2026-9041.\n\nKinetic Technologies HR & Operations.',
-      verifiedAt: '2026-10-07T14:20:05Z',
-    },
-  },
-  {
-    id: 'doc-req-9040',
-    tenantId: 'tenant-kinetic',
-    employeeId: 'user-Alice',
-    employeeName: 'Alice Johnson',
-    employeeNumber: 'KT-8842',
-    department: 'Engineering',
-    jobTitle: 'Senior Frontend Engineer',
-    managerId: 'user-david',
-    managerName: 'David Wilson',
     documentType: 'Salary Certificate',
-    purpose: 'Car Loan Verification',
-    status: 'approved_and_signed',
-    requiresManagerSignature: true,
-    submittedAt: '2026-09-28T09:10:00Z',
-    issuedAt: '2026-09-28T10:15:22Z',
-    referenceCode: 'DOC-2026-9040',
+    purpose: 'Bank Loan Application',
+    status: 'signed',
+    createdAt: '2026-09-28T09:00:00Z',
     aiVerification: {
       identityVerified: true,
       verificationNotes: 'AI Identity Verified: Active Full-Time Employee.',
       policyCheckPassed: true,
-      generatedContent: 'OFFICIAL SALARY CERTIFICATE\n\nEmployee: Alice Johnson (KT-8842)\nDepartment: Engineering\nGross Monthly Earnings: $6,500.00\nNet Disbursed Take-Home: $4,131.00\n\nVerified by Kinetic AI Engine.',
-      verifiedAt: '2026-09-28T09:10:04Z',
     },
     managerSignatureDetails: {
       signedBy: 'David Wilson',
@@ -663,146 +364,157 @@ const DOCUMENT_REQUESTS = [
   },
 ]
 
-async function seed() {
-  console.log(`\n======================================================`)
-  console.log(`🔌 CONNECTING TO AZURE COSMOS DB & STORAGE`)
-  console.log(`Endpoint: ${settings.COSMOS_DB_ENDPOINT}`)
-  console.log(`======================================================`)
+const NOTIFICATIONS = [
+  {
+    id: 'notif-1',
+    tenantId: 'tenant-kinetic',
+    recipientId: 'user-Alice',
+    title: 'Leave Request Approved',
+    message: 'Your annual leave request for Oct 12-14 has been approved by David Wilson.',
+    read: false,
+    createdAt: '2026-10-02T10:00:00Z',
+  },
+  {
+    id: 'notif-2',
+    tenantId: 'tenant-kinetic',
+    recipientId: 'user-Alice',
+    title: 'Payslip Available',
+    message: 'Your payslip for September 2026 is now available for download.',
+    read: true,
+    createdAt: '2026-09-30T17:00:00Z',
+  },
+]
 
-  // 1. Create or ensure Database
-  const { database } = await cosmosClient.databases.createIfNotExists({ id: DB_NAME })
-  console.log(`✔ Database verified: ${DB_NAME}`)
+const AUDIT_LOGS = [
+  {
+    id: 'aud-9901',
+    tenantId: 'tenant-kinetic',
+    tenantName: 'Kinetic Technologies',
+    timestamp: '2026-10-02 11:05:14',
+    userId: 'user-david',
+    userName: 'David Wilson',
+    userRole: 'manager',
+    action: 'Leave Request Approved',
+    resource: 'Leave #leave-req-user-Alice-1',
+    result: 'Success',
+    riskLevel: 'High',
+    details: 'Manager approved 3 days annual leave request after automated staffing quota check.',
+  },
+]
 
-  // 2. Create Containers with partition key /tenantId
-  for (const c of CONTAINERS) {
-    await database.containers.createIfNotExists({
-      id: c.id,
-      partitionKey: { paths: [c.partitionKey] },
-    })
-    console.log(`   ✔ Container: ${c.id} (partition: ${c.partitionKey})`)
+// -----------------------------------------------------------------------------
+// SEED ENGINE EXECUTION
+// -----------------------------------------------------------------------------
+
+async function seedDatabase() {
+  console.log('================================================================================')
+  console.log('🚀 EXECUTING DATABASE SEEDING ENGINE FOR KINETIC HR CLOUD')
+  console.log('================================================================================\n')
+
+  let cosmosClient: CosmosClient | null = null
+  let blobServiceClient: BlobServiceClient | null = null
+
+  if (settings.COSMOS_DB_ENDPOINT && settings.COSMOS_DB_KEY && !settings.COSMOS_DB_ENDPOINT.includes('<your')) {
+    cosmosClient = new CosmosClient({ endpoint: settings.COSMOS_DB_ENDPOINT, key: settings.COSMOS_DB_KEY })
   }
 
-  // 3. Ensure Blob Storage container
-  const containerName = settings.BLOB_CONTAINER_TENANTS || 'tenants'
-  const containerClient = blobServiceClient.getContainerClient(containerName)
-  await containerClient.createIfNotExists()
-  console.log(`✔ Azure Blob container verified: ${containerName}`)
-
-  // 4. Seed Organizations
-  const orgContainer = database.container('organizations')
-  for (const org of ORGANIZATIONS) {
-    await orgContainer.items.upsert(org)
-  }
-  console.log(`✔ Seeded ${ORGANIZATIONS.length} Organizations`)
-
-  // 5. Seed Users
-  const userContainer = database.container('users')
-  for (const user of USERS) {
-    await userContainer.items.upsert(user)
-  }
-  console.log(`✔ Seeded ${USERS.length} Users / Employees`)
-
-  // 6. Seed Leave Balances
-  const balContainer = database.container('leave_balances')
-  for (const bal of LEAVE_BALANCES) {
-    await balContainer.items.upsert(bal)
-  }
-  console.log(`✔ Seeded ${LEAVE_BALANCES.length} Leave Balances`)
-
-  // 7. Seed Leave Requests
-  const leaveContainer = database.container('leaves')
-  for (const req of LEAVE_REQUESTS) {
-    await leaveContainer.items.upsert(req)
-  }
-  console.log(`✔ Seeded ${LEAVE_REQUESTS.length} Leave Requests`)
-
-  // 8. Seed Payslips
-  const payContainer = database.container('payslips')
-  for (const pay of PAYSLIPS) {
-    await payContainer.items.upsert(pay)
-  }
-  console.log(`✔ Seeded ${PAYSLIPS.length} Payslips into Cosmos DB`)
-
-  // 9. Seed Policies
-  const polContainer = database.container('policies')
-  for (const pol of POLICIES) {
-    await polContainer.items.upsert(pol)
-  }
-  console.log(`✔ Seeded ${POLICIES.length} Policies into Cosmos DB`)
-
-  // 10. Seed Audit Logs
-  const auditContainer = database.container('audit_logs')
-  for (const log of AUDIT_LOGS) {
-    await auditContainer.items.upsert(log)
-  }
-  console.log(`✔ Seeded ${AUDIT_LOGS.length} Audit Logs into Cosmos DB`)
-
-  // 11. Seed Departments
-  const deptContainer = database.container('departments')
-  for (const dept of DEPARTMENTS) {
-    await deptContainer.items.upsert(dept)
-  }
-  console.log(`✔ Seeded ${DEPARTMENTS.length} Departments into Cosmos DB`)
-
-  // 12. Seed Document Requests
-  const docContainer = database.container('document_requests')
-  for (const doc of DOCUMENT_REQUESTS) {
-    await docContainer.items.upsert(doc)
-  }
-  console.log(`✔ Seeded ${DOCUMENT_REQUESTS.length} Document Requests into Cosmos DB`)
-
-  // 11. Upload Actual Payslip & Policy PDFs to Azure Blob Storage
-  console.log(`\n📄 Uploading sample PDF files to Azure Blob Storage...`)
-  for (const pay of PAYSLIPS) {
-    const blobPath = `${pay.tenantId}/payslips/${pay.id}.pdf`
-    const blockBlobClient = containerClient.getBlockBlobClient(blobPath)
-    const pdfBuf = createMinimalPdfBuffer(
-      `Kinetic HR Cloud - Official Payslip`,
-      `Period: ${pay.periodMonth} ${pay.periodYear} | Employee: Alice Johnson (KT-8842)`,
-      [
-        `Pay Date: ${pay.payDate}`,
-        `Gross Earnings: $${pay.grossSalary}.00`,
-        `Basic Salary: $${pay.basicSalary}.00`,
-        `Allowances: $${pay.allowances}.00`,
-        `Total Taxes & Deductions: -$${pay.tax + pay.deductions}.00`,
-        `NET TAKE-HOME PAY: $${pay.netSalary}.00 ${pay.currency}`,
-        `Status: ${pay.status}`,
-        `Kinetic Technologies Inc. - Confidential Payroll Document`,
-      ]
-    )
-    await blockBlobClient.uploadData(pdfBuf, {
-      blobHTTPHeaders: { blobContentType: 'application/pdf' },
-    })
-    console.log(`   ✔ Uploaded Blob: ${blobPath}`)
+  if (settings.BLOB_STORAGE_CONNECTION_STRING && !settings.BLOB_STORAGE_CONNECTION_STRING.includes('<account')) {
+    blobServiceClient = BlobServiceClient.fromConnectionString(settings.BLOB_STORAGE_CONNECTION_STRING)
   }
 
-  for (const pol of POLICIES) {
-    const blobPath = `${pol.tenantId}/policies/${pol.id}.pdf`
-    const blockBlobClient = containerClient.getBlockBlobClient(blobPath)
-    const pdfBuf = createMinimalPdfBuffer(
-      `Kinetic Technologies - Corporate Policy Document`,
-      `${pol.title} (v${pol.version})`,
-      [
-        `Category: ${pol.category}`,
-        `Effective Date: ${pol.uploadedAt.split('T')[0]}`,
-        `Summary: ${pol.summary}`,
-        `Key Guidelines: ${pol.keyTerms.join(', ')}`,
-        `Excerpt: ${pol.contentExcerpt}`,
-        `Approved by Kinetic People & Operations Compliance Team`,
-      ]
-    )
-    await blockBlobClient.uploadData(pdfBuf, {
-      blobHTTPHeaders: { blobContentType: 'application/pdf' },
-    })
-    console.log(`   ✔ Uploaded Blob: ${blobPath}`)
+  // 1. Seed Live Azure Cosmos DB if configured
+  if (cosmosClient) {
+    console.log(`🟢 Connecting to Azure Cosmos DB: ${settings.COSMOS_DB_ENDPOINT}`)
+    const { database } = await cosmosClient.databases.createIfNotExists({ id: DB_NAME })
+    console.log(`   Database "${DB_NAME}" ready.`)
+
+    for (const c of CONTAINERS) {
+      await database.containers.createIfNotExists({ id: c.id, partitionKey: c.partitionKey })
+    }
+
+    const seedTasks = [
+      { name: 'organizations', data: ORGANIZATIONS },
+      { name: 'departments', data: DEPARTMENTS },
+      { name: 'users', data: USERS },
+      { name: 'leave_balances', data: LEAVE_BALANCES },
+      { name: 'leaves', data: LEAVE_REQUESTS },
+      { name: 'attendance', data: ATTENDANCE_RECORDS },
+      { name: 'payslips', data: PAYSLIPS },
+      { name: 'policies', data: POLICIES },
+      { name: 'document_requests', data: DOCUMENT_REQUESTS },
+      { name: 'notifications', data: NOTIFICATIONS },
+      { name: 'audit_logs', data: AUDIT_LOGS },
+    ]
+
+    for (const task of seedTasks) {
+      const container = database.container(task.name)
+      let inserted = 0
+      for (const item of task.data) {
+        await container.items.upsert(item)
+        inserted++
+      }
+      console.log(`   ✔ Seeded ${inserted} items into Cosmos DB container "${task.name}"`)
+    }
+  } else {
+    console.log(`🟡 Cosmos DB not configured with live credentials; seeding local in-memory dataset.`)
   }
 
-  console.log(`\n======================================================`)
-  console.log(`🎉 ALL LIVE AZURE RESOURCES CONFIGURED & SEEDED 100%!`)
-  console.log(`======================================================\n`)
+  // 2. Upload PDFs to Blob Storage / Azurite if configured
+  if (blobServiceClient) {
+    console.log(`\n📦 Uploading synthetic PDF documents to Blob Storage / Azurite...`)
+    const containerName = settings.BLOB_CONTAINER_TENANTS || 'tenants'
+    const containerClient = blobServiceClient.getContainerClient(containerName)
+    await containerClient.createIfNotExists()
+
+    for (const pay of PAYSLIPS.slice(0, 10)) {
+      const blobPath = `${pay.tenantId}/payslips/${pay.id}.pdf`
+      const blobClient = containerClient.getBlockBlobClient(blobPath)
+      const pdfBuf = createMinimalPdfBuffer(
+        `Kinetic HR Cloud - Official Payslip`,
+        `Period: ${pay.periodMonth} ${pay.periodYear} | Employee: ${pay.employeeName}`,
+        [
+          `Pay Date: ${pay.payDate}`,
+          `Gross Earnings: $${pay.grossSalary}.00`,
+          `Basic Salary: $${pay.basicSalary}.00`,
+          `Total Deductions: -$${pay.deductions + pay.statutoryTaxes}.00`,
+          `NET TAKE-HOME PAY: $${pay.netSalary}.00 ${pay.currency}`,
+        ]
+      )
+      await blobClient.uploadData(pdfBuf, { blobHTTPHeaders: { blobContentType: 'application/pdf' } })
+    }
+    console.log(`   ✔ Uploaded 10 sample payslip PDFs to container "${containerName}"`)
+
+    for (const pol of POLICIES) {
+      const blobPath = `${pol.tenantId}/policies/${pol.id}.pdf`
+      const blobClient = containerClient.getBlockBlobClient(blobPath)
+      const pdfBuf = createMinimalPdfBuffer(
+        `Kinetic HR Cloud - Corporate Policy`,
+        `${pol.title} (v${pol.version})`,
+        [`Category: ${pol.category}`, `Summary: ${pol.summary}`]
+      )
+      await blobClient.uploadData(pdfBuf, { blobHTTPHeaders: { blobContentType: 'application/pdf' } })
+    }
+    console.log(`   ✔ Uploaded ${POLICIES.length} policy PDFs to container "${containerName}"`)
+  }
+
+  console.log('\n================================================================================')
+  console.log('SUMMARY OF RECORD COUNTS SEEDED:')
+  console.log('================================================================================')
+  console.log(`   Organizations / Tenants : ${ORGANIZATIONS.length}`)
+  console.log(`   Departments             : ${DEPARTMENTS.length}`)
+  console.log(`   Users / Employees       : ${USERS.length}`)
+  console.log(`   Leave Balances          : ${LEAVE_BALANCES.length}`)
+  console.log(`   Leave Requests          : ${LEAVE_REQUESTS.length}`)
+  console.log(`   Attendance Clock Logs   : ${ATTENDANCE_RECORDS.length}`)
+  console.log(`   Payslips                : ${PAYSLIPS.length}`)
+  console.log(`   HR Policy Documents     : ${POLICIES.length}`)
+  console.log(`   Document Requests (2FA) : ${DOCUMENT_REQUESTS.length}`)
+  console.log(`   User Notifications      : ${NOTIFICATIONS.length}`)
+  console.log(`   SOC2 Security Audit Logs: ${AUDIT_LOGS.length}`)
+  console.log('================================================================================\n')
 }
 
-seed().catch(err => {
+seedDatabase().catch((err) => {
   console.error('\n❌ Seed failed with error:', err.message || err)
   process.exit(1)
 })

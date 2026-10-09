@@ -58,6 +58,15 @@ import {
   verify2faAndSignDocument,
   sendDocumentSoftcopy,
 } from './functions/documents'
+import {
+  getAttendanceRecords,
+  recordAttendanceClock,
+} from './functions/attendance'
+import {
+  getNotifications,
+  markNotificationRead,
+} from './functions/notifications'
+
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { isCosmosConfigured, getCosmosDatabase } from './config/cosmos'
 
@@ -175,6 +184,15 @@ addRoute('POST', '/api/documents/request', createDocumentRequest)
 addRoute('GET', '/api/documents', getDocumentRequests)
 addRoute('POST', '/api/documents/{id}/verify-2fa-sign', verify2faAndSignDocument)
 addRoute('POST', '/api/documents/{id}/send-softcopy', sendDocumentSoftcopy)
+
+// Attendance
+addRoute('GET', '/api/attendance', getAttendanceRecords)
+addRoute('POST', '/api/attendance/clock', recordAttendanceClock)
+
+// Notifications
+addRoute('GET', '/api/notifications', getNotifications)
+addRoute('PATCH', '/api/notifications/{id}/read', markNotificationRead)
+
 
 
 const server = http.createServer(async (req, res) => {
