@@ -15,7 +15,21 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private get baseUrl(): string {
-    return (import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071/api').replace(/\/$/, '')
+    const envUrl = import.meta.env.VITE_API_BASE_URL
+    if (envUrl && !envUrl.includes('localhost')) {
+      return envUrl.replace(/\/$/, '')
+    }
+
+    // Auto-detect production / Azure Static Web Apps hosting
+    if (
+      typeof window !== 'undefined' &&
+      !window.location.hostname.includes('localhost') &&
+      !window.location.hostname.includes('127.0.0.1')
+    ) {
+      return 'https://kinetichr-api-d0cwatbqbaafg9hh.southindia-01.azurewebsites.net/api'
+    }
+
+    return (envUrl || 'http://localhost:7071/api').replace(/\/$/, '')
   }
 
   private getAuthHeaders(): HeadersInit {
