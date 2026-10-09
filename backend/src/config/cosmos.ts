@@ -700,8 +700,9 @@ export function getTenantContainer(containerName: string): Container {
   }
 
   const realContainer = db.container(containerName)
+  const isStrictLive = (process.env.AZURE_MODE || '').toLowerCase() === 'live'
 
-  // Double-Way Resilient Wrapper: Tries live Azure Cosmos DB, logs clearly to terminal, falls back to Mock Data on failure
+  // Double-Way Resilient Wrapper: Executes live Azure Cosmos DB, enforces strict error handling in live mode
   return {
     items: {
       query: (querySpec: any, options?: any) => ({
@@ -713,13 +714,14 @@ export function getTenantContainer(containerName: string): Container {
             )
             return result
           } catch (err: any) {
-            console.warn(
-              `⚠️  [AZURE COSMOS DB ERROR] Query failed on "${containerName}": ${err.message}. Seamlessly falling back to In-Memory Mock Data!`
+            console.error(
+              `❌ [AZURE COSMOS DB ERROR] Query failed on "${containerName}": ${err.message}`
             )
+            if (isStrictLive) {
+              throw new Error(`Azure Cosmos DB Live Query Failed: ${err.message}`)
+            }
+            console.warn(`🟡 [MOCK DATA FALLBACK] Falling back to In-Memory Mock Store`)
             const fallbackResult = await mockContainer.items.query(querySpec).fetchAll()
-            console.log(
-              `🟡 [MOCK DATA FALLBACK] Query on container "${containerName}" -> Returned ${fallbackResult.resources?.length ?? 0} item(s) from In-Memory Mock Store`
-            )
             return fallbackResult
           }
         },
@@ -730,17 +732,17 @@ export function getTenantContainer(containerName: string): Container {
           console.log(
             `🟢 [AZURE COSMOS DB] Inserted item "${item?.id || 'new'}" into container "${containerName}" (Live Azure Cloud)`
           )
-          // Keep mock store in sync as secondary mirror
           try { await mockContainer.items.create(item) } catch (_) {}
           return result
         } catch (err: any) {
-          console.warn(
-            `⚠️  [AZURE COSMOS DB ERROR] Insert failed on "${containerName}": ${err.message}. Saving to In-Memory Mock Store!`
+          console.error(
+            `❌ [AZURE COSMOS DB ERROR] Insert failed on "${containerName}": ${err.message}`
           )
+          if (isStrictLive) {
+            throw new Error(`Azure Cosmos DB Live Insert Failed: ${err.message}`)
+          }
+          console.warn(`🟡 [MOCK DATA FALLBACK] Saving to In-Memory Mock Store`)
           const fallbackResult = await mockContainer.items.create(item)
-          console.log(
-            `🟡 [MOCK DATA FALLBACK] Created item "${item?.id || 'new'}" in "${containerName}" (In-Memory Mock Store)`
-          )
           return fallbackResult
         }
       },
@@ -753,9 +755,13 @@ export function getTenantContainer(containerName: string): Container {
           try { await mockContainer.items.upsert(item) } catch (_) {}
           return result
         } catch (err: any) {
-          console.warn(
-            `⚠️  [AZURE COSMOS DB ERROR] Upsert failed on "${containerName}": ${err.message}. Saving to In-Memory Mock Store!`
+          console.error(
+            `❌ [AZURE COSMOS DB ERROR] Upsert failed on "${containerName}": ${err.message}`
           )
+          if (isStrictLive) {
+            throw new Error(`Azure Cosmos DB Live Upsert Failed: ${err.message}`)
+          }
+          console.warn(`🟡 [MOCK DATA FALLBACK] Saving to In-Memory Mock Store`)
           const fallbackResult = await mockContainer.items.upsert(item)
           return fallbackResult
         }
@@ -771,7 +777,7 @@ export function getTenantContainer(containerName: string): Container {
             )
             return result
           }
-          // Fallback check if item exists only in mock store
+          if (isStrictLive) return result
           const mockResult = await mockContainer.item(id, partitionKey).read()
           if (mockResult.resource) {
             console.log(
@@ -781,9 +787,12 @@ export function getTenantContainer(containerName: string): Container {
           }
           return result
         } catch (err: any) {
-          console.warn(
-            `⚠️  [AZURE COSMOS DB ERROR] Read "${id}" failed on "${containerName}": ${err.message}. Falling back to In-Memory Mock Store!`
+          console.error(
+            `❌ [AZURE COSMOS DB ERROR] Read "${id}" failed on "${containerName}": ${err.message}`
           )
+          if (isStrictLive) {
+            throw new Error(`Azure Cosmos DB Live Read Failed: ${err.message}`)
+          }
           return mockContainer.item(id, partitionKey).read()
         }
       },
@@ -796,9 +805,12 @@ export function getTenantContainer(containerName: string): Container {
           try { await mockContainer.item(id, partitionKey).replace(newItem) } catch (_) {}
           return result
         } catch (err: any) {
-          console.warn(
-            `⚠️  [AZURE COSMOS DB ERROR] Update "${id}" failed on "${containerName}": ${err.message}. Updating In-Memory Mock Store!`
+          console.error(
+            `❌ [AZURE COSMOS DB ERROR] Update "${id}" failed on "${containerName}": ${err.message}`
           )
+          if (isStrictLive) {
+            throw new Error(`Azure Cosmos DB Live Replace Failed: ${err.message}`)
+          }
           return mockContainer.item(id, partitionKey).replace(newItem)
         }
       },
@@ -811,14 +823,18 @@ export function getTenantContainer(containerName: string): Container {
           try { await mockContainer.item(id, partitionKey).delete() } catch (_) {}
           return result
         } catch (err: any) {
-          console.warn(
-            `⚠️  [AZURE COSMOS DB ERROR] Delete "${id}" failed on "${containerName}": ${err.message}. Deleting from In-Memory Mock Store!`
+          console.error(
+            `❌ [AZURE COSMOS DB ERROR] Delete "${id}" failed on "${containerName}": ${err.message}`
           )
+          if (isStrictLive) {
+            throw new Error(`Azure Cosmos DB Live Delete Failed: ${err.message}`)
+          }
           return mockContainer.item(id, partitionKey).delete()
         }
       },
     }),
   } as unknown as Container
+
 }
 
 /**

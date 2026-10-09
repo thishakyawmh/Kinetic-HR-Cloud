@@ -65,6 +65,31 @@ export function maskCredential(val?: string): string {
 }
 
 /**
+ * Checks if an environment variable holds a real value rather than a template placeholder like <your-account>
+ */
+export function isRealConfig(val?: string): boolean {
+  if (!val) return false
+  if (val === 'UseDevelopmentStorage=true') return true
+  const lower = val.toLowerCase()
+  if (lower.includes('<your') || lower.includes('<account') || lower.includes('<key>') || lower.includes('<deployment>')) {
+    return false
+  }
+  return true
+}
+
+/**
+ * Helper to convert NodeJS readable stream to Buffer
+ */
+async function streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    readableStream.on('data', data => chunks.push(Buffer.isBuffer(data) ? data : Buffer.from(data)))
+    readableStream.on('end', () => resolve(Buffer.concat(chunks)))
+    readableStream.on('error', reject)
+  })
+}
+
+/**
  * Helper to make a lightweight HTTPS GET/POST request with custom headers
  */
 function makeHttpsRequest(
@@ -124,7 +149,7 @@ export async function verifyCosmosDb(isLiveMode: boolean): Promise<AzureServiceD
   const endpoint = process.env.COSMOS_DB_ENDPOINT
   const key = process.env.COSMOS_DB_KEY
   const connStr = process.env.COSMOS_DB_CONNECTION_STRING
-  const isConfigured = !!(connStr || (endpoint && key))
+  const isConfigured = Boolean((connStr && isRealConfig(connStr)) || (endpoint && isRealConfig(endpoint) && key && isRealConfig(key)))
 
   if (!isLiveMode || !isConfigured) {
     return {
@@ -203,7 +228,7 @@ export async function verifyCosmosDb(isLiveMode: boolean): Promise<AzureServiceD
  */
 export async function verifyBlobStorage(isLiveMode: boolean): Promise<AzureServiceDiagnosticReport> {
   const connStr = process.env.BLOB_STORAGE_CONNECTION_STRING
-  const isConfigured = !!connStr
+  const isConfigured = Boolean(connStr && isRealConfig(connStr))
 
   if (!isLiveMode || !isConfigured) {
     return {
@@ -218,7 +243,7 @@ export async function verifyBlobStorage(isLiveMode: boolean): Promise<AzureServi
       evidence: {
         details: 'Local SAS token generator and local blob simulator active for offline development.',
       },
-      remediation: isConfigured ? 'Set AZURE_MODE=live to enable real Azure Blob Storage verification.' : 'Add BLOB_STORAGE_CONNECTION_STRING in local.settings.json.',
+      remediation: isConfigured ? 'Set AZURE_MODE=live to enable real Azure Blob Storage verification.' : 'Add BLOB_STORAGE_CONNECTION_STRING in local.settings.json (or UseDevelopmentStorage=true for local Azurite emulator).',
     }
   }
 
@@ -227,12 +252,21 @@ export async function verifyBlobStorage(isLiveMode: boolean): Promise<AzureServi
     const serviceClient = BlobServiceClient.fromConnectionString(connStr!)
     const containerName = process.env.BLOB_CONTAINER_TENANTS || 'tenants'
     const containerClient = serviceClient.getContainerClient(containerName)
-    
-    // Perform safe real operation: test uploading, reading properties, and deleting diagnostic blob
+    await containerClient.createIfNotExists()
+
+    // Perform safe real operation: upload, read back, and delete diagnostic blob
     const testBlobName = `diag-health-check-${Date.now()}.txt`
     const blobClient = containerClient.getBlockBlobClient(testBlobName)
-    const uploadRes = await blobClient.upload('KINETIC_HR_CLOUD_DIAGNOSTIC_VERIFICATION_PAYLOAD', 44)
-    const deleteRes = await blobClient.delete()
+    const testContent = 'KINETIC_HR_CLOUD_DIAGNOSTIC_VERIFICATION_PAYLOAD'
+    const uploadRes = await blobClient.upload(testContent, Buffer.byteLength(testContent))
+    
+    // Read back verification
+    const downloadRes = await blobClient.download()
+    if (downloadRes.readableStreamBody) {
+      await streamToBuffer(downloadRes.readableStreamBody)
+    }
+    
+    await blobClient.delete()
 
     const latencyMs = Date.now() - startMs
     const requestId = uploadRes.requestId || `blob-req-${Date.now()}`
@@ -252,7 +286,7 @@ export async function verifyBlobStorage(isLiveMode: boolean): Promise<AzureServi
         httpStatus: 201,
         endpoint: serviceClient.url,
         latencyMs,
-        details: `Real Azure Blob Storage operation succeeded: test blob written & deleted in container "${containerName}". Request ID: ${requestId}`,
+        details: `Real Azure Blob Storage operation succeeded: test blob written, read back & deleted in container "${containerName}". Request ID: ${requestId}`,
       },
     }
   } catch (err: any) {
@@ -278,10 +312,11 @@ export async function verifyBlobStorage(isLiveMode: boolean): Promise<AzureServi
         latencyMs,
         details: `Real Azure Blob Storage operation failed: ${msg}`,
       },
-      remediation: 'Check BLOB_STORAGE_CONNECTION_STRING access key and container existence in Azure Portal.',
+      remediation: 'Check BLOB_STORAGE_CONNECTION_STRING access key and container existence in Azure Portal (or run Azurite local storage emulator).',
     }
   }
 }
+
 
 /**
  * 3. Azure Functions v4 Compute Diagnostic
