@@ -18,13 +18,53 @@ export const authService = {
       return null
     }
 
+    const sanitizeSession = (parsed: any): AuthSession => {
+      if (parsed.user?.role === 'platform_admin') {
+        parsed.tenant = {
+          id: 'tenant-platform',
+          name: 'Global Cloud Fleet Infrastructure',
+          code: 'PLATFORM',
+          domain: 'azure.kineticcloud.io',
+          plan: 'Enterprise',
+        }
+        return parsed
+      }
+      let tenantId = parsed.user?.tenantId
+      if (!tenantId || tenantId === 'tenant-kinetic') {
+        const email = (parsed.user?.email || '').toLowerCase()
+        const emp = (parsed.user?.employeeNumber || '').toUpperCase()
+        if (email.includes('keells') || emp.startsWith('KS-') || emp.startsWith('A-20') || emp.startsWith('M-20')) {
+          tenantId = 'tenant-keells'
+        } else if (email.includes('singer') || emp.startsWith('SNG-') || emp.startsWith('A-30') || emp.startsWith('M-30')) {
+          tenantId = 'tenant-singer'
+        } else {
+          tenantId = 'tenant-sampath'
+        }
+        if (parsed.user) parsed.user.tenantId = tenantId
+      }
+      const realTenant = appDataStore.getTenant(tenantId) || appDataStore.getTenants().find(t => t.id !== 'tenant-kinetic') || {
+        id: 'tenant-sampath',
+        name: 'Sampath Bank PLC',
+        code: 'SAMPATH',
+        domain: 'sampath.lk',
+        plan: 'Enterprise',
+      }
+      parsed.tenant = realTenant
+      if (parsed.user) parsed.user.tenantId = realTenant.id
+      return parsed
+    }
+
     // 1. Check tab-scoped sessionStorage first so each tab can have its own role/user
     const sessionRaw = sessionStorage.getItem(AUTH_STORAGE_KEY)
     if (sessionRaw) {
       try {
         const parsed = JSON.parse(sessionRaw)
         if (parsed.user && parsed.tenant) {
-          return parsed as AuthSession
+          const sanitized = sanitizeSession(parsed)
+          if (sanitized.tenant.id !== parsed.tenant.id || sanitized.tenant.name !== parsed.tenant.name) {
+            this.setSession(sanitized)
+          }
+          return sanitized
         }
       } catch (e) {
         console.error('Failed to parse tab auth session', e)
@@ -38,9 +78,9 @@ export const authService = {
         try {
           const parsed = JSON.parse(localRaw)
           if (parsed.user && parsed.tenant) {
-            // Adopt into this tab's sessionStorage so future tab switches remain isolated
-            sessionStorage.setItem(AUTH_STORAGE_KEY, localRaw)
-            return parsed as AuthSession
+            const sanitized = sanitizeSession(parsed)
+            sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sanitized))
+            return sanitized
           }
         } catch (e) {
           console.error('Failed to parse localStorage auth session', e)
@@ -48,15 +88,15 @@ export const authService = {
       }
     }
 
-    // Default to Alice Johnson (Employee) of Kinetic Technologies for seamless first visit in mock mode
+    // Default to first user of Sampath Bank for seamless first visit in mock mode
     if (useMock()) {
-      const defaultUser = appDataStore.getUser('user-Alice')
-      const defaultTenant = appDataStore.getTenant('tenant-kinetic')
+      const defaultTenant = appDataStore.getTenant('tenant-sampath') || appDataStore.getTenants()[0]
+      const defaultUser = defaultTenant ? appDataStore.getUsers(defaultTenant.id)[0] : appDataStore.getUsers()[0]
       if (defaultUser && defaultTenant) {
         const defaultSession: AuthSession = {
           user: defaultUser,
           tenant: defaultTenant,
-          token: 'mock-entra-id-jwt-token-Alice',
+          token: `mock-entra-id-jwt-token-${defaultUser.id}`,
         }
         this.setSession(defaultSession)
         return defaultSession
@@ -116,11 +156,11 @@ export const authService = {
       console.log('🔍 [AUTH DEBUG - Backend returned user]', response.user)
       const session: AuthSession = {
         user: response.user,
-        tenant: response.tenant || {
+        tenant: response.tenant || appDataStore.getTenant(tenantId) || {
           id: tenantId,
-          name: tenantId === 'tenant-nova' ? 'Nova Systems' : 'Kinetic Technologies',
-          code: tenantId === 'tenant-nova' ? 'NOVA' : 'KINETIC',
-          domain: 'kinetictech.io',
+          name: tenantId === 'tenant-keells' ? 'Keells Supermarkets' : tenantId === 'tenant-singer' ? 'Singer Sri Lanka PLC' : 'Sampath Bank PLC',
+          code: tenantId === 'tenant-keells' ? 'KEELLS' : tenantId === 'tenant-singer' ? 'SINGER' : 'SAMPATH',
+          domain: tenantId === 'tenant-keells' ? 'keells.com' : tenantId === 'tenant-singer' ? 'singersl.com' : 'sampath.lk',
           plan: 'Enterprise',
         },
         token: response.token,
@@ -198,11 +238,12 @@ export const authService = {
   switchUser(userId: string): AuthSession {
     const user = appDataStore.getUser(userId)
     if (!user) throw new Error(`User ${userId} not found`)
-    const tenant = appDataStore.getTenant(user.tenantId)
+    const tenantId = user.tenantId && user.tenantId !== 'tenant-kinetic' ? user.tenantId : 'tenant-sampath'
+    const tenant = appDataStore.getTenant(tenantId) || appDataStore.getTenants()[0]
     if (!tenant) throw new Error(`Tenant for user ${userId} not found`)
 
     const session: AuthSession = {
-      user,
+      user: { ...user, tenantId: tenant.id },
       tenant,
       token: `mock-entra-id-token-${user.id}`,
     }
@@ -227,9 +268,10 @@ export const authService = {
 
   switchRole(role: UserRole): AuthSession {
     const current = this.getCurrentSession()
-    const tenantId = current ? current.tenant.id : 'tenant-kinetic'
+    const tenantId = (current && current.tenant?.id && current.tenant.id !== 'tenant-kinetic') ? current.tenant.id : 'tenant-sampath'
     const target = appDataStore.getUsers(tenantId).find(u => u.role === role) ||
-      appDataStore.getUsers().find(u => u.role === role)!
+      appDataStore.getUsers('tenant-sampath').find(u => u.role === role) ||
+      appDataStore.getUsers().find(u => u.role === role && u.tenantId !== 'tenant-kinetic')!
 
     return this.switchUser(target.id)
   },

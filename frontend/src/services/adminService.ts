@@ -245,5 +245,70 @@ export const adminService = {
       }
     }
   },
+
+  async getDRStatus(): Promise<any> {
+    if (!useMock()) {
+      return apiClient.get<any>('/admin/dr-status')
+    }
+    return {
+      timestamp: new Date().toISOString(),
+      isFailoverActive: false,
+      activeRoute: 'PRIMARY_AZURE_CLOUD',
+      primary: {
+        account: 'kinetic-hr',
+        endpoint: 'https://kinetic-hr.documents.azure.com:443/',
+        region: 'South India (Primary Datacenter)',
+        status: 'ONLINE',
+        mode: 'Active-Active Multi-Region Leader',
+        latencyMs: 6,
+        availabilitySLA: '99.999%',
+      },
+      secondaryCloudDR: {
+        account: 'kinetic-hr-dr',
+        endpoint: 'https://kinetic-hr-dr.documents.azure.com:443/',
+        region: 'Central India (Azure Paired Region)',
+        status: 'HOT_STANDBY',
+        replicationLagMs: 4,
+        syncState: 'REALTIME_IN_SYNC',
+        consistency: 'Session Level (RPO = 0, RTO < 1.5s)',
+        backbone: 'Microsoft Global Optical Fiber Mesh',
+      },
+      localAirGapVault: {
+        storageType: 'Encrypted Persistent Disk Store',
+        filePath: 'storage/disaster_recovery_vault.json',
+        status: 'SYNCHRONIZED',
+        lastSyncedAt: new Date().toISOString(),
+        syncedContainersCount: 12,
+        totalSyncedRecords: 480,
+        airGapProtection: 'True (Zero Data Loss Offline Resiliency)',
+      },
+      metrics: {
+        totalFailoverEvents: 0,
+        rpoSeconds: 0,
+        rtoSeconds: 1.2,
+      },
+    }
+  },
+
+  async simulateDRFailover(simulateOutage: boolean): Promise<any> {
+    if (!useMock()) {
+      return apiClient.post<any>('/admin/dr-simulate-failover', { simulateOutage })
+    }
+    const current = await this.getDRStatus()
+    return {
+      ...current,
+      isFailoverActive: simulateOutage,
+      activeRoute: simulateOutage ? 'DISASTER_RECOVERY_HOT_STANDBY' : 'PRIMARY_AZURE_CLOUD',
+      primary: {
+        ...current.primary,
+        status: simulateOutage ? 'OFFLINE_SIMULATED' : 'ONLINE',
+      },
+      secondaryCloudDR: {
+        ...current.secondaryCloudDR,
+        status: simulateOutage ? 'ACTIVE_FAILOVER' : 'HOT_STANDBY',
+      },
+    }
+  },
 }
+
 

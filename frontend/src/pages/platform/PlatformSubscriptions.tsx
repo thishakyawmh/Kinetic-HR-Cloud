@@ -8,13 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import {
   CreditCard,
   Check,
-  ShieldAlert,
-  Sparkles,
   Users,
-  HardDrive,
   Cpu,
-  Layers,
-  CheckCircle2,
 } from 'lucide-react'
 
 export const PlatformSubscriptions: React.FC = () => {
@@ -23,11 +18,11 @@ export const PlatformSubscriptions: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Subscription Business Model & Plan Limits"
-        subtitle="Manage commercial SaaS tiers, monthly AI request quotas, and backend quota enforcement policies (§12)."
+        title="Subscription Plans"
+        subtitle="Commercial SaaS tiers, seat limits, and AI quotas."
         badge={
           <Badge variant="outline" className="text-xs bg-[#23ace3]/15 text-[#23ace3] border-[#23ace3]/30">
-            Commercial SaaS Engine
+            SaaS Plans
           </Badge>
         }
       >
@@ -41,23 +36,6 @@ export const PlatformSubscriptions: React.FC = () => {
           <span>Provision Tenant on Plan</span>
         </Button>
       </PageHeader>
-
-      {/* Backend Enforcement Principle Callout (§12) */}
-      <Card className="border-[#23ace3]/30 bg-[#23ace3]/10 p-5 rounded-2xl shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2 rounded-xl bg-[#23ace3]/20 text-[#23ace3] shrink-0">
-            <ShieldAlert className="h-5 w-5" />
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-sm font-bold text-foreground">
-              Backend Quota Enforcement Architecture (§12)
-            </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Subscription limits are strictly enforced at the backend service layer, not merely in the client UI. If an organization on the <strong>Starter Plan (25 seats)</strong> attempts to add a 26th employee, or exceeds its <strong>500 monthly AI request quota</strong>, the backend API rejects the operation with a plan upgrade prompt.
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* 3 Tier Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

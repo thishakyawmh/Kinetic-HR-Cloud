@@ -58,6 +58,30 @@ export const AppShell: React.FC = () => {
     location.pathname === '/admin/assistant' ||
     location.pathname === '/'
 
+  // Relevant organization name that the manager, employee, or HR admin belongs to
+  const organizationName = React.useMemo(() => {
+    if (role === 'platform_admin') {
+      return 'Global Cloud Fleet Infrastructure'
+    }
+    if (tenant?.name && tenant.name !== 'Kinetic Technologies' && tenant.id !== 'tenant-kinetic') {
+      return tenant.name
+    }
+    if (user?.tenantId) {
+      if (user.tenantId === 'tenant-keells') return 'Keells Supermarkets'
+      if (user.tenantId === 'tenant-singer') return 'Singer Sri Lanka PLC'
+      if (user.tenantId === 'tenant-sampath') return 'Sampath Bank PLC'
+    }
+    const email = (user?.email || '').toLowerCase()
+    const emp = (user?.employeeNumber || '').toUpperCase()
+    if (email.includes('keells') || emp.startsWith('KS-') || emp.startsWith('A-20') || emp.startsWith('M-20')) {
+      return 'Keells Supermarkets'
+    }
+    if (email.includes('singer') || emp.startsWith('SNG-') || emp.startsWith('A-30') || emp.startsWith('M-30')) {
+      return 'Singer Sri Lanka PLC'
+    }
+    return 'Sampath Bank PLC'
+  }, [user, tenant, role])
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground font-sans transition-colors duration-200">
       {/* Kinetic Collapsible Sidebar */}
@@ -77,7 +101,7 @@ export const AppShell: React.FC = () => {
           {/* Active Organization Pill Badge */}
           <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-card border border-border text-xs font-medium text-foreground shadow-xs">
             <Building2 className="h-3.5 w-3.5 text-[#23ace3]" />
-            <span>{tenant?.name || 'Kinetic HR Cloud'}</span>
+            <span>{organizationName}</span>
           </div>
 
           {/* Notifications */}

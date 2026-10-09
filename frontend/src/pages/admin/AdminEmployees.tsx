@@ -1055,7 +1055,7 @@ export const AdminEmployees: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="font-extrabold text-foreground text-lg">
-                        {tenant?.name || 'Kinetic Technologies'} Whole Company Workspace
+                        {tenant?.name || 'Sampath Bank PLC'} Whole Company Workspace
                       </h4>
                       <div className="text-xs text-[#23ace3] font-mono font-semibold">
                         Single Unified Enterprise Workspace • {employees.length} Active Members

@@ -87,10 +87,10 @@ export const AdminCreateWorkspace: React.FC = () => {
 
         <PageHeader
           title="Provision New Department Workspace"
-          subtitle={`Establish a new organizational division, branch workspace, or department team under ${tenant?.name || 'Kinetic Technologies'}.`}
+          subtitle={`Establish a new organizational division, branch workspace, or department team under ${tenant?.name || 'Sampath Bank PLC'}.`}
           badge={
             <Badge variant="outline" className="text-xs bg-[#23ace3]/10 border-[#23ace3]/30 text-[#23ace3]">
-              Multi-Tenant Partition: {tenant?.code || 'KINETIC'}
+              Multi-Tenant Partition: {tenant?.code || 'SAMPATH'}
             </Badge>
           }
         />

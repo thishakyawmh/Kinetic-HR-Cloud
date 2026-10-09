@@ -393,12 +393,12 @@ export const ProfilePage: React.FC = () => {
 
                 <div>
                   <label className="text-muted-foreground block mb-1">Reporting Manager</label>
-                  <Input value={user?.managerName || 'David Wilson'} disabled className="bg-muted/40 cursor-not-allowed" />
+                  <Input value={user?.managerName || 'Workspace Branch Manager'} disabled className="bg-muted/40 cursor-not-allowed" />
                 </div>
 
                 <div>
                   <label className="text-muted-foreground block mb-1">Organization</label>
-                  <Input value={`${tenant?.name || 'Kinetic Technologies'} (${tenant?.code || 'KINETIC'})`} disabled className="bg-muted/40 cursor-not-allowed" />
+                  <Input value={`${tenant?.name || 'Sampath Bank PLC'} (${tenant?.code || 'SAMPATH'})`} disabled className="bg-muted/40 cursor-not-allowed" />
                 </div>
 
                 <div>

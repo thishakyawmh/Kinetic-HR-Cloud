@@ -41,8 +41,8 @@ export const ManagerDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Manager Command Center - ${user?.name || 'David Wilson'}`}
-        subtitle={`Engineering Department Overview • ${tenant?.name || 'Alyxra Digital'}`}
+        title={`Manager Command Center - ${user?.name || 'Workspace Manager'}`}
+        subtitle={`${user?.department || 'Department'} Overview • ${tenant?.name || 'Sampath Bank PLC'}`}
       />
 
       {/* Metrics Row (Section 19) */}

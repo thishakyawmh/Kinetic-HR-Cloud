@@ -46,12 +46,23 @@ export function authenticateRequest(
     } catch {
       // Dev / Mock fallback token resolution
       const lower = token.toLowerCase()
-      if (lower.includes('david') || lower.includes('manager')) {
+      if (lower.includes('platform') || lower.includes('alex') || lower.includes('kc-0001')) {
+        decoded = {
+          id: 'user-platform-admin',
+          tenantId: 'tenant-sampath',
+          name: 'Alex Thorne',
+          email: 'alex.thorne@kineticcloud.azure.com',
+          role: 'platform_admin',
+          department: 'Cloud Platform Operations',
+          jobTitle: 'Principal Cloud Platform Director',
+          employeeNumber: 'KC-0001',
+        }
+      } else if (lower.includes('david') || lower.includes('manager')) {
         decoded = {
           id: 'user-david',
-          tenantId: 'tenant-kinetic',
+          tenantId: 'tenant-sampath',
           name: 'David Wilson',
-          email: 'david.wilson@kinetictech.io',
+          email: 'david.wilson@sampath.lk',
           role: 'manager',
           department: 'Engineering',
           jobTitle: 'Engineering Director',
@@ -60,9 +71,9 @@ export function authenticateRequest(
       } else if (lower.includes('alice') || lower.includes('employee')) {
         decoded = {
           id: 'user-Alice',
-          tenantId: 'tenant-kinetic',
+          tenantId: 'tenant-sampath',
           name: 'Alice Johnson',
-          email: 'Alice.johnson@kinetictech.io',
+          email: 'alice.johnson@sampath.lk',
           role: 'employee',
           department: 'Engineering',
           jobTitle: 'Senior Frontend Engineer',
@@ -71,24 +82,13 @@ export function authenticateRequest(
       } else if (lower.includes('sarah') || lower.includes('admin')) {
         decoded = {
           id: 'user-sarah',
-          tenantId: 'tenant-kinetic',
+          tenantId: 'tenant-sampath',
           name: 'Sarah Miller',
-          email: 'sarah.miller@kinetictech.io',
+          email: 'sarah.miller@sampath.lk',
           role: 'admin',
           department: 'Human Resources',
           jobTitle: 'VP of People & Operations',
           employeeNumber: 'A-0012',
-        }
-      } else if (lower.includes('platform') || lower.includes('alex')) {
-        decoded = {
-          id: 'user-platform-admin',
-          tenantId: 'tenant-kinetic',
-          name: 'Alex Thorne',
-          email: 'alex.thorne@kineticcloud.azure.com',
-          role: 'platform_admin',
-          department: 'Cloud Platform Operations',
-          jobTitle: 'Principal Cloud Platform Director',
-          employeeNumber: 'KC-0001',
         }
       } else {
         throw new Error('Unrecognized mock token')

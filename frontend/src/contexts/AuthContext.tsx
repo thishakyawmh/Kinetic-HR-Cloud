@@ -134,6 +134,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newUser
   }
 
+  // Resolve genuine active tenant for the logged-in user
+  const activeTenant = React.useMemo<Tenant | null>(() => {
+    if (!session?.user) return null
+    if (session.user.role === 'platform_admin') {
+      return {
+        id: 'tenant-platform',
+        name: 'Global Cloud Fleet Infrastructure',
+        code: 'PLATFORM',
+        domain: 'azure.kineticcloud.io',
+        plan: 'Enterprise',
+      }
+    }
+
+    // Always prefer user's direct assigned tenantId if valid
+    const userTenantId = session.user.tenantId
+    if (userTenantId && userTenantId !== 'tenant-kinetic') {
+      const match = allTenants.find(t => t.id === userTenantId || t.code?.toLowerCase() === userTenantId.toLowerCase())
+      if (match && match.name && match.name !== 'Kinetic Technologies') return match
+      const fromStore = appDataStore.getTenant(userTenantId)
+      if (fromStore && fromStore.name && fromStore.name !== 'Kinetic Technologies') return fromStore
+    }
+
+    // If session.tenant exists and is valid
+    if (session.tenant && session.tenant.name && session.tenant.name !== 'Kinetic Technologies' && session.tenant.id !== 'tenant-kinetic') {
+      return session.tenant
+    }
+
+    // Deduce from user email / employee number
+    const email = (session.user.email || '').toLowerCase()
+    const emp = (session.user.employeeNumber || '').toUpperCase()
+    if (email.includes('keells') || emp.startsWith('KS-') || emp.startsWith('A-20') || emp.startsWith('M-20')) {
+      return appDataStore.getTenant('tenant-keells') || allTenants[1] || null
+    }
+    if (email.includes('singer') || emp.startsWith('SNG-') || emp.startsWith('A-30') || emp.startsWith('M-30')) {
+      return appDataStore.getTenant('tenant-singer') || allTenants[2] || null
+    }
+    return appDataStore.getTenant('tenant-sampath') || allTenants[0] || null
+  }, [session, allTenants])
+
+  React.useEffect(() => {
+    if (session && activeTenant && (session.tenant?.id !== activeTenant.id || session.tenant?.name !== activeTenant.name)) {
+      const updated = { ...session, tenant: activeTenant, user: { ...session.user, tenantId: activeTenant.id } }
+      authService.setSession(updated)
+      setSession(updated)
+    }
+  }, [activeTenant])
+
   const role: UserRole = session?.user.role || 'employee'
 
   return (
@@ -141,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         session,
         user: session?.user || null,
-        tenant: session?.tenant || (session?.user ? appDataStore.getTenant(session.user.tenantId) : null) || allTenants[0] || null,
+        tenant: activeTenant,
         role,
         isAuthenticated: !!session,
         allTenants,

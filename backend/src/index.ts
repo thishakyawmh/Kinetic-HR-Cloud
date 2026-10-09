@@ -40,6 +40,8 @@ import {
   getAdminIntegrations,
   getAdminAIUsage,
   getAzureFleetDiagnostic,
+  getDRStatusHandler,
+  simulateDRFailoverHandler,
 } from './functions/admin'
 import {
   getOrganizations,
@@ -352,6 +354,20 @@ app.http('getAzureFleetDiagnostic', {
   authLevel: 'anonymous',
   route: 'admin/azure-fleet-diagnostic',
   handler: getAzureFleetDiagnostic,
+})
+
+app.http('getDRStatus', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/dr-status',
+  handler: getDRStatusHandler,
+})
+
+app.http('simulateDRFailover', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'admin/dr-simulate-failover',
+  handler: simulateDRFailoverHandler,
 })
 
 app.http('getAttendanceRecords', {

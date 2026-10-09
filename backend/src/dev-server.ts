@@ -45,6 +45,8 @@ import {
   getAdminIntegrations,
   getAdminAIUsage,
   getAzureFleetDiagnostic,
+  getDRStatusHandler,
+  simulateDRFailoverHandler,
 } from './functions/admin'
 import {
   getOrganizations,
@@ -172,6 +174,8 @@ addRoute('GET', '/api/admin/audit-logs', getAdminAuditLogs)
 addRoute('GET', '/api/admin/integrations', getAdminIntegrations)
 addRoute('GET', '/api/admin/ai-usage', getAdminAIUsage)
 addRoute('GET', '/api/admin/azure-fleet-diagnostic', getAzureFleetDiagnostic)
+addRoute('GET', '/api/admin/dr-status', getDRStatusHandler)
+addRoute('POST', '/api/admin/dr-simulate-failover', simulateDRFailoverHandler)
 
 
 // Platform Admin

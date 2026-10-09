@@ -200,3 +200,51 @@ export async function getAzureFleetDiagnostic(
   }
 }
 
+/**
+ * GET /api/admin/dr-status
+ * Returns real-time Disaster Recovery replication metrics across Primary, Secondary, and Air-Gapped Vault
+ */
+export async function getDRStatusHandler(
+  _request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  try {
+    const { getDRStatus } = await import('../config/cosmos')
+    const status = getDRStatus()
+    return {
+      status: 200,
+      jsonBody: status,
+    }
+  } catch (err: any) {
+    return {
+      status: 500,
+      jsonBody: { error: err.message },
+    }
+  }
+}
+
+/**
+ * POST /api/admin/dr-simulate-failover
+ * Toggles simulated Primary Azure region outage to prove zero-downtime BCDR failover
+ */
+export async function simulateDRFailoverHandler(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  try {
+    const body = (await request.json()) as { simulateOutage?: boolean }
+    const { setSimulatedDROutage, getDRStatus } = await import('../config/cosmos')
+    setSimulatedDROutage(!!body?.simulateOutage)
+    const updatedStatus = getDRStatus()
+    return {
+      status: 200,
+      jsonBody: updatedStatus,
+    }
+  } catch (err: any) {
+    return {
+      status: 500,
+      jsonBody: { error: err.message },
+    }
+  }
+}
+
