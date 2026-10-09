@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leaveService } from '@/services/leaveService'
+import { ApiError } from '@/services/apiClient'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,8 @@ import {
   Clock,
   ShieldCheck,
   FileUp,
+  X,
+  ArrowRight,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -32,11 +35,22 @@ const leaveSchema = z.object({
 
 type LeaveFormData = z.infer<typeof leaveSchema>
 
+interface ConflictModalData {
+  coveringForName: string
+  coveringForId: string
+  startDate: string
+  endDate: string
+  responsibility: string
+}
+
 export const EmployeeLeaveApply: React.FC = () => {
   const { user, tenant, refreshUser } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [submittedRequest, setSubmittedRequest] = useState<any>(null)
+  const [conflictModalData, setConflictModalData] = useState<ConflictModalData | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [pendingFormData, setPendingFormData] = useState<LeaveFormData | null>(null)
 
   const { data: balances = [] } = useQuery({
     queryKey: ['leaveBalances', user?.id],
@@ -48,13 +62,14 @@ export const EmployeeLeaveApply: React.FC = () => {
     register,
     handleSubmit,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<LeaveFormData>({
     resolver: zodResolver(leaveSchema),
     defaultValues: {
       leaveTypeCode: 'annual',
-      startDate: '2026-10-15',
-      endDate: '2026-10-16',
+      startDate: '2026-10-07',
+      endDate: '2026-10-09',
       reason: '',
     },
   })
@@ -80,8 +95,9 @@ export const EmployeeLeaveApply: React.FC = () => {
   const afterRemaining = Math.max(0, currentRemaining - requestedDays)
 
   const applyMutation = useMutation({
-    mutationFn: async (data: LeaveFormData) => {
+    mutationFn: async ({ data, isUrgent }: { data: LeaveFormData; isUrgent?: boolean }) => {
       if (!user || !tenant) return
+      setErrorMessage(null)
       const leaveTypeMap: Record<string, string> = {
         annual: 'Annual Leave',
         sick: 'Sick Leave',
@@ -102,19 +118,42 @@ export const EmployeeLeaveApply: React.FC = () => {
         requestedDays,
         reason: data.reason,
         isEmergency: data.leaveTypeCode === 'emergency',
+        isUrgent,
       })
     },
     onSuccess: newReq => {
       setSubmittedRequest(newReq)
+      setConflictModalData(null)
       queryClient.invalidateQueries({ queryKey: ['leaveRequests'] })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      queryClient.invalidateQueries({ queryKey: ['leavePlans'] })
       refreshUser()
+    },
+    onError: (err: any) => {
+      if (err instanceof ApiError && err.status === 409 && err.details) {
+        setConflictModalData({
+          coveringForName: err.details.coveringForName || 'Marcus Chen',
+          coveringForId: err.details.coveringForId || 'user-marcus',
+          startDate: err.details.startDate || '2026-10-06',
+          endDate: err.details.endDate || '2026-10-10',
+          responsibility: err.details.responsibility || 'Senior Frontend Engineering Duty Handoff',
+        })
+      } else {
+        setErrorMessage(err.message || 'Failed to submit leave request')
+      }
     },
   })
 
   const onSubmit = (data: LeaveFormData) => {
-    applyMutation.mutate(data)
+    setPendingFormData(data)
+    applyMutation.mutate({ data, isUrgent: false })
   }
+
+  const handleConfirmUrgentLeave = () => {
+    const data = pendingFormData || getValues()
+    applyMutation.mutate({ data, isUrgent: true })
+  }
+
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -133,6 +172,80 @@ export const EmployeeLeaveApply: React.FC = () => {
         }
       />
 
+      {/* Error / Warning Alert Banner */}
+      {errorMessage && (
+        <Card className="border border-rose-500/40 bg-rose-500/10 p-4 rounded-2xl animate-in fade-in">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold text-rose-300">Leave Application Notice</h4>
+              <p className="text-xs text-rose-200/90 leading-relaxed">{errorMessage}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Interactive Active Duty Handover Conflict Modal */}
+      {conflictModalData && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <Card className="max-w-lg w-full bg-card border border-amber-500/50 rounded-[28px] shadow-2xl p-6 space-y-5 relative">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div className="space-y-1 pr-6">
+                <h3 className="text-lg font-bold text-foreground">You Have an Active Duty Handover</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  You're scheduled to cover <span className="font-semibold text-foreground">{conflictModalData.coveringForName}</span> during these dates ({conflictModalData.startDate} to {conflictModalData.endDate}). Taking leave may leave this responsibility uncovered. Is your leave urgent and necessary?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-muted/40 rounded-2xl border border-border/60 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Assigned Coverage Target:</span>
+                <span className="font-semibold text-foreground">{conflictModalData.coveringForName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Responsibility:</span>
+                <span className="font-semibold text-sky-400">{conflictModalData.responsibility}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Scheduled Duty Dates:</span>
+                <span className="font-semibold text-foreground">{conflictModalData.startDate} — {conflictModalData.endDate}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <Button
+                type="button"
+                onClick={() => handleConfirmUrgentLeave()}
+                disabled={applyMutation.isPending}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs h-10 rounded-xl flex-1 shadow-sm cursor-pointer"
+              >
+                {applyMutation.isPending ? 'Submitting Urgent Request...' : 'Yes — Request Urgent Leave'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConflictModalData(null)}
+                className="text-xs h-10 rounded-xl flex-1 border-border cursor-pointer"
+              >
+                No — Keep My Current Schedule
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/employee/leave-plans')}
+                className="text-xs h-10 rounded-xl shrink-0 cursor-pointer"
+              >
+                Review My Responsibilities
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {submittedRequest ? (
         /* Confirmation State */
         <Card className="border border-emerald-500/30 bg-emerald-500/5 p-8 text-center rounded-[24px] shadow-sm animate-in fade-in zoom-in-95">
@@ -145,7 +258,7 @@ export const EmployeeLeaveApply: React.FC = () => {
                 Leave request submitted successfully
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Your request (Ref #{submittedRequest.id}) has been routed to your direct manager for review.
+                Your request (Ref #{submittedRequest.id}) has been registered and updated in your balance ledger.
               </p>
             </div>
 
@@ -163,13 +276,18 @@ export const EmployeeLeaveApply: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status:</span>
                 <span className="font-semibold text-amber-400 flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" /> Pending Manager Approval
+                  <Clock className="h-3.5 w-3.5" /> {submittedRequest.status === 'approved' ? 'Auto-Approved' : 'Pending Manager Review'}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Manager:</span>
-                <span className="font-semibold text-foreground">{user?.managerName || 'David Wilson'}</span>
-              </div>
+              {submittedRequest.reassignmentSummary && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-[11px] leading-relaxed mt-2">
+                  <div className="font-semibold flex items-center gap-1.5 mb-1">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                    <span>AI Duty Reassignment Status</span>
+                  </div>
+                  {submittedRequest.reassignmentSummary}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-center gap-3 pt-2">
@@ -184,10 +302,10 @@ export const EmployeeLeaveApply: React.FC = () => {
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => navigate('/employee/leave')}
+                onClick={() => navigate('/employee/leave-plans')}
                 className="text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl"
               >
-                View Leave Dashboard
+                View Team Calendar & Duty Wiring
               </Button>
             </div>
           </CardContent>

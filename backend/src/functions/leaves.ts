@@ -1,9 +1,39 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { authenticateRequest } from '../middleware/auth'
+import { arbitrateLeaveConflict } from '../services/aiEngine'
+
+/**
+ * Helper: Check date range overlap (YYYY-MM-DD)
+ */
+function datesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+  return start1 <= end2 && end1 >= start2
+}
+
+/**
+ * Helper: Calculate working days between start and end date (inclusive)
+ */
+function calculateWorkingDays(startDateStr: string, endDateStr: string): number {
+  if (!startDateStr || !endDateStr) return 1
+  const start = new Date(startDateStr)
+  const end = new Date(endDateStr)
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return 1
+
+  let count = 0
+  const cur = new Date(start)
+  while (cur <= end) {
+    const dayOfWeek = cur.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++
+    }
+    cur.setDate(cur.getDate() + 1)
+  }
+  return count > 0 ? count : 1
+}
 
 /**
  * GET /api/leaves/balances
+ * Retrieves authoritative leave balances for user
  */
 export async function getLeaveBalances(
   request: HttpRequest,
@@ -29,18 +59,54 @@ export async function getLeaveBalances(
     const typeNames: Record<string, string> = {
       annual: 'Annual Leave',
       casual: 'Casual Leave',
+      sick: 'Sick Leave',
       medical: 'Medical Leave',
-      sick: 'Medical Leave',
-      maternity: 'Maternity Leave',
       emergency: 'Emergency Leave',
-      other: 'Other Leave',
+      parental: 'Parental Leave',
+      unpaid: 'Unpaid Leave',
+    }
+
+    const defaultAllowances: Record<string, number> = {
+      annual: 20,
+      sick: 12,
+      casual: 7,
+      emergency: 3,
+      parental: 90,
+      unpaid: 0,
+    }
+
+    if (!balances || balances.length === 0) {
+      // Create initial balances for user if not existing
+      const initialTypes = ['annual', 'sick', 'casual', 'emergency']
+      const newBals: any[] = []
+      const balContainer = getTenantContainer('leave_balances')
+
+      for (const tCode of initialTypes) {
+        const item = {
+          id: `bal-${targetUserId}-${tCode}`,
+          tenantId,
+          userId: targetUserId,
+          leaveTypeId: `lt-${tCode}`,
+          leaveTypeName: typeNames[tCode],
+          code: tCode,
+          leaveType: tCode,
+          totalAllowance: defaultAllowances[tCode] || 15,
+          used: 0,
+          pending: 0,
+          remaining: defaultAllowances[tCode] || 15,
+        }
+        await balContainer.items.upsert(item)
+        newBals.push(item)
+      }
+      return { status: 200, jsonBody: newBals }
     }
 
     const normalized = balances.map(b => {
       const type = (b.code || b.leaveType || 'annual').toLowerCase()
-      const total = Number(b.totalAllowance || b.allocated || 14)
+      const total = Number(b.totalAllowance !== undefined ? b.totalAllowance : (b.allocated || defaultAllowances[type] || 14))
       const used = Number(b.used || 0)
-      const remaining = Number(b.remaining !== undefined ? b.remaining : Math.max(0, total - used))
+      const pending = Number(b.pending || 0)
+      const remaining = Number(b.remaining !== undefined ? b.remaining : Math.max(0, total - used - pending))
       return {
         ...b,
         id: b.id || `bal-${b.userId}-${type}`,
@@ -51,7 +117,7 @@ export async function getLeaveBalances(
         totalAllowance: total,
         allocated: total,
         used,
-        pending: Number(b.pending || 0),
+        pending,
         remaining,
       }
     })
@@ -96,7 +162,7 @@ export async function getLeaveRequests(
 
 /**
  * POST /api/leaves
- * Submits a new leave application
+ * Submits a new leave application with active duty handover conflict checks and balance accounting
  */
 export async function createLeaveRequest(
   request: HttpRequest,
@@ -106,67 +172,216 @@ export async function createLeaveRequest(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
+  const userId = auth.user!.id
+  const userName = auth.user!.name
 
   try {
     const body = (await request.json()) as any
-    const leaveId = `leave-${Date.now()}`
+    const startDate = body.startDate
+    const endDate = body.endDate
+    const leaveTypeCode = (body.leaveTypeCode || 'annual').toLowerCase()
+    const isUrgent = !!body.isUrgent
 
-    const container = getTenantContainer('leaves')
-    const requestedDaysNum = Number(body.requestedDays || 1)
+    // Calculate working days
+    const requestedDaysNum = body.requestedDays ? Number(body.requestedDays) : calculateWorkingDays(startDate, endDate)
 
-    // Automated Leave Approval Engine Check:
-    // Check remaining balance for user
+    // 1. Check for Active Duty Handover Conflict (User is assigned to cover someone else during this period)
+    const activePlans = await queryTenantItems<any>(
+      'leave_plans',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.assignedBackupId = @userId AND c.status != "cancelled"',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@userId', value: userId },
+      ]
+    )
+
+    const conflictingHandover = activePlans.find(p => datesOverlap(p.startDate, p.endDate, startDate, endDate))
+
+    // If there is an active handover conflict and user hasn't explicitly confirmed urgency:
+    if (conflictingHandover && !isUrgent) {
+      return {
+        status: 409,
+        jsonBody: {
+          error: 'ACTIVE_DUTY_HANDOVER_CONFLICT',
+          message: `Active Duty Handover Conflict: Scheduled to cover ${conflictingHandover.employeeName} from ${conflictingHandover.startDate} to ${conflictingHandover.endDate}`,
+          coveringForName: conflictingHandover.employeeName,
+          coveringForId: conflictingHandover.employeeId,
+          startDate: conflictingHandover.startDate,
+          endDate: conflictingHandover.endDate,
+          responsibility: `${conflictingHandover.employeeRole || 'Operational'} Duty Coverage & Handoff`,
+        },
+      }
+    }
+
+    // 2. Authoritative Balance Check
     const balances = await queryTenantItems<any>(
       'leave_balances',
       tenantId,
       'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = @code OR c.leaveType = @code)',
       [
         { name: '@tenantId', value: tenantId },
-        { name: '@userId', value: auth.user!.id },
-        { name: '@code', value: body.leaveTypeCode || 'annual' },
+        { name: '@userId', value: userId },
+        { name: '@code', value: leaveTypeCode },
       ]
     )
 
+    let currentBal = balances[0]
+    if (!currentBal) {
+      currentBal = {
+        id: `bal-${userId}-${leaveTypeCode}`,
+        tenantId,
+        userId,
+        code: leaveTypeCode,
+        leaveType: leaveTypeCode,
+        totalAllowance: leaveTypeCode === 'annual' ? 20 : 10,
+        used: 0,
+        pending: 0,
+        remaining: leaveTypeCode === 'annual' ? 20 : 10,
+      }
+    }
+
+    const available = Number(currentBal.remaining !== undefined ? currentBal.remaining : (currentBal.totalAllowance - currentBal.used - (currentBal.pending || 0)))
+
+    if (available < requestedDaysNum && leaveTypeCode !== 'unpaid') {
+      return {
+        status: 400,
+        jsonBody: {
+          error: `Insufficient ${leaveTypeCode} leave balance. Available: ${available} days, Requested: ${requestedDaysNum} days.`,
+        },
+      }
+    }
+
+    // 3. Automated Approval Policy
     let autoApproved = false
     let autoReason = ''
-    const currentBal = balances[0]
-    const remaining = currentBal ? Number(currentBal.remaining ?? (currentBal.totalAllowance - currentBal.used)) : 14
-
-    // Automatic approval condition: Routine leave within balance and <= 3 days duration
-    if (remaining >= requestedDaysNum && requestedDaysNum <= 3 && body.leaveTypeCode !== 'unpaid' && body.leaveTypeCode !== 'special') {
+    if (available >= requestedDaysNum && requestedDaysNum <= 3 && leaveTypeCode !== 'unpaid' && leaveTypeCode !== 'special' && !conflictingHandover) {
       autoApproved = true
-      autoReason = `Auto-approved by Kinetic Engine: Sufficient leave balance (${remaining} days available) and zero staffing conflict.`
+      autoReason = `Auto-approved by Kinetic Engine: Balance verified (${available} days available), 0 staffing conflict.`
     }
 
     const initialStatus = autoApproved ? 'approved' : 'pending'
+    const leaveId = `leave-${Date.now()}`
+
+    // 4. Handle Conflicting Duty Handover Reassignment Workflow (If Urgent Leave Confirmed)
+    let reassignmentSummary = ''
+    if (conflictingHandover && isUrgent) {
+      // Find replacement candidate in same tenant & role
+      const allUsers = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT * FROM c WHERE c.tenantId = @tenantId',
+        [{ name: '@tenantId', value: tenantId }]
+      )
+
+      const reqRole = conflictingHandover.employeeRole || auth.user!.jobTitle || 'Senior Frontend Engineer'
+      const reqDept = conflictingHandover.department || auth.user!.department || 'Engineering'
+
+      // Filter eligible candidates in same role/dept excluding absent user and original leave taker
+      const eligibleCandidates = allUsers.filter(u => {
+        if (u.id === userId || u.id === conflictingHandover.employeeId) return false
+        return (u.jobTitle === reqRole || u.department === reqDept)
+      })
+
+      // Query leaves to check candidate availability
+      const candidateLeaves = await queryTenantItems<any>(
+        'leaves',
+        tenantId,
+        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.status IN ("approved", "pending")',
+        [{ name: '@tenantId', value: tenantId }]
+      )
+
+      const availableCandidates = eligibleCandidates.filter(cand => {
+        const hasOverlappingLeave = candidateLeaves.some(l => l.employeeId === cand.id && datesOverlap(l.startDate, l.endDate, conflictingHandover.startDate, conflictingHandover.endDate))
+        return !hasOverlappingLeave
+      })
+
+      const planContainer = getTenantContainer('leave_plans')
+
+      if (availableCandidates.length > 0) {
+        const selectedReplacement = availableCandidates[0]
+        conflictingHandover.status = 'Reassigned'
+        conflictingHandover.assignedBackupId = selectedReplacement.id
+        conflictingHandover.assignedBackupName = selectedReplacement.name
+        conflictingHandover.assignedBackupRole = selectedReplacement.jobTitle || reqRole
+        conflictingHandover.reassignedFrom = userName
+        conflictingHandover.notes = `Reassigned from ${userName} to ${selectedReplacement.name} due to urgent leave request.`
+        conflictingHandover.updatedAt = new Date().toISOString()
+        await planContainer.items.upsert(conflictingHandover)
+
+        reassignmentSummary = `Responsibility for ${conflictingHandover.employeeName} successfully reassigned to ${selectedReplacement.name} (${selectedReplacement.jobTitle || reqRole}).`
+      } else {
+        conflictingHandover.status = 'Coverage Needed'
+        conflictingHandover.assignedBackupId = ''
+        conflictingHandover.assignedBackupName = 'Coverage Needed — Manager Action Required'
+        conflictingHandover.notes = `Flagged: Coverage Needed — Urgent leave filed by ${userName}, no available same-role backup.`
+        conflictingHandover.updatedAt = new Date().toISOString()
+        await planContainer.items.upsert(conflictingHandover)
+
+        // Create manager escalation notification
+        try {
+          const notifContainer = getTenantContainer('notifications')
+          await notifContainer.items.create({
+            id: `notif-esc-${Date.now()}`,
+            tenantId,
+            recipientId: auth.user!.managerId || 'user-david',
+            title: '🚨 Coverage Gap Escalation Required',
+            message: `Urgent leave submitted by ${userName} created a coverage gap for ${conflictingHandover.employeeName}. Manager action required to assign replacement.`,
+            read: false,
+            createdAt: new Date().toISOString(),
+          })
+        } catch (_) {}
+
+        reassignmentSummary = `No available same-role backup found. Handover flagged as "Coverage Needed — Manager Action Required" and escalated to manager.`
+      }
+    }
+
+    const leaveTypeMap: Record<string, string> = {
+      annual: 'Annual Leave',
+      sick: 'Sick Leave',
+      casual: 'Casual Leave',
+      emergency: 'Emergency Leave',
+      parental: 'Parental Leave',
+      unpaid: 'Unpaid Leave',
+      other: 'Other Leave',
+    }
 
     const newRequest = {
       id: leaveId,
       tenantId,
-      employeeId: auth.user!.id,
-      employeeName: auth.user!.name,
+      employeeId: userId,
+      employeeName: userName,
       department: body.department || auth.user!.department || 'Engineering',
-      leaveTypeId: body.leaveTypeId,
-      leaveTypeName: body.leaveTypeName,
-      leaveTypeCode: body.leaveTypeCode,
-      startDate: body.startDate,
-      endDate: body.endDate,
+      leaveTypeId: body.leaveTypeId || `lt-${leaveTypeCode}`,
+      leaveTypeName: body.leaveTypeName || leaveTypeMap[leaveTypeCode] || 'Leave',
+      leaveTypeCode,
+      startDate,
+      endDate,
       requestedDays: requestedDaysNum,
       reason: body.reason,
+      isUrgent,
       status: initialStatus,
       autoApproved,
+      reassignmentSummary: reassignmentSummary || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       timeline: [
         {
           id: `tl-${Date.now()}-1`,
-          action: 'submitted',
-          actorName: auth.user!.name,
+          action: isUrgent ? 'submitted_urgent' : 'submitted',
+          actorName: userName,
           timestamp: new Date().toISOString(),
-          comment: 'Leave request submitted',
+          comment: isUrgent ? `Urgent leave submitted: ${body.reason}` : 'Leave request submitted',
         },
-        ...(autoApproved ? [{
+        ...(reassignmentSummary ? [{
           id: `tl-${Date.now()}-2`,
+          action: 'reassignment_triggered',
+          actorName: 'Kinetic Reassignment Engine',
+          timestamp: new Date().toISOString(),
+          comment: reassignmentSummary,
+        }] : []),
+        ...(autoApproved ? [{
+          id: `tl-${Date.now()}-3`,
           action: 'approved',
           actorName: 'Kinetic Autonomous Engine',
           timestamp: new Date().toISOString(),
@@ -175,17 +390,19 @@ export async function createLeaveRequest(
       ],
     }
 
+    const container = getTenantContainer('leaves')
     const { resource } = await container.items.create(newRequest)
 
-    // Deduct balance if auto approved
-    if (autoApproved && currentBal) {
-      const balanceContainer = getTenantContainer('leave_balances')
+    // Update Authoritative Leave Balances
+    const balanceContainer = getTenantContainer('leave_balances')
+    if (initialStatus === 'approved') {
       currentBal.used = (currentBal.used || 0) + requestedDaysNum
-      currentBal.remaining = Math.max(0, (currentBal.totalAllowance || 14) - currentBal.used)
-      try {
-        await balanceContainer.items.upsert(currentBal)
-      } catch (_) {}
+    } else {
+      currentBal.pending = (currentBal.pending || 0) + requestedDaysNum
     }
+    currentBal.remaining = Math.max(0, (currentBal.totalAllowance || 20) - (currentBal.used || 0) - (currentBal.pending || 0))
+    currentBal.updatedAt = new Date().toISOString()
+    await balanceContainer.items.upsert(currentBal)
 
     return { status: 201, jsonBody: resource }
   } catch (err: any) {
@@ -195,7 +412,7 @@ export async function createLeaveRequest(
 
 /**
  * PATCH /api/leaves/{id}/status
- * Updates status (approved, rejected, cancelled)
+ * Updates status (approved, rejected, cancelled) and reverses/updates leave balances accordingly
  */
 export async function updateLeaveStatus(
   request: HttpRequest,
@@ -215,50 +432,66 @@ export async function updateLeaveStatus(
     const body = (await request.json()) as { status: string; comment?: string; actorName?: string }
     const container = getTenantContainer('leaves')
 
-    // Read current item from Cosmos DB with partition key
     const { resource: currentLeave } = await container.item(leaveId, tenantId).read()
     if (!currentLeave) {
       return { status: 404, jsonBody: { error: `Leave request "${leaveId}" not found` } }
     }
 
-    currentLeave.status = body.status
+    const prevStatus = currentLeave.status
+    const newStatus = body.status
+    const requestedDays = currentLeave.requestedDays || 1
+    const empId = currentLeave.employeeId
+    const code = currentLeave.leaveTypeCode || 'annual'
+
+    currentLeave.status = newStatus
     currentLeave.updatedAt = new Date().toISOString()
     if (!currentLeave.timeline) currentLeave.timeline = []
 
     currentLeave.timeline.push({
       id: `tl-${Date.now()}`,
-      action: body.status,
+      action: newStatus,
       actorName: body.actorName || auth.user!.name,
       timestamp: new Date().toISOString(),
-      comment: body.comment || `Status updated to ${body.status}`,
+      comment: body.comment || `Status updated to ${newStatus}`,
     })
 
     const { resource: updated } = await container.item(leaveId, tenantId).replace(currentLeave)
 
-    // If approved, deduct used and update remaining in leave_balances container
-    if (body.status === 'approved' && currentLeave.leaveTypeCode && currentLeave.employeeId) {
-      try {
-        const balContainer = getTenantContainer('leave_balances')
-        const { resources: balances } = await balContainer.items
-          .query({
-            query: 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND c.code = @code',
-            parameters: [
-              { name: '@tenantId', value: tenantId },
-              { name: '@userId', value: currentLeave.employeeId },
-              { name: '@code', value: currentLeave.leaveTypeCode },
-            ],
-          })
-          .fetchAll()
+    // Update Authoritative Leave Balances in Database
+    try {
+      const balContainer = getTenantContainer('leave_balances')
+      const balances = await queryTenantItems<any>(
+        'leave_balances',
+        tenantId,
+        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = @code OR c.leaveType = @code)',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@userId', value: empId },
+          { name: '@code', value: code },
+        ]
+      )
 
-        if (balances.length > 0) {
-          const bal = balances[0]
-          bal.used = (bal.used || 0) + (currentLeave.requestedDays || 1)
-          bal.remaining = Math.max(0, (bal.totalAllowance || 0) - bal.used)
-          await balContainer.items.upsert(bal)
+      if (balances.length > 0) {
+        const bal = balances[0]
+        if (prevStatus === 'pending') {
+          bal.pending = Math.max(0, (bal.pending || 0) - requestedDays)
+        } else if (prevStatus === 'approved') {
+          bal.used = Math.max(0, (bal.used || 0) - requestedDays)
         }
-      } catch (balErr) {
-        console.warn('Could not auto-deduct leave balance:', balErr)
+
+        if (newStatus === 'approved') {
+          bal.used = (bal.used || 0) + requestedDays
+        } else if (newStatus === 'pending') {
+          bal.pending = (bal.pending || 0) + requestedDays
+        }
+        // If rejected or cancelled, neither used nor pending holds the days
+
+        bal.remaining = Math.max(0, (bal.totalAllowance || 20) - (bal.used || 0) - (bal.pending || 0))
+        bal.updatedAt = new Date().toISOString()
+        await balContainer.items.upsert(bal)
       }
+    } catch (balErr) {
+      console.warn('Could not update leave balance on status change:', balErr)
     }
 
     return { status: 200, jsonBody: updated }
@@ -269,7 +502,7 @@ export async function updateLeaveStatus(
 
 /**
  * GET /api/leaves/types
- * Retrieves active leave policies and types for the tenant
+ * Retrieves active leave policies and types for tenant
  */
 export async function getLeaveTypes(
   request: HttpRequest,
@@ -296,8 +529,8 @@ export async function getLeaveTypes(
       tenantId: auth.user!.tenantId,
       name: 'Sick Leave',
       code: 'sick',
-      defaultDays: 10,
-      defaultAllowance: 10,
+      defaultDays: 12,
+      defaultAllowance: 12,
       requiresApproval: true,
       requiresManagerApproval: true,
       color: '#f43f5e',
@@ -308,8 +541,8 @@ export async function getLeaveTypes(
       tenantId: auth.user!.tenantId,
       name: 'Casual Leave',
       code: 'casual',
-      defaultDays: 5,
-      defaultAllowance: 5,
+      defaultDays: 7,
+      defaultAllowance: 7,
       requiresApproval: false,
       requiresManagerApproval: false,
       color: '#10b981',
@@ -332,8 +565,8 @@ export async function getLeaveTypes(
       tenantId: auth.user!.tenantId,
       name: 'Parental Leave',
       code: 'parental',
-      defaultDays: 60,
-      defaultAllowance: 60,
+      defaultDays: 90,
+      defaultAllowance: 90,
       requiresApproval: true,
       requiresManagerApproval: true,
       color: '#8b5cf6',
@@ -356,12 +589,9 @@ export async function getLeaveTypes(
   return { status: 200, jsonBody: defaultLeaveTypes }
 }
 
-import { arbitrateLeaveConflict } from '../services/aiEngine'
-
 /**
  * POST /api/leaves/ai-evaluate
- * Evaluates department leave requests under a daily max quota (e.g. 5 approvals out of 8 requests)
- * using historical leave frequency logs, urgency sentiment, and fairness rules.
+ * Evaluates department leave requests under a daily max quota using AI
  */
 export async function evaluateAIFairnessLeaves(
   request: HttpRequest,
@@ -378,10 +608,8 @@ export async function evaluateAIFairnessLeaves(
     const department = body?.department || 'Engineering'
     const maxDailyQuota = Number(body?.maxDailyQuota || 5)
 
-    // Call real AI arbitration engine
     const report = await arbitrateLeaveConflict(tenantId, department, targetDate, maxDailyQuota)
 
-    // If autoExecute requested, update database status for all evaluated items
     if (body?.autoExecute && report.evaluations.length > 0) {
       const container = getTenantContainer('leaves')
       for (const item of report.evaluations) {
@@ -421,7 +649,7 @@ export async function evaluateAIFairnessLeaves(
 
 /**
  * GET /api/leaves/plans
- * Retrieves team annual leave plans and automated responsibility assignment wiring
+ * Retrieves team annual leave plans and duty handoffs from database
  */
 export async function getLeavePlans(
   request: HttpRequest,
@@ -432,9 +660,60 @@ export async function getLeavePlans(
 
   const tenantId = auth.user!.tenantId
   try {
-    const plans = await queryTenantItems<any>('leave_plans', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId', [
+    let plans = await queryTenantItems<any>('leave_plans', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId', [
       { name: '@tenantId', value: tenantId },
     ])
+
+    // If no plans in DB yet, initialize realistic default scenario (Marcus leave Oct 6-10 covered by Alice)
+    if (!plans || plans.length === 0) {
+      const defaultScenarioPlans = [
+        {
+          id: 'plan-kasun-oct',
+          tenantId,
+          employeeId: 'user-kasun',
+          employeeName: 'Kasun Perera',
+          employeeRole: 'Senior Credit Officer',
+          department: 'Retail Banking & Branches',
+          startDate: '2026-10-06',
+          endDate: '2026-10-10',
+          days: 5,
+          notes: 'Approved Annual Leave — Credit Underwriting Duty Coverage by Dinesh Weerasinghe',
+          status: 'confirmed',
+          type: 'Annual Leave',
+          assignedBackupId: 'user-dinesh',
+          assignedBackupName: 'Dinesh Weerasinghe',
+          assignedBackupRole: 'Senior Credit Officer',
+          createdAt: new Date().toISOString(),
+          syncState: 'REALTIME_AZURE_CALENDAR_IN_SYNC',
+        },
+        {
+          id: 'plan-nuwan-oct',
+          tenantId,
+          employeeId: 'user-nuwan',
+          employeeName: 'Nuwan Jayasuriya',
+          employeeRole: 'Foreign Exchange Specialist',
+          department: 'Treasury & Investment',
+          startDate: '2026-10-19',
+          endDate: '2026-10-21',
+          days: 3,
+          notes: 'Annual Leave Plan — Foreign Exchange Settlement Coverage',
+          status: 'confirmed',
+          type: 'Annual Leave',
+          assignedBackupId: 'user-thilini',
+          assignedBackupName: 'Thilini Silva',
+          assignedBackupRole: 'Treasury Operations Manager',
+          createdAt: new Date().toISOString(),
+          syncState: 'REALTIME_AZURE_CALENDAR_IN_SYNC',
+        },
+      ]
+
+      const planContainer = getTenantContainer('leave_plans')
+      for (const p of defaultScenarioPlans) {
+        await planContainer.items.upsert(p)
+      }
+      plans = defaultScenarioPlans
+    }
+
     return { status: 200, jsonBody: plans }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
@@ -443,7 +722,7 @@ export async function getLeavePlans(
 
 /**
  * POST /api/leaves/plans
- * Marks an annual leave plan on the real-time calendar and calculates same-role responsibility handoff
+ * Schedules an annual leave plan and calculates non-conflicting same-role backup duty handoff
  */
 export async function createLeavePlan(
   request: HttpRequest,
@@ -453,6 +732,10 @@ export async function createLeavePlan(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
+  const userId = auth.user!.id
+  const userName = auth.user!.name
+  const userRole = auth.user!.jobTitle || 'Senior Frontend Engineer'
+  const userDept = auth.user!.department || 'Engineering'
 
   try {
     const body = (await request.json()) as {
@@ -461,41 +744,75 @@ export async function createLeavePlan(
       notes?: string
     }
 
-    // 1. Fetch team members in same tenant to find same-role mate
+    const startDate = body.startDate
+    const endDate = body.endDate
+    const daysCount = calculateWorkingDays(startDate, endDate)
+
+    // Fetch team members in same tenant
     const allUsers = await queryTenantItems<any>('users', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId', [
       { name: '@tenantId', value: tenantId },
     ])
 
-    const myRole = auth.user!.jobTitle || 'Senior Frontend Engineer'
-    const myDept = auth.user!.department || 'Engineering'
+    // Fetch existing leaves and plans to verify backup availability
+    const allLeaves = await queryTenantItems<any>('leaves', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.status IN ("approved", "pending")', [
+      { name: '@tenantId', value: tenantId },
+    ])
 
-    // Find same-role colleagues excluding current user
-    const sameRoleMates = allUsers.filter(
-      u => u.id !== auth.user!.id && (u.jobTitle === myRole || u.department === myDept)
-    )
+    const allPlans = await queryTenantItems<any>('leave_plans', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.status != "cancelled"', [
+      { name: '@tenantId', value: tenantId },
+    ])
 
-    const selectedBackup = sameRoleMates[0] || {
-      id: 'user-marcus',
-      name: 'Marcus Chen',
-      jobTitle: myRole,
-      department: myDept,
+    // Cascading Candidate Backup Search:
+    // Level 1: Same job title & same department
+    let candidates = allUsers.filter(u => u.id !== userId && u.jobTitle === userRole && u.department === userDept)
+
+    // Level 2: Same department
+    if (candidates.length === 0) {
+      candidates = allUsers.filter(u => u.id !== userId && u.department === userDept)
+    }
+
+    // Level 3: Same job title across org
+    if (candidates.length === 0) {
+      candidates = allUsers.filter(u => u.id !== userId && u.jobTitle === userRole)
+    }
+
+    // Level 4: Any colleague in organization
+    if (candidates.length === 0) {
+      candidates = allUsers.filter(u => u.id !== userId)
+    }
+
+    // Select candidate who is NOT on leave during these dates
+    let eligibleBackup = candidates.find(cand => {
+      const isOnLeave = allLeaves.some(l => l.employeeId === cand.id && datesOverlap(l.startDate, l.endDate, startDate, endDate))
+      const isBackup = allPlans.some(p => p.assignedBackupId === cand.id && datesOverlap(p.startDate, p.endDate, startDate, endDate))
+      return !isOnLeave && !isBackup
+    })
+
+    // Fallback if everyone has high duty load: Pick candidate not on leave
+    if (!eligibleBackup && candidates.length > 0) {
+      eligibleBackup = candidates.find(cand => {
+        const isOnLeave = allLeaves.some(l => l.employeeId === cand.id && datesOverlap(l.startDate, l.endDate, startDate, endDate))
+        return !isOnLeave
+      }) || candidates[0]
     }
 
     const planId = `plan-${Date.now()}`
     const planItem = {
       id: planId,
       tenantId,
-      employeeId: auth.user!.id,
-      employeeName: auth.user!.name,
-      employeeRole: myRole,
-      department: myDept,
-      startDate: body.startDate,
-      endDate: body.endDate,
+      employeeId: userId,
+      employeeName: userName,
+      employeeRole: userRole,
+      department: userDept,
+      startDate,
+      endDate,
+      days: daysCount,
       notes: body.notes || 'Annual leave plan scheduled',
-      status: 'confirmed',
-      assignedBackupId: selectedBackup.id,
-      assignedBackupName: selectedBackup.name,
-      assignedBackupRole: selectedBackup.jobTitle || myRole,
+      status: eligibleBackup ? 'confirmed' : 'Coverage Needed',
+      type: 'Annual Leave',
+      assignedBackupId: eligibleBackup ? eligibleBackup.id : '',
+      assignedBackupName: eligibleBackup ? eligibleBackup.name : 'Coverage Needed — Manager Action Required',
+      assignedBackupRole: eligibleBackup ? (eligibleBackup.jobTitle || userRole) : userRole,
       createdAt: new Date().toISOString(),
       syncState: 'REALTIME_AZURE_CALENDAR_IN_SYNC',
     }
@@ -503,10 +820,155 @@ export async function createLeavePlan(
     const container = getTenantContainer('leave_plans')
     await container.items.upsert(planItem)
 
+    // Automatically Update Authoritative Leave Balance in Database
+    try {
+      const balContainer = getTenantContainer('leave_balances')
+      const balances = await queryTenantItems<any>(
+        'leave_balances',
+        tenantId,
+        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = "annual" OR c.leaveType = "annual")',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@userId', value: userId },
+        ]
+      )
+
+      if (balances.length > 0) {
+        const bal = balances[0]
+        bal.used = (bal.used || 0) + daysCount
+        bal.remaining = Math.max(0, (bal.totalAllowance || 20) - bal.used - (bal.pending || 0))
+        bal.updatedAt = new Date().toISOString()
+        await balContainer.items.upsert(bal)
+      }
+
+      // Also create an approved leave request item in leaves container
+      const leavesContainer = getTenantContainer('leaves')
+      await leavesContainer.items.create({
+        id: `leave-plan-${Date.now()}`,
+        tenantId,
+        employeeId: userId,
+        employeeName: userName,
+        department: userDept,
+        leaveTypeId: 'lt-annual',
+        leaveTypeName: 'Annual Leave',
+        leaveTypeCode: 'annual',
+        startDate,
+        endDate,
+        requestedDays: daysCount,
+        reason: body.notes || 'Annual leave plan scheduled on team calendar',
+        status: 'approved',
+        autoApproved: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+    } catch (balErr) {
+      console.warn('Could not auto-deduct balance for leave plan:', balErr)
+    }
+
     return { status: 201, jsonBody: planItem }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
   }
 }
+
+/**
+ * DELETE /api/leaves/plans/{id}
+ * Cancels a scheduled leave plan and restores the employee's leave balance in the database
+ */
+export async function deleteLeavePlan(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+  const planId = request.params.id
+
+  if (!planId) {
+    return { status: 400, jsonBody: { error: 'Plan ID is required in URL parameter' } }
+  }
+
+  try {
+    const container = getTenantContainer('leave_plans')
+    let currentPlan: any = null
+
+    try {
+      const { resource } = await container.item(planId, tenantId).read()
+      currentPlan = resource
+    } catch (_) {}
+
+    if (!currentPlan) {
+      const plans = await queryTenantItems<any>('leave_plans', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.id = @id', [
+        { name: '@tenantId', value: tenantId },
+        { name: '@id', value: planId },
+      ])
+      if (plans.length > 0) {
+        currentPlan = plans[0]
+      }
+    }
+
+    if (!currentPlan) {
+      return { status: 404, jsonBody: { error: `Leave plan "${planId}" not found` } }
+    }
+
+    // Mark plan as cancelled
+    currentPlan.status = 'cancelled'
+    currentPlan.updatedAt = new Date().toISOString()
+    await container.items.upsert(currentPlan)
+
+    const empId = currentPlan.employeeId
+    const daysCount = currentPlan.days || calculateWorkingDays(currentPlan.startDate, currentPlan.endDate)
+
+    // Restore Authoritative Leave Balance in Database
+    try {
+      const balContainer = getTenantContainer('leave_balances')
+      const balances = await queryTenantItems<any>(
+        'leave_balances',
+        tenantId,
+        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = "annual" OR c.leaveType = "annual")',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@userId', value: empId },
+        ]
+      )
+
+      if (balances.length > 0) {
+        const bal = balances[0]
+        bal.used = Math.max(0, (bal.used || 0) - daysCount)
+        bal.remaining = Math.max(0, (bal.totalAllowance || 20) - bal.used - (bal.pending || 0))
+        bal.updatedAt = new Date().toISOString()
+        await balContainer.items.upsert(bal)
+      }
+
+      // Mark corresponding leave request as cancelled in leaves container
+      const leavesContainer = getTenantContainer('leaves')
+      const matchingLeaves = await queryTenantItems<any>(
+        'leaves',
+        tenantId,
+        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.employeeId = @empId AND c.startDate = @startDate AND c.endDate = @endDate',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@empId', value: empId },
+          { name: '@startDate', value: currentPlan.startDate },
+          { name: '@endDate', value: currentPlan.endDate },
+        ]
+      )
+
+      for (const ml of matchingLeaves) {
+        ml.status = 'cancelled'
+        ml.updatedAt = new Date().toISOString()
+        await leavesContainer.items.upsert(ml)
+      }
+    } catch (balErr) {
+      console.warn('Could not refund balance for cancelled plan:', balErr)
+    }
+
+    return { status: 200, jsonBody: { message: 'Leave plan cancelled and balance restored.', plan: currentPlan } }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
 
 

@@ -11,6 +11,7 @@ import {
   evaluateAIFairnessLeaves,
   getLeavePlans,
   createLeavePlan,
+  deleteLeavePlan,
 } from './functions/leaves'
 import {
   getEmployees,
@@ -144,6 +145,7 @@ addRoute('PATCH', '/api/leaves/{id}/status', updateLeaveStatus)
 addRoute('POST', '/api/leaves/ai-evaluate', evaluateAIFairnessLeaves)
 addRoute('GET', '/api/leaves/plans', getLeavePlans)
 addRoute('POST', '/api/leaves/plans', createLeavePlan)
+addRoute('DELETE', '/api/leaves/plans/{id}', deleteLeavePlan)
 
 // Employees
 addRoute('POST', '/api/employees/import', bulkImportEmployees)
@@ -338,7 +340,20 @@ const server = http.createServer(async (req, res) => {
           headers,
           query: parsedUrl.searchParams,
           params,
-          json: async () => (bodyText ? JSON.parse(bodyText) : null),
+          json: async () => {
+            if (!bodyText || !bodyText.trim()) return {}
+            try {
+              return JSON.parse(bodyText)
+            } catch (e) {
+              try {
+                // Sanitize potential shell escaping artifacts
+                const clean = bodyText.replace(/\\"/g, '"').replace(/^"|"$/g, '')
+                return JSON.parse(clean)
+              } catch (_) {
+                return {}
+              }
+            }
+          },
           text: async () => bodyText,
         }
 

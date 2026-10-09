@@ -42,6 +42,7 @@ export const leaveService = {
     requestedDays: number
     reason: string
     isEmergency?: boolean
+    isUrgent?: boolean
     aiAnalysis?: LeaveRequest['aiAnalysis']
   }): Promise<LeaveRequest> {
     if (!useMock()) {
@@ -52,6 +53,30 @@ export const leaveService = {
       ...data,
       isEmergency: !!data.isEmergency,
     })
+  },
+
+  async getLeavePlans(): Promise<any[]> {
+    if (!useMock()) {
+      return apiClient.get<any[]>('/leaves/plans')
+    }
+    await new Promise(r => setTimeout(r, 100))
+    return []
+  },
+
+  async createLeavePlan(data: { startDate: string; endDate: string; notes?: string }): Promise<any> {
+    if (!useMock()) {
+      return apiClient.post<any>('/leaves/plans', data)
+    }
+    await new Promise(r => setTimeout(r, 150))
+    return { id: `plan-${Date.now()}`, ...data, status: 'confirmed' }
+  },
+
+  async cancelLeavePlan(planId: string): Promise<any> {
+    if (!useMock()) {
+      return apiClient.delete(`/leaves/plans/${planId}`)
+    }
+    await new Promise(r => setTimeout(r, 150))
+    return true
   },
 
   async cancelLeave(requestId: string, employeeName: string): Promise<LeaveRequest | undefined> {
@@ -83,3 +108,4 @@ export const leaveService = {
     return appDataStore.submitLeaveComplaint(requestId, complaintNote)
   },
 }
+

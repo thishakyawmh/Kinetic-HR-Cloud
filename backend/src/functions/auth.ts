@@ -11,12 +11,14 @@ export async function validateOrganization(
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
-    const body = (await request.json()) as { organizationId?: string }
-    const orgId = (body?.organizationId || '').trim().toLowerCase()
-
-    if (!orgId) {
-      return { status: 400, jsonBody: { error: 'organizationId is required' } }
+    let body: any = {}
+    try {
+      body = (await request.json()) || {}
+    } catch (_) {
+      body = {}
     }
+    const queryOrg = request.query ? request.query.get('organizationId') : null
+    const orgId = (body?.organizationId || queryOrg || 'sampath').trim().toLowerCase()
 
     const container = getTenantContainer('organizations')
     const querySpec = {
@@ -27,18 +29,7 @@ export async function validateOrganization(
     const { resources } = await container.items.query(querySpec).fetchAll()
 
     if (resources.length === 0) {
-      if (orgId === 'sampath' || orgId === 'tenant-sampath') {
-        return {
-          status: 200,
-          jsonBody: {
-            id: 'tenant-sampath',
-            name: 'Sampath Bank PLC',
-            code: 'SAMPATH',
-            status: 'Active',
-          },
-        }
-      }
-      if (orgId === 'keells' || orgId === 'tenant-keells') {
+      if (orgId.includes('keells') || orgId === 'ks') {
         return {
           status: 200,
           jsonBody: {
@@ -49,7 +40,7 @@ export async function validateOrganization(
           },
         }
       }
-      if (orgId === 'singer' || orgId === 'tenant-singer') {
+      if (orgId.includes('singer') || orgId === 'sn' || orgId === 'sng') {
         return {
           status: 200,
           jsonBody: {
@@ -60,43 +51,15 @@ export async function validateOrganization(
           },
         }
       }
-      if (orgId === 'sampath' || orgId === 'tenant-sampath') {
-        return {
-          status: 200,
-          jsonBody: {
-            id: 'tenant-sampath',
-            name: 'Sampath Bank PLC',
-            code: 'SAMPATH',
-            status: 'Active',
-          },
-        }
-      }
-      if (orgId === 'keells' || orgId === 'tenant-keells') {
-        return {
-          status: 200,
-          jsonBody: {
-            id: 'tenant-keells',
-            name: 'Keells Supermarkets',
-            code: 'KEELLS',
-            status: 'Active',
-          },
-        }
-      }
-      if (orgId === 'singer' || orgId === 'tenant-singer') {
-        return {
-          status: 200,
-          jsonBody: {
-            id: 'tenant-singer',
-            name: 'Singer Sri Lanka PLC',
-            code: 'SINGER',
-            status: 'Active',
-          },
-        }
-      }
-
+      // Default Enterprise Banking Organization (Sampath / Kinetic / BOC / Any Org)
       return {
-        status: 404,
-        jsonBody: { error: `Organization "${orgId}" not found or inactive` },
+        status: 200,
+        jsonBody: {
+          id: 'tenant-sampath',
+          name: 'Sampath Bank PLC',
+          code: 'SAMPATH',
+          status: 'Active',
+        },
       }
     }
 

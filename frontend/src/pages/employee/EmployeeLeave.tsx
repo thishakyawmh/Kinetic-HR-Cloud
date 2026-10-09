@@ -47,15 +47,26 @@ export const EmployeeLeave: React.FC = () => {
         title="Leave Management"
         subtitle="View your leave balances, track submitted requests, and review historical absences."
       >
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => navigate('/employee/leave/apply')}
-          className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl shadow-xs"
-        >
-          <PlusCircle className="h-3.5 w-3.5" />
-          <span>Apply for Leave</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/employee/leave-plans')}
+            className="gap-1.5 text-xs border-sky-500/40 text-sky-400 hover:bg-sky-500/10 rounded-xl"
+          >
+            <CalendarDays className="h-3.5 w-3.5 text-sky-400" />
+            <span>Team Leave Plans & Duty Wiring</span>
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => navigate('/employee/leave/apply')}
+            className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl shadow-xs"
+          >
+            <PlusCircle className="h-3.5 w-3.5" />
+            <span>Apply for Leave</span>
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Leave Balances Grid */}

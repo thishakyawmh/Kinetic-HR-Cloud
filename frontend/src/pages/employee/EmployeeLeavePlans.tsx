@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { leaveService } from '@/services/leaveService'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +15,11 @@ import {
   Clock,
   RefreshCw,
   Calendar as CalendarIcon,
+  AlertTriangle,
+  CheckCircle2,
+  X,
+  Info,
+  ShieldCheck,
 } from 'lucide-react'
 
 interface RoleColorConfig {
@@ -24,47 +31,40 @@ interface RoleColorConfig {
 }
 
 const ROLE_COLORS: Record<string, RoleColorConfig> = {
+  'Senior Credit Officer': {
+    role: 'Senior Credit Officer',
+    color: '#0284c7',
+    bg: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+    border: 'border-sky-500',
+    badgeText: 'Credit & Risk',
+  },
+  'Senior Branch Manager': {
+    role: 'Senior Branch Manager',
+    color: '#6366f1',
+    bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
+    border: 'border-indigo-500',
+    badgeText: 'Branch Management Lead',
+  },
+  'Foreign Exchange Specialist': {
+    role: 'Foreign Exchange Specialist',
+    color: '#10b981',
+    bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    border: 'border-emerald-500',
+    badgeText: 'Treasury & Forex',
+  },
+  'Treasury Operations Manager': {
+    role: 'Treasury Operations Manager',
+    color: '#8b5cf6',
+    bg: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+    border: 'border-purple-500',
+    badgeText: 'Treasury Operations',
+  },
   'Senior Frontend Engineer': {
     role: 'Senior Frontend Engineer',
     color: '#0284c7',
     bg: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
     border: 'border-sky-500',
-    badgeText: 'Frontend Engineering',
-  },
-  'Engineering Director': {
-    role: 'Engineering Director',
-    color: '#6366f1',
-    bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
-    border: 'border-indigo-500',
-    badgeText: 'Management Lead',
-  },
-  'DevOps & Cloud Engineer': {
-    role: 'DevOps & Cloud Engineer',
-    color: '#10b981',
-    bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    border: 'border-emerald-500',
-    badgeText: 'Cloud & Infrastructure',
-  },
-  'Backend Lead': {
-    role: 'Backend Lead',
-    color: '#8b5cf6',
-    bg: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-    border: 'border-purple-500',
-    badgeText: 'Core Architecture',
-  },
-  'VP of People & Operations': {
-    role: 'VP of People & Operations',
-    color: '#f59e0b',
-    bg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    border: 'border-amber-500',
-    badgeText: 'Human Resources',
-  },
-  'Systems Architect': {
-    role: 'Systems Architect',
-    color: '#ec4899',
-    bg: 'bg-pink-500/10 text-pink-400 border-pink-500/30',
-    border: 'border-pink-500',
-    badgeText: 'Operations Architecture',
+    badgeText: 'Engineering',
   },
 }
 
@@ -72,103 +72,137 @@ interface LeavePlanEntry {
   id: string
   employeeId: string
   employeeName: string
-  role: string
+  role?: string
+  employeeRole?: string
   startDate: string
   endDate: string
-  days: number
-  status: 'planned' | 'confirmed'
+  days?: number
+  status: string
   assignedBackupId: string
   assignedBackupName: string
-  assignedBackupRole: string
-  type: 'Annual Leave' | 'Casual Leave' | 'Sick Leave'
+  assignedBackupRole?: string
+  type?: string
+  notes?: string
+  reassignedFrom?: string
   isCasualAbsence?: boolean
   hoursUnannounced?: number
 }
 
 const DEFAULT_PLANS: LeavePlanEntry[] = [
   {
-    id: 'plan-1',
-    employeeId: 'user-Alice',
-    employeeName: 'Alice Johnson',
-    role: 'Senior Frontend Engineer',
-    startDate: '2026-10-12',
-    endDate: '2026-10-14',
-    days: 3,
+    id: 'plan-kasun-oct',
+    employeeId: 'user-kasun',
+    employeeName: 'Kasun Perera',
+    role: 'Senior Credit Officer',
+    employeeRole: 'Senior Credit Officer',
+    startDate: '2026-10-06',
+    endDate: '2026-10-10',
+    days: 5,
     status: 'confirmed',
-    assignedBackupId: 'user-marcus',
-    assignedBackupName: 'Marcus Chen',
-    assignedBackupRole: 'Senior Frontend Engineer',
+    assignedBackupId: 'user-dinesh',
+    assignedBackupName: 'Dinesh Weerasinghe',
+    assignedBackupRole: 'Senior Credit Officer',
     type: 'Annual Leave',
+    notes: 'Approved Annual Leave — Credit Underwriting Covered by Dinesh Weerasinghe',
   },
   {
-    id: 'plan-2',
-    employeeId: 'user-priya',
-    employeeName: 'Priya Patel',
-    role: 'Backend Lead',
+    id: 'plan-nuwan-oct',
+    employeeId: 'user-nuwan',
+    employeeName: 'Nuwan Jayasuriya',
+    role: 'Foreign Exchange Specialist',
+    employeeRole: 'Foreign Exchange Specialist',
     startDate: '2026-10-19',
     endDate: '2026-10-21',
     days: 3,
     status: 'confirmed',
-    assignedBackupId: 'user-Alice',
-    assignedBackupName: 'Alice Johnson',
-    assignedBackupRole: 'Senior Frontend Engineer',
+    assignedBackupId: 'user-thilini',
+    assignedBackupName: 'Thilini Silva',
+    assignedBackupRole: 'Treasury Operations Manager',
     type: 'Annual Leave',
-  },
-  {
-    id: 'plan-3',
-    employeeId: 'user-marcus',
-    employeeName: 'Marcus Chen',
-    role: 'Senior Frontend Engineer',
-    startDate: '2026-10-27',
-    endDate: '2026-10-28',
-    days: 2,
-    status: 'confirmed',
-    assignedBackupId: 'user-Alice',
-    assignedBackupName: 'Alice Johnson',
-    assignedBackupRole: 'Senior Frontend Engineer',
-    type: 'Annual Leave',
-  },
-  {
-    id: 'plan-4',
-    employeeId: 'user-david',
-    employeeName: 'David Wilson',
-    role: 'Engineering Director',
-    startDate: '2026-10-22',
-    endDate: '2026-10-23',
-    days: 2,
-    status: 'confirmed',
-    assignedBackupId: 'user-sarah',
-    assignedBackupName: 'Sarah Miller',
-    assignedBackupRole: 'VP of People & Operations',
-    type: 'Annual Leave',
-  },
-  {
-    id: 'plan-5',
-    employeeId: 'user-marcus',
-    employeeName: 'Marcus Chen',
-    role: 'Senior Frontend Engineer',
-    startDate: '2026-10-09',
-    endDate: '2026-10-09',
-    days: 1,
-    status: 'confirmed',
-    assignedBackupId: 'user-Alice',
-    assignedBackupName: 'Alice Johnson',
-    assignedBackupRole: 'Senior Frontend Engineer',
-    type: 'Casual Leave',
-    isCasualAbsence: true,
-    hoursUnannounced: 1.2,
+    notes: 'Annual Leave Plan — Foreign Exchange Settlement Coverage',
   },
 ]
 
 export const EmployeeLeavePlans: React.FC = () => {
   const { user } = useAuth()
-  const [plans, setPlans] = useState<LeavePlanEntry[]>(DEFAULT_PLANS)
+  const queryClient = useQueryClient()
   const [selectedDaysCount, setSelectedDaysCount] = useState<number>(2)
   const [aiWarning, setAiWarning] = useState<string | null>(null)
   const [syncStatus, setSyncStatus] = useState<string>('REALTIME_SYNCED')
+  const [selectedPlanDetails, setSelectedPlanDetails] = useState<LeavePlanEntry | null>(null)
+  const [cancellingPlan, setCancellingPlan] = useState<LeavePlanEntry | null>(null)
+  const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
 
   const currentRole = user?.jobTitle || 'Senior Frontend Engineer'
+
+  // Fetch real plans from backend
+  const { data: apiPlans = [], isFetching } = useQuery({
+    queryKey: ['leavePlans'],
+    queryFn: () => leaveService.getLeavePlans(),
+  })
+
+  // Merge API plans with default scenario plans
+  const plans: LeavePlanEntry[] = (apiPlans && apiPlans.length > 0 ? apiPlans : DEFAULT_PLANS).map(p => ({
+    ...p,
+    role: p.employeeRole || p.role || 'Senior Frontend Engineer',
+    type: p.type || 'Annual Leave',
+  }))
+
+  const isPlanOwner = (p: LeavePlanEntry) => {
+    if (!user) return true
+    const uName = user.name?.toLowerCase() || ''
+    const pName = p.employeeName?.toLowerCase() || ''
+    const uId = user.id
+    return (
+      p.employeeId === uId ||
+      (uName && pName && (pName.includes(uName) || uName.includes(pName))) ||
+      (uName.includes('kasun') && pName.includes('kasun')) ||
+      (uId === 'user-kasun' && p.employeeId === 'user-kasun') ||
+      (uName.includes('alice') && pName.includes('alice')) ||
+      (uId === 'user-Alice' && p.employeeId === 'user-Alice')
+    )
+  }
+
+  const createPlanMutation = useMutation({
+    mutationFn: (data: { startDate: string; endDate: string; notes?: string }) =>
+      leaveService.createLeavePlan(data),
+    onSuccess: (newPlan) => {
+      queryClient.invalidateQueries({ queryKey: ['leavePlans'] })
+      queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      setSyncStatus('JUST_UPDATED')
+      setTimeout(() => setSyncStatus('REALTIME_SYNCED'), 3000)
+
+      if (newPlan.status === 'Coverage Needed') {
+        setAiWarning(
+          `🚨 Coverage Alert: Scheduled leave plan for ${newPlan.startDate} to ${newPlan.endDate}, but no available same-role backup was found. Status updated to "Coverage Needed — Manager Action Required".`
+        )
+      } else {
+        setAiWarning(null)
+      }
+    },
+  })
+
+  const cancelPlanMutation = useMutation({
+    mutationFn: (planId: string) => leaveService.cancelLeavePlan(planId),
+    onSuccess: (_, planId) => {
+      queryClient.invalidateQueries({ queryKey: ['leavePlans'] })
+      queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      queryClient.invalidateQueries({ queryKey: ['leaveRequests'] })
+      setSyncStatus('JUST_UPDATED')
+      setTimeout(() => setSyncStatus('REALTIME_SYNCED'), 3000)
+
+      const targetPlan = cancellingPlan || plans.find(p => p.id === planId)
+      const daysRestored = targetPlan?.days || 1
+
+      setCancelSuccessMsg(
+        `✅ Leave plan cancelled successfully! ${daysRestored} day(s) have been credited back to your annual leave balance.`
+      )
+      setCancellingPlan(null)
+      setSelectedPlanDetails(null)
+      setTimeout(() => setCancelSuccessMsg(null), 6000)
+    },
+  })
 
   // Handle Mark Annual Leave directly on calendar
   const handleMarkAnnualLeave = (day: number) => {
@@ -176,51 +210,40 @@ export const EmployeeLeavePlans: React.FC = () => {
     const endDayNum = Math.min(31, day + selectedDaysCount - 1)
     const endDateStr = `2026-10-${endDayNum < 10 ? '0' + endDayNum : endDayNum}`
 
-    // Check for conflict with same role mate on that day
-    const sameRoleConflict = plans.find(
-      p =>
-        p.role === currentRole &&
-        p.employeeId !== user?.id &&
-        p.startDate <= endDateStr &&
-        p.endDate >= startDateStr
-    )
-
-    if (sameRoleConflict) {
-      setAiWarning(
-        `🚨 AI Conflict Alert: ${sameRoleConflict.employeeName} (${sameRoleConflict.role}) has already scheduled annual leave on ${startDateStr}. AI Priority Arbitration evaluated attendance history: Priority granted to ${user?.name || 'Alice Johnson'} (100% attendance integrity). Duty handoff reassigned to Priya Patel.`
-      )
-    } else {
-      setAiWarning(null)
-    }
-
-    const newPlan: LeavePlanEntry = {
-      id: `plan-${Date.now()}`,
-      employeeId: user?.id || 'user-Alice',
-      employeeName: user?.name || 'Alice Johnson',
-      role: currentRole,
+    createPlanMutation.mutate({
       startDate: startDateStr,
       endDate: endDateStr,
-      days: selectedDaysCount,
-      status: 'confirmed',
-      assignedBackupId: 'user-marcus',
-      assignedBackupName: 'Marcus Chen',
-      assignedBackupRole: currentRole,
-      type: 'Annual Leave',
-    }
-
-    setPlans(prev => [newPlan, ...prev])
-    setSyncStatus('JUST_UPDATED')
-    setTimeout(() => setSyncStatus('REALTIME_SYNCED'), 3000)
+      notes: `Annual leave plan scheduled by ${user?.name || 'Alice Johnson'}`,
+    })
   }
 
   // Days in October 2026
   const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1)
 
-  // Get plans for a specific day
+  // Get plans for a specific day (Deduplicated and excluding cancelled)
   const getPlansForDay = (day: number) => {
     const dateStr = `2026-10-${day < 10 ? '0' + day : day}`
-    return plans.filter(p => p.startDate <= dateStr && p.endDate >= dateStr)
+    const activeItems = plans.filter(p => p.status !== 'cancelled' && p.startDate <= dateStr && p.endDate >= dateStr)
+    const uniqueMap = new Map<string, LeavePlanEntry>()
+    activeItems.forEach(p => {
+      const key = p.id || `${p.employeeId}-${p.startDate}-${p.endDate}`
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, p)
+      }
+    })
+    return Array.from(uniqueMap.values())
   }
+
+  const handleCellClick = (day: number) => {
+    const dayPlans = getPlansForDay(day)
+    const myPlan = dayPlans.find(p => isPlanOwner(p))
+    if (myPlan) {
+      setCancellingPlan(myPlan)
+    } else {
+      handleMarkAnnualLeave(day)
+    }
+  }
+
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -404,7 +427,8 @@ export const EmployeeLeavePlans: React.FC = () => {
                       {/* Render Leave Chips with Role Color Bar */}
                       <div className="space-y-1 my-1 overflow-hidden">
                         {dayPlans.map(dp => {
-                          const roleCfg = ROLE_COLORS[dp.role] || ROLE_COLORS['Senior Frontend Engineer']
+                          const roleKey = dp.role || 'Senior Frontend Engineer'
+                          const roleCfg = ROLE_COLORS[roleKey] || ROLE_COLORS['Senior Frontend Engineer']
                           return (
                             <div
                               key={dp.id}
@@ -418,6 +442,37 @@ export const EmployeeLeavePlans: React.FC = () => {
                             >
                               <span className="truncate">{dp.employeeName.split(' ')[0]}</span>
                               <span className="text-[9px] opacity-80">➔ {dp.assignedBackupName.split(' ')[0]}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Render Leave Chips with Role Color Bar */}
+                      <div className="space-y-1 my-1 overflow-hidden">
+                        {dayPlans.map(dp => {
+                          const roleCfg = ROLE_COLORS[dp.role || 'Senior Frontend Engineer'] || ROLE_COLORS['Senior Frontend Engineer']
+                          const isCoverageNeeded = dp.status === 'Coverage Needed' || dp.assignedBackupName?.includes('Coverage Needed')
+                          const isReassigned = dp.status === 'Reassigned'
+
+                          return (
+                            <div
+                              key={dp.id}
+                              onClick={e => {
+                                e.stopPropagation()
+                                setSelectedPlanDetails(dp)
+                              }}
+                              className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold truncate flex items-center justify-between border shadow-2xs cursor-pointer hover:scale-[1.02] transition-transform"
+                              style={{
+                                backgroundColor: isCoverageNeeded ? '#ef444420' : isReassigned ? '#a855f720' : `${roleCfg.color}15`,
+                                borderColor: isCoverageNeeded ? '#ef444460' : isReassigned ? '#a855f760' : `${roleCfg.color}40`,
+                                color: isCoverageNeeded ? '#f87171' : isReassigned ? '#c084fc' : roleCfg.color,
+                              }}
+                              title={`${dp.employeeName} (${dp.role}) -> Backup: ${dp.assignedBackupName}`}
+                            >
+                              <span className="truncate">{dp.employeeName.split(' ')[0]}</span>
+                              <span className="text-[9px] opacity-80">
+                                {isCoverageNeeded ? '⚠️ Needed' : `➔ ${dp.assignedBackupName.split(' ')[0]}`}
+                              </span>
                             </div>
                           )
                         })}
@@ -450,30 +505,53 @@ export const EmployeeLeavePlans: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {plans.slice(0, 3).map(p => {
-                const roleCfg = ROLE_COLORS[p.role] || ROLE_COLORS['Senior Frontend Engineer']
+              {plans.slice(0, 5).map(p => {
+                const roleCfg = ROLE_COLORS[p.role || 'Senior Frontend Engineer'] || ROLE_COLORS['Senior Frontend Engineer']
+                const isCoverageNeeded = p.status === 'Coverage Needed' || p.assignedBackupName?.includes('Coverage Needed')
+                const isReassigned = p.status === 'Reassigned'
+
                 return (
                   <div
                     key={p.id}
-                    className="p-3 rounded-2xl border bg-muted/30 text-xs space-y-2 relative overflow-hidden"
-                    style={{ borderColor: `${roleCfg.color}40` }}
+                    onClick={() => setSelectedPlanDetails(p)}
+                    className="p-3 rounded-2xl border bg-muted/30 text-xs space-y-2 relative overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors"
+                    style={{ borderColor: isCoverageNeeded ? '#ef444450' : isReassigned ? '#a855f750' : `${roleCfg.color}40` }}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-foreground">{p.employeeName}</span>
-                      <Badge variant="secondary" className="text-[9px] bg-secondary text-muted-foreground">
+                      <Badge
+                        variant="secondary"
+                        className={`text-[9px] ${
+                          isCoverageNeeded
+                            ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                            : isReassigned
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                            : 'bg-secondary text-muted-foreground'
+                        }`}
+                      >
                         {p.startDate} - {p.endDate}
                       </Badge>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] font-medium text-sky-400">
-                      <span>On {p.type}</span>
+                    <div className="flex items-center gap-2 text-[11px] font-medium">
+                      <span className="text-sky-400">On {p.type || 'Annual Leave'}</span>
                       <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-emerald-400">Duty Covered by {p.assignedBackupName}</span>
+                      {isCoverageNeeded ? (
+                        <span className="text-rose-400 font-bold flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" /> Coverage Needed — Manager Action Required
+                        </span>
+                      ) : (
+                        <span className={isReassigned ? 'text-purple-300' : 'text-emerald-400'}>
+                          Duty Covered by {p.assignedBackupName} {isReassigned ? '(Reassigned)' : ''}
+                        </span>
+                      )}
                     </div>
 
                     <div className="text-[10px] text-muted-foreground border-t border-border/40 pt-1.5 flex justify-between">
                       <span>Role: {p.role}</span>
-                      <span className="text-sky-400 font-mono">Realtime Connected</span>
+                      <span className="text-sky-400 font-mono">
+                        {isCoverageNeeded ? 'Escalation Active' : isReassigned ? 'AI Reassigned' : 'Realtime Connected'}
+                      </span>
                     </div>
                   </div>
                 )
@@ -506,6 +584,103 @@ export const EmployeeLeavePlans: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Interactive Details Panel Modal for Calendar Events & Handoffs */}
+      {selectedPlanDetails && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <Card className="max-w-md w-full bg-card border border-border/80 rounded-[28px] shadow-2xl p-6 space-y-5 relative">
+            <button
+              onClick={() => setSelectedPlanDetails(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted/60 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
+                <CalendarIcon className="h-5.5 w-5.5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">
+                  {selectedPlanDetails.employeeName}
+                </h3>
+                <p className="text-xs text-muted-foreground">{selectedPlanDetails.role}</p>
+              </div>
+            </div>
+
+            <div className="bg-muted/30 p-4 rounded-2xl border border-border/60 text-xs space-y-2.5">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Leave Type:</span>
+                <span className="font-semibold text-foreground">{selectedPlanDetails.type || 'Annual Leave'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Scheduled Period:</span>
+                <span className="font-semibold text-foreground">
+                  {selectedPlanDetails.startDate} to {selectedPlanDetails.endDate}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Assigned Duty Backup:</span>
+                <span
+                  className={`font-semibold ${
+                    selectedPlanDetails.status === 'Coverage Needed' || selectedPlanDetails.assignedBackupName?.includes('Coverage Needed')
+                      ? 'text-rose-400'
+                      : 'text-emerald-400'
+                  }`}
+                >
+                  {selectedPlanDetails.assignedBackupName}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Backup Role:</span>
+                <span className="font-semibold text-foreground">
+                  {selectedPlanDetails.assignedBackupRole || selectedPlanDetails.role}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Handover Status:</span>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] ${
+                    selectedPlanDetails.status === 'Coverage Needed' || selectedPlanDetails.assignedBackupName?.includes('Coverage Needed')
+                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                      : selectedPlanDetails.status === 'Reassigned'
+                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                      : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                  }`}
+                >
+                  {selectedPlanDetails.status === 'Coverage Needed' || selectedPlanDetails.assignedBackupName?.includes('Coverage Needed')
+                    ? 'Coverage Needed — Manager Action Required'
+                    : selectedPlanDetails.status === 'Reassigned'
+                    ? 'Reassigned (Urgent Leave Escalation)'
+                    : 'Confirmed & Active'}
+                </Badge>
+              </div>
+            </div>
+
+            {selectedPlanDetails.notes && (
+              <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs">
+                <div className="font-semibold mb-0.5 flex items-center gap-1.5">
+                  <Info className="h-3.5 w-3.5 text-sky-400" /> Audit Log / Handoff Notes:
+                </div>
+                <p className="text-[11px] text-sky-200/90 leading-relaxed">{selectedPlanDetails.notes}</p>
+              </div>
+            )}
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPlanDetails(null)}
+                className="text-xs rounded-xl"
+              >
+                Close Details Panel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
+

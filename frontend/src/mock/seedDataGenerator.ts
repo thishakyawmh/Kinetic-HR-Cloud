@@ -536,101 +536,93 @@ export function generateProductionSeedData(): GeneratedSeedData {
     return { firstName: fn, lastName: ln, fullName: `${fn} ${ln}` }
   }
 
-  // SAMPATH BANK
-  const sbAdminName = 'Kasun Perera'
-  const sbAdmin: any = {
-    id: 'user-sb-admin',
-    tenantId: 'tenant-sampath',
-    name: sbAdminName,
-    email: 'kasun.perera@sampath.lk',
-    role: 'admin',
-    department: 'People Operations & HR',
-    jobTitle: 'Head of Human Resources & Statutory Governance',
-    employeeNumber: 'A-1001',
-    branchId: 'br-sb-1',
-    branchName: 'Colombo Fort Head Office Branch',
-    hireDate: '2020-03-15',
-    phone: '+94 77 234 5678',
-    location: 'Colombo Fort Head Office Branch',
-  }
-  const sbAdminEmp: any = {
-    ...sbAdmin,
-    id: 'user-sb-admin-emp',
-    email: 'kasun.emp@sampath.lk',
-    role: 'employee',
-    employeeNumber: 'SB-1001',
-    managerId: 'user-sb-admin',
-    managerName: 'Kasun Perera',
-  }
-  USERS.push(sbAdmin, sbAdminEmp)
-
-  const sbManagers = [
-    { id: 'user-sb-mgr-1', name: 'Dinesh Weerasinghe', empId: 'M-1001', selfEmpId: 'SB-1002', branch: BRANCHES[0], dept: 'Retail Banking & Branches', title: 'Senior Branch Manager (Colombo Fort)' },
-    { id: 'user-sb-mgr-2', name: 'Chamari Bandara', empId: 'M-1002', selfEmpId: 'SB-1003', branch: BRANCHES[1], dept: 'Retail Banking & Branches', title: 'Senior Branch Manager (Kandy)' },
-    { id: 'user-sb-mgr-3', name: 'Nuwan Jayasuriya', empId: 'M-1003', selfEmpId: 'SB-1004', branch: BRANCHES[2], dept: 'Retail Banking & Branches', title: 'Branch Manager (Galle Fort)' },
-    { id: 'user-sb-mgr-4', name: 'Thilini Silva', empId: 'M-1004', selfEmpId: 'SB-1005', branch: BRANCHES[3], dept: 'Retail Banking & Branches', title: 'Branch Manager (Kurunegala)' },
-    { id: 'user-sb-mgr-5', name: 'Sanjeewa Fernando', empId: 'M-1005', selfEmpId: 'SB-1006', branch: BRANCHES[4], dept: 'Retail Banking & Branches', title: 'Branch Manager (Jaffna)' },
-  ]
-
-  sbManagers.forEach((m, idx) => {
-    const mgrUser: any = {
-      id: m.id,
+  // SAMPATH BANK (5 Banking Workers — 2 Same Role, 1 Exhausted Annual Leave, 0 IT Developers)
+  const sampathUsers: any[] = [
+    {
+      id: 'user-kasun',
       tenantId: 'tenant-sampath',
-      name: m.name,
-      email: `${m.name.toLowerCase().replace(' ', '.')}@sampath.lk`,
-      role: 'manager',
-      department: m.dept,
-      jobTitle: m.title,
-      employeeNumber: m.empId,
-      branchId: m.branch.id,
-      branchName: m.branch.name,
-      managerId: 'user-sb-admin',
-      managerName: sbAdminName,
-      hireDate: `2021-0${idx + 2}-15`,
-      phone: `+94 77 ${300 + idx} 4567`,
-      location: m.branch.name,
-    }
-    const mgrEmp: any = {
-      ...mgrUser,
-      id: `${m.id}-emp`,
-      email: `${m.name.toLowerCase().replace(' ', '.')}.emp@sampath.lk`,
+      name: 'Kasun Perera',
+      email: 'kasun.perera@sampath.lk',
       role: 'employee',
-      employeeNumber: m.selfEmpId,
-    }
-    USERS.push(mgrUser, mgrEmp)
-  })
-
-  const sbBranchStaffTargets = [13, 14, 14, 14, 14]
-  let sbGlobalEmpNum = 1007
-  sbBranchStaffTargets.forEach((targetCount, bIdx) => {
-    const branch = BRANCHES[bIdx]
-    const manager = sbManagers[bIdx]
-    for (let i = 0; i < targetCount; i++) {
-      const isFemale = (bIdx + i) % 2 === 1
-      const person = getSLName(sbGlobalEmpNum, isFemale)
-      const empId = `SB-${sbGlobalEmpNum}`
-      const titles = ['Customer Relationship Officer', 'Senior Banking Assistant', 'Operations Executive', 'Credit Analyst', 'Cashier & Counter Specialist', 'Trade Services Officer']
-      const depts = ['Retail Banking & Branches', 'Corporate Credit & Risk', 'Treasury & Investment', 'Core Banking IT Systems']
-      USERS.push({
-        id: `user-sb-emp-${sbGlobalEmpNum}`,
-        tenantId: 'tenant-sampath',
-        name: person.fullName,
-        email: `${person.firstName.toLowerCase()}.${person.lastName.toLowerCase()}${sbGlobalEmpNum % 100}@sampath.lk`,
-        role: 'employee',
-        department: depts[(i + bIdx) % depts.length],
-        jobTitle: titles[(i * 3 + bIdx) % titles.length],
-        employeeNumber: empId,
-        branchId: branch.id,
-        branchName: branch.name,
-        managerId: manager.id,
-        managerName: manager.name,
-        hireDate: `202${2 + (i % 3)}-0${(i % 9) + 1}-10`,
-        phone: `+94 71 ${400 + (sbGlobalEmpNum % 500)} ${1000 + (i * 123) % 9000}`,
-        location: branch.name,
-      })
-      sbGlobalEmpNum++
-    }
-  })
+      department: 'Retail Banking & Branches',
+      jobTitle: 'Senior Credit Officer',
+      employeeNumber: 'SB-1001',
+      branchId: 'br-sb-1',
+      branchName: 'Colombo Fort Head Office Branch',
+      managerId: 'user-chamari',
+      managerName: 'Chamari Bandara',
+      hireDate: '2022-01-15',
+      phone: '+94 77 234 1001',
+      location: 'Colombo Fort Head Office Branch',
+    },
+    {
+      id: 'user-dinesh',
+      tenantId: 'tenant-sampath',
+      name: 'Dinesh Weerasinghe',
+      email: 'dinesh.weerasinghe@sampath.lk',
+      role: 'employee',
+      department: 'Retail Banking & Branches',
+      jobTitle: 'Senior Credit Officer', // SAME ROLE AS KASUN
+      employeeNumber: 'SB-1002',
+      branchId: 'br-sb-1',
+      branchName: 'Colombo Fort Head Office Branch',
+      managerId: 'user-chamari',
+      managerName: 'Chamari Bandara',
+      hireDate: '2021-06-10',
+      phone: '+94 77 234 1002',
+      location: 'Colombo Fort Head Office Branch',
+    },
+    {
+      id: 'user-thilini',
+      tenantId: 'tenant-sampath',
+      name: 'Thilini Silva',
+      email: 'thilini.silva@sampath.lk',
+      role: 'employee',
+      department: 'Corporate Credit & Risk',
+      jobTitle: 'Treasury Operations Manager',
+      employeeNumber: 'SB-1003',
+      branchId: 'br-sb-1',
+      branchName: 'Colombo Fort Head Office Branch',
+      managerId: 'user-chamari',
+      managerName: 'Chamari Bandara',
+      hireDate: '2020-03-01',
+      phone: '+94 77 234 1003',
+      location: 'Colombo Fort Head Office Branch',
+    },
+    {
+      id: 'user-nuwan',
+      tenantId: 'tenant-sampath',
+      name: 'Nuwan Jayasuriya',
+      email: 'nuwan.jayasuriya@sampath.lk',
+      role: 'employee',
+      department: 'Treasury & Investment',
+      jobTitle: 'Foreign Exchange Specialist',
+      employeeNumber: 'SB-1004',
+      branchId: 'br-sb-1',
+      branchName: 'Colombo Fort Head Office Branch',
+      managerId: 'user-chamari',
+      managerName: 'Chamari Bandara',
+      hireDate: '2023-02-20',
+      phone: '+94 77 234 1004',
+      location: 'Colombo Fort Head Office Branch',
+    },
+    {
+      id: 'user-chamari',
+      tenantId: 'tenant-sampath',
+      name: 'Chamari Bandara',
+      email: 'chamari.bandara@sampath.lk',
+      role: 'manager',
+      department: 'Retail Banking & Branches',
+      jobTitle: 'Senior Branch Manager',
+      employeeNumber: 'M-1005',
+      branchId: 'br-sb-1',
+      branchName: 'Colombo Fort Head Office Branch',
+      hireDate: '2019-11-01',
+      phone: '+94 77 234 1005',
+      location: 'Colombo Fort Head Office Branch',
+    },
+  ]
+  USERS.push(...sampathUsers)
 
   // KEELLS SUPER
   const ksAdminName = 'Supun Dissanayake'

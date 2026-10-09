@@ -55,7 +55,7 @@ class AppDataStore {
       try {
         const parsed = JSON.parse(saved)
         // Purge obsolete legacy tenants and enforce active enterprise organizations
-        if (!parsed.tenants || parsed.tenants.some((t: any) => t.id === 'tenant-kinetic' || t.id === 'tenant-nova')) {
+        if (!parsed.tenants || !parsed.tenants.some((t: any) => t.id === 'tenant-sampath')) {
           this.tenants = [...MOCK_TENANTS]
         } else {
           this.tenants = parsed.tenants
