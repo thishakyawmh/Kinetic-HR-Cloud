@@ -39,6 +39,7 @@ import {
   getAdminAuditLogs,
   getAdminIntegrations,
   getAdminAIUsage,
+  getAzureFleetDiagnostic,
 } from './functions/admin'
 import {
   getOrganizations,
@@ -329,3 +330,11 @@ app.http('deleteBranch', {
   route: 'branches/{id}',
   handler: deleteBranch,
 })
+
+app.http('getAzureFleetDiagnostic', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/azure-fleet-diagnostic',
+  handler: getAzureFleetDiagnostic,
+})
+

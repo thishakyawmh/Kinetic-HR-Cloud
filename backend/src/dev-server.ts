@@ -44,6 +44,7 @@ import {
   getAdminAuditLogs,
   getAdminIntegrations,
   getAdminAIUsage,
+  getAzureFleetDiagnostic,
 } from './functions/admin'
 import {
   getOrganizations,
@@ -160,6 +161,8 @@ addRoute('GET', '/api/admin/stats', getAdminDashboardStats)
 addRoute('GET', '/api/admin/audit-logs', getAdminAuditLogs)
 addRoute('GET', '/api/admin/integrations', getAdminIntegrations)
 addRoute('GET', '/api/admin/ai-usage', getAdminAIUsage)
+addRoute('GET', '/api/admin/azure-fleet-diagnostic', getAzureFleetDiagnostic)
+
 
 // Platform Admin
 addRoute('GET', '/api/platform/organizations', getOrganizations)
