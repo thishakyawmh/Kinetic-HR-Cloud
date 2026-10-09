@@ -320,7 +320,32 @@ server.listen(PORT, async () => {
     const containerName = process.env.BLOB_CONTAINER_TENANTS || 'tenants'
     console.log(`🟢 [AZURE BLOB STORAGE] STATUS: CONFIGURED (Container: "${containerName}")`)
   } else {
-    console.log(`🟡 [AZURE BLOB STORAGE] STATUS: OFFLINE (Blob storage not configured)`)
+    console.log(`🟡 [AZURE BLOB STORAGE] STATUS: OFFLINE (Local SAS Token Simulator Active)`)
+  }
+
+  // Additional Azure Services Telemetry Badges
+  if (process.env.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING || process.env.AZURE_ACS_CONNECTION_STRING) {
+    console.log(`🟢 [AZURE COMMUNICATION SERVICES] STATUS: CONFIGURED (Twilio / ACS SMS & Email Gateway)`)
+  } else {
+    console.log(`🟡 [AZURE COMMUNICATION SERVICES] STATUS: SIMULATED (Local SMS & Email Gateway Active)`)
+  }
+
+  if (process.env.AZURE_SERVICE_BUS_CONNECTION_STRING) {
+    console.log(`🟢 [AZURE SERVICE BUS] STATUS: CONFIGURED (Live Pub/Sub Topic Pipeline)`)
+  } else {
+    console.log(`🟡 [AZURE SERVICE BUS] STATUS: SIMULATED (In-Memory Pub/Sub Queue Active)`)
+  }
+
+  if (process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
+    console.log(`🟢 [AZURE AI DOCUMENT INTELLIGENCE] STATUS: CONFIGURED (Form Recognizer OCR Engine)`)
+  } else {
+    console.log(`🟡 [AZURE AI DOCUMENT INTELLIGENCE] STATUS: SIMULATED (Local OCR Extraction Engine Active)`)
+  }
+
+  if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
+    console.log(`🟢 [AZURE APPLICATION INSIGHTS] STATUS: CONFIGURED (Live APM Telemetry Tracing)`)
+  } else {
+    console.log(`🟡 [AZURE APPLICATION INSIGHTS] STATUS: SIMULATED (In-Memory APM Tracing Active)`)
   }
 
   console.log(`--------------------------------------------------------------------------------`)

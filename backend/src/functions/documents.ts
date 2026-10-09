@@ -1,6 +1,10 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { authenticateRequest } from '../middleware/auth'
+import { sendMobileSms, sendEmailSoftcopy } from '../config/acs'
+import { publishHREvent } from '../config/serviceBus'
+import { analyzeDocumentOCR } from '../config/documentIntelligence'
+import { trackTelemetryEvent } from '../config/appInsights'
 
 /**
  * POST /api/documents/request
@@ -42,6 +46,9 @@ export async function createDocumentRequest(
     const randomRefNum = Math.floor(1000 + Math.random() * 9000)
     const referenceCode = `DOC-2026-${randomRefNum}`
     const nowIso = new Date().toISOString()
+
+    // Run Azure AI Document Intelligence OCR Analysis
+    await analyzeDocumentOCR(documentType, `${referenceCode}.pdf`)
 
     // 3. AI Underlayer Step 3: Automated Corporate Document Generation
     const generatedContent = `OFFICIAL ${documentType.toUpperCase()}
@@ -89,6 +96,14 @@ Issued via Kinetic HR Cloud Enterprise Portal.`
 
     const container = getTenantContainer('document_requests')
     await container.items.create(docItem)
+
+    // Azure Event & Telemetry Triggers
+    await publishHREvent('hr-documents', 'DocumentRequestedEvent', tenantId, {
+      referenceCode,
+      employeeName: user.name,
+      documentType,
+    })
+    trackTelemetryEvent('DocumentRequested', { referenceCode, documentType, tenantId })
 
     return { status: 201, jsonBody: docItem }
   } catch (err: any) {
@@ -185,6 +200,18 @@ export async function verify2faAndSignDocument(
     const container = getTenantContainer('document_requests')
     await container.item(doc.id, tenantId).replace(doc)
 
+    // Trigger Azure ACS SMS & Service Bus Event Triggers
+    await sendMobileSms(
+      auth.user!.phone || '+1 (555) 234-5678',
+      `Kinetic HR 2FA Alert: Executive digital signature applied for ${doc.referenceCode} by ${auth.user!.name}.`
+    )
+    await publishHREvent('hr-documents', 'Document2FASignedEvent', tenantId, {
+      referenceCode: doc.referenceCode,
+      signedBy: auth.user!.name,
+      signatureHash,
+    })
+    trackTelemetryEvent('Document2FAVerified', { referenceCode: doc.referenceCode, signedBy: auth.user!.name })
+
     return { status: 200, jsonBody: doc }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
@@ -220,6 +247,19 @@ export async function sendDocumentSoftcopy(
     }
 
     const doc = docs[0]
+
+    // Trigger ACS SMS & Email Dispatch
+    await sendMobileSms(
+      '+1 (555) 234-[#842]',
+      `Kinetic HR Alert: Your signed ${doc.documentType} (#${doc.referenceCode}) has been dispatched to your email & employee portal.`
+    )
+    await sendEmailSoftcopy(auth.user!.email, `HR Document Softcopy: ${doc.documentType}`, doc.referenceCode)
+    await publishHREvent('hr-documents', 'DocumentSoftcopyDispatchedEvent', tenantId, {
+      referenceCode: doc.referenceCode,
+      recipientEmail: auth.user!.email,
+    })
+    trackTelemetryEvent('SoftcopyDispatched', { referenceCode: doc.referenceCode, email: auth.user!.email })
+
     return {
       status: 200,
       jsonBody: {
