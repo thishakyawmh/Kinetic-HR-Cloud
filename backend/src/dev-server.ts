@@ -211,6 +211,24 @@ addRoute('PATCH', '/api/notifications/{id}/read', markNotificationRead)
 addRoute('POST', '/api/ai/chat', handleAIChat)
 addRoute('GET', '/api/ai/health', getAIHealth)
 
+// Azure AI Search
+import { handleSearchPolicies, handleSeedSearch, handleSearchHealth } from './functions/search'
+import { ensurePolicyIndex, seedPolicyDocuments } from './config/search'
+addRoute('GET', '/api/search/policies', handleSearchPolicies)
+addRoute('POST', '/api/search/seed', handleSeedSearch)
+addRoute('GET', '/api/search/health', handleSearchHealth)
+
+// Azure AI Document Intelligence
+import { handleDocIntelHealth } from './functions/documents'
+addRoute('GET', '/api/documents/intelligence/health', handleDocIntelHealth)
+
+// Azure Service Bus
+import { checkServiceBusHealth } from './config/serviceBus'
+addRoute('GET', '/api/servicebus/health', async () => ({
+  status: 200,
+  jsonBody: await checkServiceBusHealth(),
+}))
+
 
 
 const server = http.createServer(async (req, res) => {
@@ -385,6 +403,24 @@ server.listen(PORT, async () => {
     console.log(`🟢 [AZURE APPLICATION INSIGHTS] STATUS: CONFIGURED (Live APM Telemetry Tracing)`)
   } else {
     console.log(`🟡 [AZURE APPLICATION INSIGHTS] STATUS: SIMULATED (In-Memory APM Tracing Active)`)
+  }
+
+  if (process.env.AZURE_OPENAI_KEY && process.env.AZURE_OPENAI_ENDPOINT) {
+    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-1'
+    console.log(`🟢 [AZURE OPENAI] STATUS: ONLINE (Deployment: "${deployment}")`)
+  } else {
+    console.log(`🟡 [AZURE OPENAI] STATUS: SIMULATED (Local GPT-4o Scenario Engine Active)`)
+  }
+
+  if (process.env.AZURE_SEARCH_KEY && process.env.AZURE_SEARCH_ENDPOINT) {
+    const indexName = process.env.AZURE_SEARCH_INDEX || 'kinetic-hr-policies'
+    console.log(`🟢 [AZURE AI SEARCH] STATUS: ONLINE (Index: "${indexName}")`)
+    // Asynchronously ensure index & seed policies
+    ensurePolicyIndex()
+      .then(() => seedPolicyDocuments())
+      .catch(() => {})
+  } else {
+    console.log(`🟡 [AZURE AI SEARCH] STATUS: SIMULATED (In-Memory RAG Vector Index Active)`)
   }
 
   console.log(`--------------------------------------------------------------------------------`)

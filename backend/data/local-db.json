@@ -35480,6 +35480,76 @@
         "phoneNumberMasked": "+94 77 *** 1122",
         "signatureHash": "SIG-2FA-KS-5512-88C4"
       }
+    },
+    {
+      "id": "doc-req-1791557177112",
+      "tenantId": "tenant-sampath",
+      "employeeId": "user-sb-admin-emp",
+      "employeeName": "Kasun Perera",
+      "managerId": "user-david",
+      "managerName": "David Wilson",
+      "documentType": "Employment Verification Letter",
+      "purpose": "dsadad",
+      "status": "pending_manager_signature",
+      "requiresManagerSignature": true,
+      "submittedAt": "2026-10-09T14:46:16.973Z",
+      "referenceCode": "DOC-2026-8726",
+      "aiVerification": {
+        "identityVerified": true,
+        "verificationNotes": "AI Identity Verified: Active undefined in undefined Dept. Hire Date: 2023-04-15.",
+        "policyCheckPassed": true,
+        "generatedContent": "OFFICIAL EMPLOYMENT VERIFICATION LETTER\nReference Code: DOC-2026-8726\nDate: October 9, 2026\n\nTo Whom It May Concern:\n\nThis letter serves as official verification that Kasun Perera (Employee ID: undefined) is employed full-time with Kinetic HR Cloud (undefined Department) as a undefined.\n\nPurpose: dsadad\n\nThis document has been verified by the Kinetic Autonomous AI Engine under corporate policy compliance.\n\nTenant ID: tenant-sampath\nIssued via Kinetic HR Cloud Enterprise Portal.",
+        "verifiedAt": "2026-10-09T14:46:16.973Z"
+      }
+    },
+    {
+      "id": "doc-req-1791564083817",
+      "tenantId": "tenant-sampath",
+      "employeeId": "user-sb-mgr-1",
+      "employeeName": "Dinesh Weerasinghe",
+      "employeeNumber": "M-1001",
+      "department": "Retail Banking & Branches",
+      "jobTitle": "Senior Branch Manager (Colombo Fort)",
+      "managerId": "user-david",
+      "managerName": "David Wilson",
+      "documentType": "Salary Certificate & Service Verification",
+      "purpose": "Housing Loan Application at Bank of Ceylon",
+      "status": "pending_manager_signature",
+      "requiresManagerSignature": true,
+      "submittedAt": "2026-10-09T16:41:22.491Z",
+      "referenceCode": "DOC-2026-1649",
+      "aiVerification": {
+        "identityVerified": true,
+        "verificationNotes": "AI Identity Verified: Active Senior Branch Manager (Colombo Fort) in Retail Banking & Branches Dept. Hire Date: 2023-04-15.",
+        "policyCheckPassed": true,
+        "generatedContent": "OFFICIAL SALARY CERTIFICATE & SERVICE VERIFICATION\nReference Code: DOC-2026-1649\nDate: October 9, 2026\n\nTo Whom It May Concern:\n\nThis letter serves as official verification that Dinesh Weerasinghe (Employee ID: M-1001) is employed full-time with Kinetic HR Cloud (Retail Banking & Branches Department) as a Senior Branch Manager (Colombo Fort).\n\nPurpose: Housing Loan Application at Bank of Ceylon\n\nThis document has been verified by the Kinetic Autonomous AI Engine under corporate policy compliance.\n\nTenant ID: tenant-sampath\nIssued via Kinetic HR Cloud Enterprise Portal.",
+        "verifiedAt": "2026-10-09T16:41:22.491Z"
+      }
+    },
+    {
+      "id": "doc-req-1791564589103",
+      "tenantId": "tenant-sampath",
+      "employeeId": "user-sb-mgr-1",
+      "employeeName": "Dinesh Weerasinghe",
+      "employeeNumber": "M-1001",
+      "department": "Retail Banking & Branches",
+      "jobTitle": "Senior Branch Manager (Colombo Fort)",
+      "managerId": "user-david",
+      "managerName": "David Wilson",
+      "documentType": "Service Letter",
+      "purpose": "Consulate Visa Appointment",
+      "status": "auto_issued",
+      "requiresManagerSignature": false,
+      "submittedAt": "2026-10-09T16:49:47.695Z",
+      "issuedAt": "2026-10-09T16:49:47.695Z",
+      "referenceCode": "DOC-2026-1958",
+      "aiVerification": {
+        "identityVerified": true,
+        "verificationNotes": "AI Identity Verified: Active Senior Branch Manager (Colombo Fort) in Retail Banking & Branches Dept. Hire Date: 2023-04-15.",
+        "policyCheckPassed": true,
+        "generatedContent": "OFFICIAL SERVICE LETTER\nReference Code: DOC-2026-1958\nDate: October 9, 2026\n\nTo Whom It May Concern:\n\nThis letter serves as official verification that Dinesh Weerasinghe (Employee ID: M-1001) is employed full-time with Kinetic HR Cloud (Retail Banking & Branches Department) as a Senior Branch Manager (Colombo Fort).\n\nPurpose: Consulate Visa Appointment\n\nThis document has been verified by the Kinetic Autonomous AI Engine under corporate policy compliance.\n\nTenant ID: tenant-sampath\nIssued via Kinetic HR Cloud Enterprise Portal.",
+        "verifiedAt": "2026-10-09T16:49:47.695Z"
+      }
     }
   ],
   "notifications": [

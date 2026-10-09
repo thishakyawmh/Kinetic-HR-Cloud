@@ -415,6 +415,40 @@ app.http('getAIHealth', {
   handler: getAIHealth,
 })
 
+// Azure AI Search Endpoints
+import { handleSearchPolicies, handleSeedSearch, handleSearchHealth } from './functions/search'
+
+app.http('handleSearchPolicies', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'search/policies',
+  handler: handleSearchPolicies,
+})
+
+app.http('handleSeedSearch', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'search/seed',
+  handler: handleSeedSearch,
+})
+
+app.http('handleSearchHealth', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'search/health',
+  handler: handleSearchHealth,
+})
+
+// Azure AI Document Intelligence Endpoints
+import { handleDocIntelHealth } from './functions/documents'
+
+app.http('handleDocIntelHealth', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'documents/intelligence/health',
+  handler: handleDocIntelHealth,
+})
+
 
 
 

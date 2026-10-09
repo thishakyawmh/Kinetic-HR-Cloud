@@ -272,3 +272,19 @@ export async function sendDocumentSoftcopy(
     return { status: 500, jsonBody: { error: err.message } }
   }
 }
+
+/**
+ * GET /api/documents/intelligence/health
+ * Returns live Azure AI Document Intelligence health report
+ */
+export async function handleDocIntelHealth(
+  _request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const { checkDocumentIntelligenceHealth } = await import('../config/documentIntelligence')
+  const health = await checkDocumentIntelligenceHealth()
+  return {
+    status: health.connected ? 200 : 503,
+    jsonBody: health,
+  }
+}

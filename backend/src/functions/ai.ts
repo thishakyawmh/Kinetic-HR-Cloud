@@ -3,6 +3,7 @@ import { authenticateRequest, AuthenticatedUser } from '../middleware/auth'
 import { callAzureOpenAIChat, checkAzureOpenAIHealth, getOpenAIConfig } from '../config/openai'
 import { queryTenantItems } from '../config/cosmos'
 import { generateProductionSeedData } from '../scripts/seedDataGenerator'
+import { searchPolicies } from '../config/search'
 
 // Memoize seed data in memory for instant high-performance grounding
 let cachedSeedData: any = null
@@ -158,18 +159,41 @@ export async function handleAIChat(
     // Ground model with multi-tenant platform data
     const platformDataGrounding = await buildPlatformGroundingContext(tenantId, auth.user!)
 
-    const systemPrompt = `You are the Kinetic HR Cloud AI Executive Copilot powered by Azure OpenAI (GPT-4o).
+    // Azure AI Search RAG Semantic Retrieval
+    let searchGrounding = ''
+    let retrievedDocs: any[] = []
+    try {
+      const searchRes = await searchPolicies(message, { tenantId, top: 3 })
+      if (searchRes.success && searchRes.results.length > 0) {
+        retrievedDocs = searchRes.results
+        searchGrounding = `
+=== RETRIEVED ENTERPRISE POLICIES (via Azure AI Search) ===
+${searchRes.results
+  .map(
+    r =>
+      `• [Document: ${r.title}] (Category: ${r.category}, Version: ${r.version}, Relevance Score: ${r.score.toFixed(2)})
+Summary: ${r.summary}
+Excerpt: ${r.content}`
+  )
+  .join('\n\n')}
+============================================================`
+      }
+    } catch (_) {}
+
+    const systemPrompt = `You are the Kinetic HR Cloud AI Executive Copilot powered by Azure OpenAI (GPT-4o) and Azure AI Search.
 You are assisting ${userName} (${userRole}, Department: ${department}) at ${tenantId}.
 
 === LIVE MULTI-TENANT PLATFORM KNOWLEDGE BASE ===
 ${platformDataGrounding}
 ==================================================
+${searchGrounding}
 
 Guidelines:
-1. Always base answers to queries about branches, employees, scheduled leaves, staffing thresholds, policies, and approvals on the Live Platform Knowledge Base above.
+1. Base answers on the Live Platform Knowledge Base and any Retrieved Enterprise Policies from Azure AI Search above.
 2. Provide exact, accurate details (e.g. employee names, dates, branch names, specific numbers, and policy statutory guidelines).
-3. Be professional, supportive, concise, and structured with clean markdown, bolding, and bullet points.
-4. Keep the Sri Lankan enterprise context accurate (Sampath Bank PLC, Keells Supermarkets, Singer Sri Lanka PLC).`
+3. If referencing policies retrieved from Azure AI Search, cite the policy document title.
+4. Be professional, supportive, concise, and structured with clean markdown, bolding, and bullet points.
+5. Keep the Sri Lankan enterprise context accurate (Sampath Bank PLC, Keells Supermarkets, Singer Sri Lanka PLC).`
 
     const openAiMessages = [
       { role: 'system' as const, content: systemPrompt },
@@ -191,6 +215,8 @@ Guidelines:
         reply: result.content,
         model: result.model,
         usage: result.usage,
+        searchRetrievedCount: retrievedDocs.length,
+        retrievedPolicies: retrievedDocs.map(d => ({ id: d.id, title: d.title, score: d.score })),
         timestamp: new Date().toISOString(),
       },
     }

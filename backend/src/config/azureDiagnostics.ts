@@ -375,12 +375,12 @@ export async function verifyCommunicationServices(isLiveMode: boolean): Promise<
   const connStr = process.env.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING || process.env.AZURE_ACS_CONNECTION_STRING
   const isConfigured = !!connStr
 
-  if (!isLiveMode || !isConfigured) {
+  if (!isConfigured) {
     return {
       serviceId: 'communication-services',
       serviceName: 'Azure Communication Services (ACS)',
       category: 'AI & Cognitive',
-      configured: isConfigured,
+      configured: false,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
@@ -389,7 +389,7 @@ export async function verifyCommunicationServices(isLiveMode: boolean): Promise<
         messageDeliveryStatus: 'SIMULATED_MOCK_DISPATCH',
         details: 'Explicit Local Simulation Mode: 2FA SMS and Softcopy Emails are processed by local mock gateway. Never reporting simulated messages as real Azure dispatches.',
       },
-      remediation: isConfigured ? 'Set AZURE_MODE=live to verify real ACS endpoint.' : 'Add AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING in local.settings.json.',
+      remediation: 'Add AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING in local.settings.json.',
     }
   }
 
@@ -461,12 +461,12 @@ export async function verifyServiceBus(isLiveMode: boolean): Promise<AzureServic
   const connStr = process.env.AZURE_SERVICE_BUS_CONNECTION_STRING
   const isConfigured = !!connStr
 
-  if (!isLiveMode || !isConfigured) {
+  if (!isConfigured) {
     return {
       serviceId: 'service-bus',
       serviceName: 'Azure Service Bus',
       category: 'Ingestion',
-      configured: isConfigured,
+      configured: false,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
@@ -474,7 +474,7 @@ export async function verifyServiceBus(isLiveMode: boolean): Promise<AzureServic
       evidence: {
         details: 'Local In-Memory Pub/Sub Queue active for offline event driven development.',
       },
-      remediation: isConfigured ? 'Set AZURE_MODE=live to enable real Azure Service Bus verification.' : 'Add AZURE_SERVICE_BUS_CONNECTION_STRING in local.settings.json.',
+      remediation: 'Add AZURE_SERVICE_BUS_CONNECTION_STRING in local.settings.json.',
     }
   }
 
@@ -606,18 +606,18 @@ export async function verifyAzureAISearch(isLiveMode: boolean): Promise<AzureSer
   const key = process.env.AZURE_SEARCH_KEY
   const isConfigured = !!(endpoint && key)
 
-  if (!isLiveMode || !isConfigured) {
+  if (!isConfigured) {
     return {
       serviceId: 'ai-search',
       serviceName: 'Azure AI Search (Hybrid Vector)',
       category: 'AI & Cognitive',
-      configured: isConfigured,
+      configured: false,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
       operationSuccess: false,
       evidence: { details: 'Local RAG search indexer active for offline policy lookup.' },
-      remediation: isConfigured ? 'Set AZURE_MODE=live to enable real Azure AI Search verification.' : 'Add AZURE_SEARCH_ENDPOINT and AZURE_SEARCH_KEY in local.settings.json.',
+      remediation: 'Add AZURE_SEARCH_ENDPOINT and AZURE_SEARCH_KEY in local.settings.json.',
     }
   }
 
@@ -674,18 +674,18 @@ export async function verifyDocumentIntelligence(isLiveMode: boolean): Promise<A
   const key = process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY
   const isConfigured = !!(endpoint && key)
 
-  if (!isLiveMode || !isConfigured) {
+  if (!isConfigured) {
     return {
       serviceId: 'doc-intelligence',
       serviceName: 'Azure AI Document Intelligence',
       category: 'AI & Cognitive',
-      configured: isConfigured,
+      configured: false,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
       operationSuccess: false,
       evidence: { details: 'Local OCR extraction engine active for offline development.' },
-      remediation: isConfigured ? 'Set AZURE_MODE=live to enable real Form Recognizer verification.' : 'Add AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT and AZURE_DOCUMENT_INTELLIGENCE_KEY in local.settings.json.',
+      remediation: 'Add AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT and AZURE_DOCUMENT_INTELLIGENCE_KEY in local.settings.json.',
     }
   }
 

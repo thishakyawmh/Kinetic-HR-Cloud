@@ -24,20 +24,34 @@ export const aiService = {
     // 0. Live Azure OpenAI Inference via Backend API
     try {
       callback?.onToolStep?.('azure_openai_inference', 'Querying live Azure OpenAI GPT-4o model...')
-      const apiRes = await apiClient.post<{ reply: string; model?: string }>('/ai/chat', {
+      const apiRes = await apiClient.post<{
+        reply: string
+        model?: string
+        searchRetrievedCount?: number
+        retrievedPolicies?: Array<{ id: string; title: string; score: number }>
+      }>('/ai/chat', {
         message: userMessage,
         context,
       })
       if (apiRes?.reply) {
         appDataStore.incrementAIMetrics(1, 1)
+        const toolExecutions: any[] = [
+          { name: 'azure_openai', label: `Inference via Azure OpenAI (${apiRes.model || 'gpt-4o'})`, status: 'completed' },
+        ]
+        if (apiRes.searchRetrievedCount && apiRes.searchRetrievedCount > 0) {
+          toolExecutions.push({
+            name: 'azure_ai_search',
+            label: `RAG Knowledge: ${apiRes.searchRetrievedCount} policy document(s) retrieved via Azure AI Search (kinetichr-search)`,
+            status: 'completed',
+          })
+        }
+
         const liveResponse: AIMessage = {
           id: `ai-msg-${Date.now()}`,
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           content: apiRes.reply,
-          toolExecutions: [
-            { name: 'azure_openai', label: `Inference via Azure OpenAI (${apiRes.model || 'gpt-4o'})`, status: 'completed' },
-          ],
+          toolExecutions,
         }
         callback?.onComplete?.(liveResponse)
         return liveResponse
