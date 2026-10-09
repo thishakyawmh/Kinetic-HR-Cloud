@@ -17,10 +17,17 @@ export function getCosmosDatabase(): Database | null {
   const key = process.env.COSMOS_DB_KEY!
   const dbName = process.env.COSMOS_DB_DATABASE || 'KineticHR'
 
-  client = new CosmosClient({ endpoint, key })
+  client = new CosmosClient({
+    endpoint,
+    key,
+    connectionPolicy: {
+      requestTimeout: 4000,
+    },
+  })
   database = client.database(dbName)
   return database
 }
+
 
 // Generates full substantial seed dataset for local memory database
 function generateSeedDataset() {
@@ -473,13 +480,25 @@ export function getTenantContainer(containerName: string): Container {
   const realContainer = db.container(containerName)
   const isStrictLive = (process.env.AZURE_MODE || '').toLowerCase() === 'live'
 
+  const withTimeout = async <T>(promise: Promise<T>, ms = 2500): Promise<T> => {
+    let timeoutHandle: any
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => reject(new Error(`Cosmos DB operation timed out after ${ms}ms`)), ms)
+    })
+    try {
+      return await Promise.race([promise, timeoutPromise])
+    } finally {
+      clearTimeout(timeoutHandle)
+    }
+  }
+
   // Double-Way Resilient Wrapper: Executes live Azure Cosmos DB, enforces strict error handling in live mode
   return {
     items: {
       query: (querySpec: any, options?: any) => ({
         fetchAll: async () => {
           try {
-            const result = await realContainer.items.query(querySpec, options).fetchAll()
+            const result = await withTimeout(realContainer.items.query(querySpec, options).fetchAll(), 3000)
             console.log(
               `🟢 [AZURE COSMOS DB] Query on container "${containerName}" -> Returned ${result.resources?.length ?? 0} item(s) from Live Azure Cloud`
             )
@@ -499,7 +518,7 @@ export function getTenantContainer(containerName: string): Container {
       }),
       create: async (item: any, options?: any) => {
         try {
-          const result = await realContainer.items.create(item, options)
+          const result = await withTimeout(realContainer.items.create(item, options), 3000)
           console.log(
             `🟢 [AZURE COSMOS DB] Inserted item "${item?.id || 'new'}" into container "${containerName}" (Live Azure Cloud)`
           )
@@ -519,7 +538,7 @@ export function getTenantContainer(containerName: string): Container {
       },
       upsert: async (item: any, options?: any) => {
         try {
-          const result = await realContainer.items.upsert(item, options)
+          const result = await withTimeout(realContainer.items.upsert(item, options), 3000)
           console.log(
             `🟢 [AZURE COSMOS DB] Upserted item "${item?.id || 'new'}" into container "${containerName}" (Live Azure Cloud)`
           )
@@ -541,7 +560,7 @@ export function getTenantContainer(containerName: string): Container {
     item: (id: string, partitionKey?: string) => ({
       read: async () => {
         try {
-          const result = await realContainer.item(id, partitionKey).read()
+          const result = await withTimeout(realContainer.item(id, partitionKey).read(), 2500)
           if (result.resource) {
             console.log(
               `🟢 [AZURE COSMOS DB] Read item "${id}" from container "${containerName}" (Live Azure Cloud)`
@@ -569,7 +588,7 @@ export function getTenantContainer(containerName: string): Container {
       },
       replace: async (newItem: any, options?: any) => {
         try {
-          const result = await realContainer.item(id, partitionKey).replace(newItem, options)
+          const result = await withTimeout(realContainer.item(id, partitionKey).replace(newItem, options), 2500)
           console.log(
             `🟢 [AZURE COSMOS DB] Updated item "${id}" in container "${containerName}" (Live Azure Cloud)`
           )
@@ -587,7 +606,7 @@ export function getTenantContainer(containerName: string): Container {
       },
       delete: async () => {
         try {
-          const result = await realContainer.item(id, partitionKey).delete()
+          const result = await withTimeout(realContainer.item(id, partitionKey).delete(), 2500)
           console.log(
             `🟢 [AZURE COSMOS DB] Deleted item "${id}" from container "${containerName}" (Live Azure Cloud)`
           )
@@ -605,6 +624,7 @@ export function getTenantContainer(containerName: string): Container {
       },
     }),
   } as unknown as Container
+
 
 }
 
