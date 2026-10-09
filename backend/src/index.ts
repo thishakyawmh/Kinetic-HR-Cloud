@@ -6,16 +6,46 @@ import {
   createLeaveRequest,
   updateLeaveStatus,
   evaluateAIFairnessLeaves,
+  getLeaveTypes,
 } from './functions/leaves'
-import { getEmployees, getEmployeeById } from './functions/employees'
-import { getPayslips, getPayslipDownloadUrl } from './functions/payroll'
-import { getPolicies, createPolicy } from './functions/policies'
+import {
+  getEmployees,
+  getEmployeeById,
+  getTeamMembers,
+  updateEmployee,
+  createEmployee,
+  bulkImportEmployees,
+} from './functions/employees'
+import { getPayslips, getPayslipById, getPayslipDownloadUrl } from './functions/payroll'
+import { getPolicies, getPolicyById, createPolicy, getPolicyDownloadUrl } from './functions/policies'
 import {
   createDocumentRequest,
   getDocumentRequests,
   verify2faAndSignDocument,
   sendDocumentSoftcopy,
 } from './functions/documents'
+import {
+  getDepartments,
+  createDepartment,
+} from './functions/departments'
+import {
+  getBranches,
+  createBranch,
+  updateBranch,
+  deleteBranch,
+} from './functions/branches'
+import {
+  getAdminDashboardStats,
+  getAdminAuditLogs,
+  getAdminIntegrations,
+  getAdminAIUsage,
+} from './functions/admin'
+import {
+  getOrganizations,
+  createOrganization,
+  getPlatformMetrics,
+  getSubscriptionPlans,
+} from './functions/platform'
 
 // Auth Routes
 app.http('validateOrganization', {
@@ -61,6 +91,13 @@ app.http('updateLeaveStatus', {
   handler: updateLeaveStatus,
 })
 
+app.http('getLeaveTypes', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'leaves/types',
+  handler: getLeaveTypes,
+})
+
 app.http('evaluateAIFairnessLeaves', {
   methods: ['POST'],
   authLevel: 'anonymous',
@@ -69,6 +106,13 @@ app.http('evaluateAIFairnessLeaves', {
 })
 
 // Employees & Organization Directory
+app.http('getTeamMembers', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'employees/team',
+  handler: getTeamMembers,
+})
+
 app.http('getEmployees', {
   methods: ['GET'],
   authLevel: 'anonymous',
@@ -83,12 +127,55 @@ app.http('getEmployeeById', {
   handler: getEmployeeById,
 })
 
+app.http('updateEmployee', {
+  methods: ['PATCH'],
+  authLevel: 'anonymous',
+  route: 'employees/{id}',
+  handler: updateEmployee,
+})
+
+app.http('createEmployee', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'employees',
+  handler: createEmployee,
+})
+
+app.http('bulkImportEmployees', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'employees/import',
+  handler: bulkImportEmployees,
+})
+
+// Departments & Workspaces
+app.http('getDepartments', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'departments',
+  handler: getDepartments,
+})
+
+app.http('createDepartment', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'departments',
+  handler: createDepartment,
+})
+
 // Payroll & Payslips (Blob Storage integration)
 app.http('getPayslips', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'payroll/payslips',
   handler: getPayslips,
+})
+
+app.http('getPayslipById', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'payroll/payslips/{id}',
+  handler: getPayslipById,
 })
 
 app.http('getPayslipDownloadUrl', {
@@ -106,11 +193,25 @@ app.http('getPolicies', {
   handler: getPolicies,
 })
 
+app.http('getPolicyById', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'policies/{id}',
+  handler: getPolicyById,
+})
+
 app.http('createPolicy', {
   methods: ['POST'],
   authLevel: 'anonymous',
   route: 'policies',
   handler: createPolicy,
+})
+
+app.http('getPolicyDownloadUrl', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'policies/{id}/download-url',
+  handler: getPolicyDownloadUrl,
 })
 
 // HR Document Requests & Manager 2FA Signing
@@ -140,4 +241,91 @@ app.http('sendDocumentSoftcopy', {
   authLevel: 'anonymous',
   route: 'documents/{id}/send-softcopy',
   handler: sendDocumentSoftcopy,
+})
+
+// Organization HR Admin Endpoints
+app.http('getAdminDashboardStats', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/stats',
+  handler: getAdminDashboardStats,
+})
+
+app.http('getAdminAuditLogs', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/audit-logs',
+  handler: getAdminAuditLogs,
+})
+
+app.http('getAdminIntegrations', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/integrations',
+  handler: getAdminIntegrations,
+})
+
+app.http('getAdminAIUsage', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/ai-usage',
+  handler: getAdminAIUsage,
+})
+
+// Kinetic Platform Admin Endpoints
+app.http('getPlatformOrganizations', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'platform/organizations',
+  handler: getOrganizations,
+})
+
+app.http('createPlatformOrganization', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'platform/organizations',
+  handler: createOrganization,
+})
+
+app.http('getPlatformMetrics', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'platform/metrics',
+  handler: getPlatformMetrics,
+})
+
+app.http('getPlatformSubscriptions', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'platform/subscriptions',
+  handler: getSubscriptionPlans,
+})
+
+// Branches Endpoints
+app.http('getBranches', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'branches',
+  handler: getBranches,
+})
+
+app.http('createBranch', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'branches',
+  handler: createBranch,
+})
+
+app.http('updateBranch', {
+  methods: ['PUT', 'PATCH'],
+  authLevel: 'anonymous',
+  route: 'branches/{id}',
+  handler: updateBranch,
+})
+
+app.http('deleteBranch', {
+  methods: ['DELETE'],
+  authLevel: 'anonymous',
+  route: 'branches/{id}',
+  handler: deleteBranch,
 })

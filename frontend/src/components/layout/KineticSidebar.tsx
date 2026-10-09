@@ -18,6 +18,8 @@ import {
   CheckSquare,
   Users,
   Building,
+  Building2,
+  MapPin,
   History,
   Activity,
   Layers,
@@ -30,6 +32,7 @@ import {
   HelpCircle,
   ChevronRight,
   Zap,
+  User as UserIcon,
 } from 'lucide-react'
 import { PlanUpgradeModal } from '@/components/subscription/PlanUpgradeModal'
 
@@ -72,13 +75,18 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
     { label: 'Team Availability', to: '/manager/team', icon: CalendarDays },
   ]
 
+  const isMultiBranchEligible = tenant?.plan === 'Business' || tenant?.plan === 'Enterprise'
+
   const adminNav = [
     { label: 'Assistant', to: '/admin/assistant', icon: Sparkles },
     { label: 'Overview', to: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Workforce Directory', to: '/admin/employees', icon: Users },
     { label: 'Workspace Directory', to: '/admin/departments', icon: Building },
+    ...(isMultiBranchEligible
+      ? [{ label: 'Branches', to: '/admin/branches', icon: MapPin }]
+      : []),
     { label: 'Audit Logs', to: '/admin/audit-logs', icon: History },
-    { label: 'AI Observability', to: '/admin/ai-usage', icon: Activity },
+    { label: 'System Analytics', to: '/admin/ai-usage', icon: Activity },
     { label: 'Integrations', to: '/admin/integrations', icon: Layers },
     { label: 'Settings', to: '/admin/settings', icon: Sliders },
   ]
@@ -99,7 +107,6 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
       : role === 'manager'
       ? managerNav
       : employeeNav
-
 
   const handleStartNewChat = () => {
     if (onNewChat) {
@@ -204,6 +211,7 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
             </button>
           )}
         </div>
+
 
         {/* Navigation Items */}
         <nav className="px-2 pt-2 space-y-1 overflow-y-auto no-scrollbar">
@@ -339,13 +347,23 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
       <div className="p-3 border-t border-border/30 relative">
         {isExpanded ? (
           <div className="flex items-center justify-between">
-            {/* User Profile Card */}
-            <div className="flex items-center gap-2.5 overflow-hidden p-1.5 rounded-xl flex-1 pr-2 min-w-0">
-              <div className="h-8 w-8 rounded-full bg-[#23ace3] text-white text-xs font-semibold flex items-center justify-center shrink-0 shadow-xs">
-                {user?.name?.[0] || 'U'}
+            {/* User Profile Card - Click to navigate to Profile */}
+            <div
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-2.5 overflow-hidden p-1.5 rounded-xl flex-1 pr-2 min-w-0 cursor-pointer hover:bg-muted/50 transition-colors group"
+              title="View Profile Settings"
+            >
+              <div className="h-8 w-8 rounded-full bg-[#23ace3] text-white text-xs font-semibold flex items-center justify-center shrink-0 shadow-xs overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                ) : (
+                  user?.name?.[0] || 'U'
+                )}
               </div>
               <div className="truncate text-left min-w-0">
-                <div className="text-xs font-medium text-foreground truncate">{user?.name || 'User'}</div>
+                <div className="text-xs font-medium text-foreground truncate group-hover:text-[#23ace3] transition-colors">
+                  {user?.name || 'User'}
+                </div>
                 <div className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
                   {user?.jobTitle || user?.department || 'Employee'}
                 </div>
@@ -372,15 +390,20 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
               <Settings className="h-4 w-4" />
             </button>
             <div
-              className="h-8 w-8 rounded-full bg-[#23ace3] text-white text-xs font-semibold flex items-center justify-center shadow-xs"
-              title={user?.name || 'User'}
+              onClick={() => navigate('/profile')}
+              className="h-8 w-8 rounded-full bg-[#23ace3] text-white text-xs font-semibold flex items-center justify-center shadow-xs cursor-pointer overflow-hidden hover:ring-2 hover:ring-[#23ace3]/50 transition-all"
+              title={`View ${user?.name || 'User'} Profile`}
             >
-              {user?.name?.[0] || 'U'}
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                user?.name?.[0] || 'U'
+              )}
             </div>
           </div>
         )}
 
-        {/* Kinetic Settings Popup: Theme Toggle & Logout Only */}
+        {/* Kinetic Settings Popup: Theme Toggle, Profile Settings, and Logout */}
         {showSettingsMenu && (
           <div className="absolute bottom-16 left-8 w-56 rounded-[20px] border border-border bg-popover text-popover-foreground p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 text-left space-y-0.5 text-xs font-sans">
             {/* Theme Change Option */}
@@ -402,6 +425,21 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
                 <span className="capitalize text-[11px] font-medium">{theme}</span>
                 <ChevronRight className="h-3 w-3" />
               </div>
+            </button>
+
+            {/* Profile Section Option - Before Logout */}
+            <button
+              onClick={() => {
+                setShowSettingsMenu(false)
+                navigate('/profile')
+              }}
+              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted rounded-xl transition-colors cursor-pointer text-left text-xs text-foreground group"
+            >
+              <div className="flex items-center gap-3">
+                <UserIcon className="h-4 w-4 text-muted-foreground group-hover:text-[#23ace3] transition-colors" />
+                <span className="font-medium">Profile Settings</span>
+              </div>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
             </button>
 
             <div className="border-t border-border/60 my-1" />

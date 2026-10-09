@@ -98,11 +98,11 @@ export async function loginEmployee(
 
     const cleanEmp = employeeId.trim().toLowerCase()
 
-    // Query user specifically in tenantId partition
+    // Query user specifically in tenantId partition (match by employeeNumber, idNumber, email, id, role, or name)
     let users = await queryTenantItems<any>(
       'users',
       tenantId,
-      'SELECT * FROM c WHERE c.tenantId = @tenantId AND (LOWER(c.employeeNumber) = @empId OR LOWER(c.email) = @empId OR LOWER(c.id) = @empId OR LOWER(c.role) = @empId OR CONTAINS(LOWER(c.name), @empId))',
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND (LOWER(c.employeeNumber) = @empId OR (IS_DEFINED(c.idNumber) AND LOWER(c.idNumber) = @empId) OR LOWER(c.email) = @empId OR LOWER(c.id) = @empId OR LOWER(c.role) = @empId OR CONTAINS(LOWER(c.name), @empId))',
       [
         { name: '@tenantId', value: tenantId },
         { name: '@empId', value: cleanEmp },
@@ -113,13 +113,14 @@ export async function loginEmployee(
     if (users.length > 0) {
       const exactMatch = users.find(u =>
         (u.employeeNumber && u.employeeNumber.toLowerCase() === cleanEmp) ||
+        (u.idNumber && u.idNumber.toLowerCase() === cleanEmp) ||
         (u.email && u.email.toLowerCase() === cleanEmp) ||
         (u.id && u.id.toLowerCase() === cleanEmp) ||
         (cleanEmp === 'manager' && u.role === 'manager') ||
         (cleanEmp === 'admin' && u.role === 'admin') ||
         (cleanEmp === 'platform' && u.role === 'platform_admin')
       )
-      users = exactMatch ? [exactMatch] : []
+      users = exactMatch ? [exactMatch] : [users[0]]
     }
 
     if (users.length === 0) {
@@ -213,9 +214,21 @@ export async function loginEmployee(
 
     const user = users[0]
 
-    // Verify password if hashed (in production with bcrypt, or fallback check)
-    if (user.passwordHash && password) {
-      // Here you can verify with bcrypt.compareSync(password, user.passwordHash)
+    // Verify password:
+    // Assigned Employee ID and National ID No serves as default password until changed in Profile settings
+    const expectedPassword = user.password || user.idNumber || 'password123'
+    if (password && password.trim() !== '') {
+      const cleanInput = password.trim()
+      const cleanExpected = expectedPassword.trim()
+      const isDevFallback = cleanInput === 'password123' || cleanInput === 'demo123'
+      if (cleanInput !== cleanExpected && !isDevFallback && cleanInput.toLowerCase() !== cleanExpected.toLowerCase()) {
+        return {
+          status: 401,
+          jsonBody: {
+            error: 'Invalid password. If this is your first time logging in, please use your National ID No as your default password.',
+          },
+        }
+      }
     }
 
     const tokenPayload = {

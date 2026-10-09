@@ -45,6 +45,13 @@ export interface User {
   hireDate: string
   phone?: string
   location?: string
+  branchId?: string
+  branchName?: string
+  address?: string
+  idNumber?: string
+  biometricStatus?: string
+  password?: string
+  passwordHash?: string
 }
 
 export interface LeaveType {
@@ -331,3 +338,45 @@ export interface WorkspaceRole {
   updatedAt?: string
 }
 
+export type BranchType = 'Headquarters' | 'Regional Branch' | 'Hub' | 'Warehouse / Facility' | 'Remote Hub'
+
+export interface BranchHoliday {
+  id: string
+  name: string
+  date: string
+  type: string
+  notes?: string
+}
+
+export interface Branch {
+  id: string
+  tenantId: string
+  name: string
+  code: string
+  type: BranchType
+  address: string
+  city: string
+  country: string
+  phone?: string
+  email?: string
+  timezone?: string
+  branchManagerId?: string
+  branchManagerName?: string
+  employeeCount?: number
+  isHeadquarters: boolean
+  status: 'Active' | 'Inactive'
+  holidays?: BranchHoliday[]
+  createdAt: string
+}
+
+export interface Department {
+  id: string
+  tenantId: string
+  name: string
+  head: string
+  threshold?: string
+  description?: string
+  status?: 'Active' | 'Inactive'
+  count?: number
+  createdAt?: string
+}

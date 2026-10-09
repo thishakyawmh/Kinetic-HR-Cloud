@@ -133,22 +133,22 @@ export const DocumentCardView: React.FC<DocumentCardViewProps> = ({
           {/* 4-Stage Stepper Bar */}
           <DocumentStageStepper status={currentDoc.status} requiresManagerSignature={currentDoc.requiresManagerSignature} />
 
-          {/* AI Verification & Notes Summary */}
+          {/* Contract Verification & Compliance Summary */}
           <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 text-xs space-y-1.5">
             <div className="flex items-center gap-1.5 font-semibold text-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-[#23ace3]" />
-              <span>AI Identity & Contract Verification</span>
+              <ShieldCheck className="h-3.5 w-3.5 text-[#23ace3]" />
+              <span>Contract & Policy Verification</span>
             </div>
             <p className="text-muted-foreground text-[11px]">
-              {currentDoc.aiVerification?.verificationNotes || 'AI Agent verified employee contract details.'}
+              {currentDoc.aiVerification?.verificationNotes || 'Automated verification completed for employee contract and status.'}
             </p>
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1 border-t border-border/40">
-              <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+              <span className="flex items-center gap-1 text-emerald-500 font-semibold">
                 <CheckCircle2 className="h-3 w-3" /> Identity Verified
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                <CheckCircle2 className="h-3 w-3" /> Corporate Policy Compliant
+              <span className="flex items-center gap-1 text-emerald-500 font-semibold">
+                <CheckCircle2 className="h-3 w-3" /> Policy Compliant
               </span>
             </div>
           </div>

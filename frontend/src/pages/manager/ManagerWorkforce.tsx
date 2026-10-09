@@ -299,15 +299,6 @@ export const ManagerWorkforce: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleAskAI(emp)}
-                          className="h-7 text-xs rounded-lg gap-1 border-[#23ace3]/40 text-[#23ace3] hover:bg-[#23ace3]/15 hover:border-[#23ace3] cursor-pointer"
-                        >
-                          <Sparkles className="h-3 w-3" />
-                          <span>Ask AI</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
                           onClick={() => openSetRoleModal(emp)}
                           className="h-7 text-xs rounded-lg gap-1 border-border/80 hover:border-[#23ace3] hover:text-[#23ace3] cursor-pointer"
                         >

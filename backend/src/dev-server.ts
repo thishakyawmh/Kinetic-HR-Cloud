@@ -23,6 +23,12 @@ import {
   createDepartment,
 } from './functions/departments'
 import {
+  getBranches,
+  createBranch,
+  updateBranch,
+  deleteBranch,
+} from './functions/branches'
+import {
   getPayslips,
   getPayslipById,
   getPayslipDownloadUrl,
@@ -37,7 +43,14 @@ import {
   getAdminDashboardStats,
   getAdminAuditLogs,
   getAdminIntegrations,
+  getAdminAIUsage,
 } from './functions/admin'
+import {
+  getOrganizations,
+  createOrganization,
+  getPlatformMetrics,
+  getSubscriptionPlans,
+} from './functions/platform'
 import {
   createDocumentRequest,
   getDocumentRequests,
@@ -124,6 +137,13 @@ addRoute('POST', '/api/employees', createEmployee)
 addRoute('GET', '/api/departments', getDepartments)
 addRoute('POST', '/api/departments', createDepartment)
 
+// Branches
+addRoute('GET', '/api/branches', getBranches)
+addRoute('POST', '/api/branches', createBranch)
+addRoute('PUT', '/api/branches/{id}', updateBranch)
+addRoute('PATCH', '/api/branches/{id}', updateBranch)
+addRoute('DELETE', '/api/branches/{id}', deleteBranch)
+
 // Payroll
 addRoute('GET', '/api/payroll/payslips', getPayslips)
 addRoute('GET', '/api/payroll/payslips/{id}/download-url', getPayslipDownloadUrl)
@@ -139,6 +159,13 @@ addRoute('POST', '/api/policies', createPolicy)
 addRoute('GET', '/api/admin/stats', getAdminDashboardStats)
 addRoute('GET', '/api/admin/audit-logs', getAdminAuditLogs)
 addRoute('GET', '/api/admin/integrations', getAdminIntegrations)
+addRoute('GET', '/api/admin/ai-usage', getAdminAIUsage)
+
+// Platform Admin
+addRoute('GET', '/api/platform/organizations', getOrganizations)
+addRoute('POST', '/api/platform/organizations', createOrganization)
+addRoute('GET', '/api/platform/metrics', getPlatformMetrics)
+addRoute('GET', '/api/platform/subscriptions', getSubscriptionPlans)
 
 // HR Documents
 addRoute('POST', '/api/documents/request', createDocumentRequest)

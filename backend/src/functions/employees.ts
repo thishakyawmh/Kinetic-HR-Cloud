@@ -17,7 +17,7 @@ export async function getEmployees(
   const department = request.query.get('department')
 
   try {
-    let query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId'
+    let query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.idNumber, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId'
     const params: Array<{ name: string; value: any }> = [{ name: '@tenantId', value: tenantId }]
 
     if (department && department !== 'all') {
@@ -73,7 +73,7 @@ export async function getTeamMembers(
   const managerId = request.query.get('managerId') || auth.user!.id
 
   try {
-    const query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId'
+    const query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.idNumber, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId'
     const params = [
       { name: '@tenantId', value: tenantId },
       { name: '@managerId', value: managerId },
@@ -108,13 +108,31 @@ export async function updateEmployee(
       return { status: 404, jsonBody: { error: 'Employee not found' } }
     }
 
+    // Determine if requester is admin or updating own profile
+    const isSelf = auth.user!.id === employeeId
+    const isAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+
+    if (!isAdmin && !isSelf) {
+      return { status: 403, jsonBody: { error: 'Unauthorized to modify this employee profile' } }
+    }
+
     const updated = {
       ...resource,
-      ...(body.phone !== undefined && { phone: body.phone }),
-      ...(body.location !== undefined && { location: body.location }),
-      ...(body.jobTitle !== undefined && { jobTitle: body.jobTitle }),
-      ...(body.department !== undefined && { department: body.department }),
-      ...(body.name !== undefined && { name: body.name }),
+      // Any authenticated user can update their own avatar and password in their Profile section
+      ...(body.avatarUrl !== undefined && { avatarUrl: body.avatarUrl }),
+      ...(body.password !== undefined && { password: body.password }),
+      // Non-admins cannot alter locked organizational parameters
+      ...(isAdmin && body.phone !== undefined && { phone: body.phone }),
+      ...(isAdmin && body.location !== undefined && { location: body.location }),
+      ...(isAdmin && body.address !== undefined && { address: body.address }),
+      ...(isAdmin && body.idNumber !== undefined && { idNumber: body.idNumber }),
+      ...(isAdmin && body.jobTitle !== undefined && { jobTitle: body.jobTitle }),
+      ...(isAdmin && body.department !== undefined && { department: body.department }),
+      ...(isAdmin && body.name !== undefined && { name: body.name }),
+      ...(isAdmin && body.role !== undefined && { role: body.role }),
+      ...(isAdmin && body.managerId !== undefined && { managerId: body.managerId }),
+      ...(isAdmin && body.managerName !== undefined && { managerName: body.managerName }),
+      ...(isAdmin && body.biometricStatus !== undefined && { biometricStatus: body.biometricStatus }),
       updatedAt: new Date().toISOString(),
     }
 
@@ -151,14 +169,19 @@ export async function createEmployee(
       name: body.name,
       email: body.email,
       role: body.role || 'employee',
-      department: body.department || 'General',
-      jobTitle: body.jobTitle || 'Team Member',
+      department: body.department || 'Unassigned',
+      jobTitle: body.jobTitle || 'Pending Assignment',
       employeeNumber: body.employeeNumber || `EMP-${Date.now().toString().slice(-4)}`,
-      managerId: body.managerId,
-      managerName: body.managerName,
+      managerId: body.managerId || '',
+      managerName: body.managerName || '',
       hireDate: body.hireDate || new Date().toISOString().split('T')[0],
       phone: body.phone || '',
       location: body.location || '',
+      address: body.address || '',
+      idNumber: body.idNumber || '',
+      password: body.password || body.idNumber || 'password123',
+      avatarUrl: body.avatarUrl || '',
+      biometricStatus: body.biometricStatus || 'Pending Employee Capture',
       createdAt: new Date().toISOString(),
     }
 

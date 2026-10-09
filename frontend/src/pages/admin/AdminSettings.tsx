@@ -23,56 +23,56 @@ export const AdminSettings: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <PageHeader
-        title="Tenant AI & Enterprise Model Configuration"
-        subtitle={`Configure Microsoft Foundry Agent Service, Azure OpenAI model deployments, and safety limits for ${tenant?.name}.`}
+        title="System & Automation Configuration"
+        subtitle={`Configure automated processing services, request quotas, and compliance policies for ${tenant?.name || 'Kinetic Technologies'}.`}
       />
 
       {savedSuccess && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          Settings updated successfully and propagated to Microsoft Foundry Agent Service.
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-semibold flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          Configuration updated successfully.
         </div>
       )}
 
-      {/* Model Deployment Card (Section 27) */}
-      <Card className="border-slate-200">
+      {/* Model Deployment Card */}
+      <Card className="border-border/60 bg-card rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Cpu className="h-5 w-5 text-sky-600" />
-              <CardTitle className="text-base">LLM Deployment & Agent Orchestration</CardTitle>
+              <Cpu className="h-5 w-5 text-[#23ace3]" />
+              <CardTitle className="text-base font-bold text-foreground">Processing Engine & Quotas</CardTitle>
             </div>
-            <Badge variant="success" className="text-[10px]">
-              Foundry Agent Active
+            <Badge variant="outline" className="text-[10px] bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+              Service Active
             </Badge>
           </div>
           <CardDescription className="text-xs">
-            Administered within Azure OpenAI isolated tenant perimeter.
+            Administered within secure enterprise tenant boundaries.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold block mb-1.5 text-slate-800">
-                AI Cloud Provider
+              <label className="font-semibold block mb-1.5 text-foreground">
+                Cloud Service Provider
               </label>
-              <Input value="Microsoft Azure OpenAI / Foundry Agent Service" disabled className="bg-slate-50 text-slate-700" />
+              <Input value="Enterprise Cloud Service (Azure Dedicated)" disabled className="bg-muted text-muted-foreground" />
             </div>
             <div>
-              <label className="font-semibold block mb-1.5 text-slate-800">
-                Active Reasoning Model
+              <label className="font-semibold block mb-1.5 text-foreground">
+                Processing Engine
               </label>
               <Select value={model} onChange={e => setModel(e.target.value)}>
-                <option value="gpt-4o-2024-08-06">Azure OpenAI GPT-4o (Enterprise Standard)</option>
-                <option value="gpt-4o-mini">Azure OpenAI GPT-4o-Mini (High Throughput)</option>
-                <option value="o1-preview">Azure OpenAI o1-preview (Deep Policy Reasoning)</option>
+                <option value="gpt-4o-2024-08-06">Enterprise Standard (Recommended)</option>
+                <option value="gpt-4o-mini">High Throughput (Fast Response)</option>
+                <option value="o1-preview">Advanced Reasoning (Deep Policy Processing)</option>
               </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold block mb-1.5 text-slate-800">
+              <label className="font-semibold block mb-1.5 text-foreground">
                 Daily Request Quota Limit
               </label>
               <Input
@@ -82,8 +82,8 @@ export const AdminSettings: React.FC = () => {
               />
             </div>
             <div>
-              <label className="font-semibold block mb-1.5 text-slate-800">
-                Content Safety Guardrail Tier
+              <label className="font-semibold block mb-1.5 text-foreground">
+                Data Retention & Compliance Tier
               </label>
               <Select value={safetyTier} onChange={e => setSafetyTier(e.target.value)}>
                 <option value="Strict Enterprise">Strict Enterprise (Zero Data Retention)</option>

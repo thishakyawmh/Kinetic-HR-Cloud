@@ -17,7 +17,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Server,
-  Sparkles,
+  Layers,
   ExternalLink,
 } from 'lucide-react'
 
@@ -89,9 +89,9 @@ export const PlatformDashboard: React.FC = () => {
           iconColor="text-emerald-400 bg-emerald-500/15"
         />
         <StatCard
-          title="Azure AI Foundry Latency"
-          value="410ms"
-          subtitle="99.98% availability SLA"
+          title="Fleet Gateway Latency (P99)"
+          value="24ms"
+          subtitle="99.99% availability SLA"
           icon={Activity}
           iconColor="text-[#ef8d46] bg-[#ef8d46]/15"
           badge={<Badge variant="success" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Operational</Badge>}
@@ -204,24 +204,36 @@ export const PlatformDashboard: React.FC = () => {
             <div className="flex items-center gap-2">
               <Server className="h-4 w-4 text-[#23ace3]" />
               <h4 className="text-sm font-bold text-foreground">
-                Azure Managed SaaS Cloud Infrastructure (§31 & §61)
+                Azure Managed SaaS Cloud Infrastructure Fleet
               </h4>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Kinetic HR Cloud operates across Microsoft Azure Container Apps, Azure PostgreSQL, Cosmos DB for NoSQL, Azure AI Search, and Microsoft Foundry Agent Service with automated tenant-level data segregation.
+              Kinetic HR Cloud operates across Microsoft Azure Functions (Serverless Node.js 20), Cosmos DB for NoSQL (/tenantId partition sharding), Azure Blob Storage (90-day cool tiering), and Azure Key Vault HSM keys with automated multi-zone ZRS redundancy.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/platform/subscriptions')}
-            className="text-xs border-border text-foreground hover:bg-muted shrink-0 rounded-xl"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-[#23ace3] mr-1.5" />
-            <span>View Subscription Plans</span>
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/platform/system-health')}
+              className="text-xs border-[#23ace3]/40 text-[#23ace3] hover:bg-[#23ace3]/10 rounded-xl"
+            >
+              <Activity className="h-3.5 w-3.5 mr-1.5" />
+              <span>Inspect Health Fleet</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/platform/subscriptions')}
+              className="text-xs border-border text-foreground hover:bg-muted rounded-xl"
+            >
+              <Layers className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
+              <span>Subscription Plans</span>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
   )
 }
+

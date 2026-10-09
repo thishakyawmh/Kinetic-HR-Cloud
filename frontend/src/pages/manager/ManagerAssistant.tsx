@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 import { aiService } from '@/services/aiService'
 import { approvalService } from '@/services/approvalService'
 import { appDataStore } from '@/services/storage'
-import { MOCK_LEAVE_REQUESTS } from '@/mock/data'
+import { leaveService } from '@/services/leaveService'
 import { AIMessage, LeaveRequest, AIMessageSuggestedOption } from '@/types'
 import { AIMessageItem } from '@/components/ai/AIMessageItem'
 import { AIThinkingIndicator } from '@/components/ai/AIThinkingIndicator'
@@ -53,13 +53,19 @@ export const ManagerAssistant: React.FC = () => {
     const investigateId = params.get('investigate')
     if (investigateId) {
       const stateReq = (location.state as any)?.request
-      const foundReq =
-        stateReq ||
-        appDataStore.getLeaveRequests(tenant?.id || '').find(r => r.id === investigateId) ||
-        MOCK_LEAVE_REQUESTS.find(r => r.id === investigateId)
+      if (stateReq) {
+        handleInvestigateRequest(stateReq)
+        return
+      }
 
-      if (foundReq) {
-        handleInvestigateRequest(foundReq)
+      // Query from live leave requests in tenant
+      if (tenant?.id) {
+        leaveService.getLeaveRequests(tenant.id).then(requests => {
+          const found = requests.find(r => r.id === investigateId)
+          if (found) {
+            handleInvestigateRequest(found)
+          }
+        })
         return
       }
     }

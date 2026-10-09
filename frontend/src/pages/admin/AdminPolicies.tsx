@@ -63,34 +63,19 @@ export const AdminPolicies: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="HR Policy Document Management & Vector Indexing"
-        subtitle="Manage official documents ingested by Azure Blob Storage and Azure AI Search for RAG grounding."
+        title="Company Policy Documents"
+        subtitle="Manage official organizational handbooks, compliance guidelines, and workplace policies."
       >
         <Button
           variant="default"
           size="sm"
           onClick={() => setIsUploadModalOpen(true)}
-          className="gap-1.5 text-xs bg-sky-600 hover:bg-sky-700 text-white"
+          className="gap-1.5 text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl"
         >
           <UploadCloud className="h-3.5 w-3.5" />
-          <span>Upload New Policy</span>
+          <span>Upload Policy</span>
         </Button>
       </PageHeader>
-
-      {/* Azure Architecture Ingestion Callout */}
-      <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50/70 via-white to-sky-50/70 p-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
-            <Database className="h-5 w-5" />
-          </div>
-          <div className="text-xs text-indigo-950 space-y-1">
-            <h4 className="font-bold text-sm">Enterprise RAG Vector Indexing Pipeline</h4>
-            <p className="text-indigo-800 leading-relaxed">
-              Uploaded PDFs are automatically ingested into <strong>Azure Blob Storage</strong>, parsed with Azure Document Intelligence, chunked into vector embeddings (text-embedding-3-large), and indexed in <strong>Azure AI Search</strong> with tenant-level security filtering.
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Drag & Drop Upload Zone (Section 26) */}
       <div

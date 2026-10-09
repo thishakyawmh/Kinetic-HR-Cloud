@@ -18,6 +18,7 @@ interface AuthContextType {
   validateOrganization: (organizationId: string) => Promise<Tenant>
   logout: () => void
   refreshUser: () => void
+  updateCurrentUser: (updates: Partial<User>) => void
   addAccount: (data: {
     name: string
     email: string
@@ -46,6 +47,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
       }
     }
+    setAllUsers(appDataStore.getUsers())
+  }
+
+  const updateCurrentUser = (updates: Partial<User>) => {
+    if (!session?.user) return
+    const updatedUser = { ...session.user, ...updates }
+    const updatedSession = { ...session, user: updatedUser }
+    authService.setSession(updatedSession)
+    setSession(updatedSession)
+    appDataStore.updateUser(session.user.id, updates)
     setAllUsers(appDataStore.getUsers())
   }
 
@@ -135,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         validateOrganization: handleValidateOrganization,
         logout: handleLogout,
         refreshUser,
+        updateCurrentUser,
         addAccount: handleAddAccount,
       }}
     >

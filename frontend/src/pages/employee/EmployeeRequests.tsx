@@ -212,35 +212,35 @@ export const EmployeeRequests: React.FC = () => {
             Request Official HR Document
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Generate and request verified corporate letters for banking, lease, or travel purposes with AI identity verification & 2FA manager signature.
+            Request verified employment confirmation letters for banking, lease, visa, or administrative purposes.
           </DialogDescription>
         </DialogHeader>
 
         {isAiProcessing ? (
           <div className="py-8 text-center space-y-4 animate-in fade-in">
             <div className="p-3 rounded-2xl bg-[#23ace3]/15 text-[#23ace3] w-12 h-12 mx-auto flex items-center justify-center border border-[#23ace3]/30">
-              <Sparkles className="h-6 w-6 animate-spin" />
+              <FileText className="h-6 w-6 animate-pulse" />
             </div>
             <div className="space-y-1">
-              <div className="text-sm font-bold text-foreground">Kinetic AI Autonomous Processing</div>
+              <div className="text-sm font-bold text-foreground">Processing Document Request</div>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                Running user verification, policy check, and generating official document draft...
+                Verifying employment records and preparing official document draft...
               </p>
             </div>
 
-            {/* AI Progress Step Indicators */}
+            {/* Document Generation Progress */}
             <div className="space-y-2 max-w-xs mx-auto text-left text-xs pt-2 font-mono">
-              <div className={`flex items-center gap-2 ${aiProgressStep >= 1 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+              <div className={`flex items-center gap-2 ${aiProgressStep >= 1 ? 'text-emerald-500' : 'text-muted-foreground'}`}>
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>[Step 1] Identity & Employment Contract Verified</span>
+                <span>Employment Record Verified</span>
               </div>
-              <div className={`flex items-center gap-2 ${aiProgressStep >= 2 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+              <div className={`flex items-center gap-2 ${aiProgressStep >= 2 ? 'text-emerald-500' : 'text-muted-foreground'}`}>
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>[Step 2] Corporate Draft Generated & Ref Code Created</span>
+                <span>Official Draft & Reference Generated</span>
               </div>
-              <div className={`flex items-center gap-2 ${aiProgressStep >= 3 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+              <div className={`flex items-center gap-2 ${aiProgressStep >= 3 ? 'text-emerald-500' : 'text-muted-foreground'}`}>
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>[Step 3] Forwarded to Manager 2FA Signing Queue</span>
+                <span>Forwarded for Manager Signature</span>
               </div>
             </div>
           </div>

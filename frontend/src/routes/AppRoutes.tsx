@@ -17,7 +17,7 @@ import { EmployeePayslipDetail } from '@/pages/employee/EmployeePayslipDetail'
 import { EmployeeRequests } from '@/pages/employee/EmployeeRequests'
 import { EmployeeAssistant } from '@/pages/employee/EmployeeAssistant'
 import { EmployeePolicies } from '@/pages/employee/EmployeePolicies'
-import { EmployeeProfile } from '@/pages/employee/EmployeeProfile'
+import { ProfilePage } from '@/pages/profile/ProfilePage'
 
 // Manager Pages
 import { ManagerDashboard } from '@/pages/manager/ManagerDashboard'
@@ -32,6 +32,7 @@ import { AdminAssistant } from '@/pages/admin/AdminAssistant'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminEmployees } from '@/pages/admin/AdminEmployees'
 import { AdminDepartments } from '@/pages/admin/AdminDepartments'
+import { AdminBranches } from '@/pages/admin/AdminBranches'
 import { AdminCreateWorkspace } from '@/pages/admin/AdminCreateWorkspace'
 import { AdminLeaveTypes } from '@/pages/admin/AdminLeaveTypes'
 import { AdminPolicies } from '@/pages/admin/AdminPolicies'
@@ -81,7 +82,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="/employee/payslips/:id" element={<EmployeePayslipDetail />} />
         <Route path="/employee/requests" element={<EmployeeRequests />} />
         <Route path="/employee/policies" element={<EmployeePolicies />} />
-        <Route path="/employee/profile" element={<EmployeeProfile />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/employee/profile" element={<ProfilePage />} />
 
         {/* Manager Experience */}
         <Route path="/manager/dashboard" element={<ManagerDashboard />} />
@@ -98,6 +100,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/admin/workforce/create-workspace" element={<AdminCreateWorkspace />} />
         <Route path="/admin/employees" element={<AdminEmployees />} />
         <Route path="/admin/departments" element={<AdminDepartments />} />
+        <Route path="/admin/branches" element={<AdminBranches />} />
         <Route path="/admin/leave-types" element={<AdminLeaveTypes />} />
         <Route path="/admin/policies" element={<AdminPolicies />} />
         <Route path="/admin/holidays" element={<AdminHolidays />} />

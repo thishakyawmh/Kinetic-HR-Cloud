@@ -10,6 +10,7 @@ import {
   Search,
   ShieldCheck,
   AlertTriangle,
+  Activity,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { adminService } from '@/services/adminService'
@@ -23,17 +24,17 @@ export const AdminAIUsage: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="AI Agent Observability & Activity Metrics"
-        subtitle="Telemetry visualization of Microsoft Foundry Agent Service, Azure OpenAI token usage, and RAG retrieval pipelines."
+        title="System Analytics & Usage Metrics"
+        subtitle="Operational metrics for automated workflows, response times, and knowledge base lookups."
       />
 
-      {/* Telemetry Metric Cards (Section 29) */}
+      {/* Telemetry Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
-          title="Total AI Requests Today"
+          title="Automated Inquiries Today"
           value={metrics?.totalRequestsToday.toLocaleString() ?? '1,284'}
-          subtitle="Processed by Kinetic AI Service"
-          icon={Sparkles}
+          subtitle="Processed and resolved"
+          icon={Activity}
           iconColor="text-[#23ace3] bg-[#23ace3]/15 border border-[#23ace3]/20"
         />
         <StatCard
@@ -42,19 +43,19 @@ export const AdminAIUsage: React.FC = () => {
           subtitle="P95 Latency: 510ms"
           icon={Clock}
           iconColor="text-emerald-500 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/20"
-          trend={{ value: 'Sub-second SLA', positive: true }}
+          trend={{ value: 'Sub-second response', positive: true }}
         />
         <StatCard
-          title="Tool Calls Executed"
+          title="Automated Actions Executed"
           value={metrics?.toolCallsCount.toLocaleString() ?? '412'}
-          subtitle="Leave queries, calendar checks"
+          subtitle="Leave calculations, calendar syncs"
           icon={Wrench}
           iconColor="text-indigo-500 dark:text-indigo-400 bg-indigo-500/15 border border-indigo-500/20"
         />
         <StatCard
-          title="RAG Knowledge Searches"
+          title="Knowledge Base Lookups"
           value={metrics?.ragSearchesCount.toLocaleString() ?? '890'}
-          subtitle="Vector matches in Azure AI Search"
+          subtitle="Policy and documentation queries"
           icon={Search}
           iconColor="text-sky-500 dark:text-sky-400 bg-sky-500/15 border border-sky-500/20"
         />

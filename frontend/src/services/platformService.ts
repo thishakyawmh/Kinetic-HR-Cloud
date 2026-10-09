@@ -1,5 +1,8 @@
 import { Tenant, User, SubscriptionPlan, SubscriptionTier, AuditEvent } from '@/types'
 import { appDataStore } from './storage'
+import { apiClient } from './apiClient'
+
+const useMock = () => import.meta.env.VITE_USE_MOCK_SERVICES !== 'false'
 
 export const PLATFORM_PLANS: SubscriptionPlan[] = [
   {
@@ -84,7 +87,10 @@ export const platformService = {
     return PLATFORM_PLANS.find(p => p.name === tier) || PLATFORM_PLANS[1]
   },
 
-  getOrganizations(): Tenant[] {
+  async getOrganizations(): Promise<Tenant[]> {
+    if (!useMock()) {
+      return apiClient.get<Tenant[]>('/platform/organizations')
+    }
     const tenants = appDataStore.getTenants()
     const allUsers = appDataStore.getUsers()
 
@@ -101,12 +107,16 @@ export const platformService = {
     })
   },
 
-  getOrganizationById(id: string): Tenant | undefined {
-    const orgs = this.getOrganizations()
+  async getOrganizationById(id: string): Promise<Tenant | undefined> {
+    const orgs = await this.getOrganizations()
     return orgs.find(o => o.id === id)
   },
 
-  registerOrganization(input: OrganizationRegistrationInput): { tenant: Tenant; adminUser: User } {
+  async registerOrganization(input: OrganizationRegistrationInput): Promise<{ tenant: Tenant; adminUser: User }> {
+    if (!useMock()) {
+      return apiClient.post<{ tenant: Tenant; adminUser: User }>('/platform/organizations', input)
+    }
+
     // Generate unique Tenant ID according to Section 5: e.g. "KIN-8F3A91"
     const randomHex = Math.random().toString(16).substring(2, 8).toUpperCase()
     const tenantId = `KIN-${randomHex}`
@@ -164,8 +174,12 @@ export const platformService = {
     return { tenant: newTenant, adminUser }
   },
 
-  getPlatformMetrics() {
-    const orgs = this.getOrganizations()
+  async getPlatformMetrics() {
+    if (!useMock()) {
+      return apiClient.get<any>('/platform/metrics')
+    }
+
+    const orgs = await this.getOrganizations()
     const allUsers = appDataStore.getUsers()
 
     const starterCount = orgs.filter(o => o.plan === 'Starter').length

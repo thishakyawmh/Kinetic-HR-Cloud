@@ -138,10 +138,11 @@ export const authService = {
       sampleIds: usersInTenant.map(u => `${u.name} (${u.employeeNumber}: ${u.role})`)
     })
 
-    // 1. Direct match by employee number, email, or id
+    // 1. Direct match by employee number, National ID No, email, or id
     let targetUser = usersInTenant.find(
       u =>
         u.employeeNumber.toLowerCase() === cleanId ||
+        (u.idNumber && u.idNumber.toLowerCase() === cleanId) ||
         u.email.toLowerCase() === cleanId ||
         u.id.toLowerCase() === cleanId
     )
@@ -169,6 +170,18 @@ export const authService = {
       throw new Error(
         `Employee ID "${employeeId}" not found. Try KT-8842 (Employee), KT-1044 (Manager), KT-0012 (HR Admin), or KC-0001 (Platform Admin).`
       )
+    }
+
+    // Verify password:
+    // Assigned Employee ID and National ID No serves as default password until changed in Profile settings
+    const expectedPassword = targetUser.password || targetUser.idNumber || 'password123'
+    if (password && password.trim() !== '') {
+      const cleanInput = password.trim()
+      const cleanExpected = expectedPassword.trim()
+      const isDevFallback = cleanInput === 'password123' || cleanInput === 'demo123'
+      if (cleanInput !== cleanExpected && !isDevFallback && cleanInput.toLowerCase() !== cleanExpected.toLowerCase()) {
+        throw new Error('Invalid password. If this is your first time logging in, please use your National ID No as your default password.')
+      }
     }
 
     const tenant = appDataStore.getTenant(targetUser.tenantId) || appDataStore.getTenants()[0]

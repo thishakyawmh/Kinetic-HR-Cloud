@@ -1,4 +1,7 @@
 import React from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useQuery } from '@tanstack/react-query'
+import { leaveService } from '@/services/leaveService'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -7,7 +10,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { CalendarDays, ShieldCheck, Settings, PlusCircle } from 'lucide-react'
 
 export const AdminLeaveTypes: React.FC = () => {
-  const leaveConfigs = [
+  const { tenant } = useAuth()
+
+  const { data: remoteLeaveTypes = [] } = useQuery({
+    queryKey: ['leaveTypes', tenant?.id],
+    queryFn: () => (tenant?.id ? leaveService.getLeaveTypes(tenant.id) : []),
+    enabled: !!tenant?.id,
+  })
+
+  const defaultLeaveConfigs = [
     {
       name: 'Annual Leave',
       allowance: '20 days',
@@ -49,6 +60,20 @@ export const AdminLeaveTypes: React.FC = () => {
       thresholdRule: 'Requires Executive Sign-Off',
     },
   ]
+
+  const leaveConfigs = remoteLeaveTypes.length > 0
+    ? remoteLeaveTypes.map(rt => {
+        const found = defaultLeaveConfigs.find(d => d.name.toLowerCase() === rt.name.toLowerCase())
+        return {
+          name: rt.name,
+          allowance: `${rt.defaultAllowance || 10} days`,
+          approval: rt.requiresManagerApproval ? 'Required (Direct Manager)' : 'Auto-approved',
+          carryForward: found?.carryForward || 'Per organization policy',
+          emergency: rt.code === 'emergency' ? 'Yes (Dependent Illness Sec 4.2)' : 'No',
+          thresholdRule: found?.thresholdRule || 'Checked against operational quota',
+        }
+      })
+    : defaultLeaveConfigs
 
   return (
     <div className="space-y-6">

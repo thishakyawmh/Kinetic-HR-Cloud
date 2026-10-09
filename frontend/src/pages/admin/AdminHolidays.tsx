@@ -6,18 +6,17 @@ import { CalendarDays } from 'lucide-react'
 
 export const AdminHolidays: React.FC = () => {
   const holidays = [
-    { name: "New Year's Day", date: '2026-01-01', day: 'Thursday', type: 'Federal & Company Holiday' },
-    { name: 'Martin Luther King Jr. Day', date: '2026-01-19', day: 'Monday', type: 'Federal Holiday' },
-    { name: "Presidents' Day", date: '2026-02-16', day: 'Monday', type: 'Federal Holiday' },
-    { name: 'Memorial Day', date: '2026-05-25', day: 'Monday', type: 'Federal Holiday' },
-    { name: 'Juneteenth National Independence Day', date: '2026-06-19', day: 'Friday', type: 'Federal Holiday' },
-    { name: 'Independence Day (Observed)', date: '2026-07-03', day: 'Friday', type: 'Federal Holiday' },
-    { name: 'Labor Day', date: '2026-09-07', day: 'Monday', type: 'Federal Holiday' },
-    { name: 'Veterans Day', date: '2026-11-11', day: 'Wednesday', type: 'Federal Holiday' },
-    { name: 'Thanksgiving Day', date: '2026-11-26', day: 'Thursday', type: 'Federal Holiday' },
-    { name: 'Day After Thanksgiving', date: '2026-11-27', day: 'Friday', type: 'Company Designated Holiday' },
-    { name: 'Christmas Eve (Half Day)', date: '2026-12-24', day: 'Thursday', type: 'Company Designated Holiday' },
-    { name: 'Christmas Day', date: '2026-12-25', day: 'Friday', type: 'Federal & Company Holiday' },
+    { name: "New Year's Day", date: '2026-01-01', day: 'Thursday', type: 'Federal & Company Holiday', branches: 'All Branches' },
+    { name: 'Tamil Thai Pongal Day', date: '2026-01-15', day: 'Thursday', type: 'Public & Bank Holiday', branches: 'All Branches' },
+    { name: 'National Day (Independence Day)', date: '2026-02-04', day: 'Wednesday', type: 'National Holiday', branches: 'All Branches' },
+    { name: 'Maha Sivarathri Day', date: '2026-02-17', day: 'Tuesday', type: 'Public & Bank Holiday', branches: 'All Branches' },
+    { name: 'Sinhala & Tamil New Year Day', date: '2026-04-13', day: 'Monday', type: 'National Holiday', branches: 'All Branches' },
+    { name: 'May Day (Worker\'s Day)', date: '2026-05-01', day: 'Friday', type: 'National Holiday', branches: 'All Branches' },
+    { name: 'Vesak Full Moon Poya Day', date: '2026-05-31', day: 'Sunday', type: 'Religious & Public Holiday', branches: 'All Branches' },
+    { name: 'Esala Perahera Festival Holiday', date: '2026-08-28', day: 'Friday', type: 'Regional Holiday', branches: 'Kandy Regional Branch' },
+    { name: 'Southern Province Cultural Day', date: '2026-09-18', day: 'Friday', type: 'Regional Holiday', branches: 'Galle Tech Hub' },
+    { name: 'Deepavali Festival Day', date: '2026-11-08', day: 'Sunday', type: 'Public & Bank Holiday', branches: 'All Branches' },
+    { name: 'Christmas Day', date: '2026-12-25', day: 'Friday', type: 'Public & Bank Holiday', branches: 'All Branches' },
   ]
 
   return (
@@ -35,6 +34,7 @@ export const AdminHolidays: React.FC = () => {
               <TableHead>Calendar Date</TableHead>
               <TableHead>Day of Week</TableHead>
               <TableHead>Classification</TableHead>
+              <TableHead>Applicable Branch</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -42,7 +42,7 @@ export const AdminHolidays: React.FC = () => {
               <TableRow key={i} className="border-border/40 hover:bg-muted/30 transition-colors">
                 <TableCell className="font-bold text-xs text-foreground">
                   <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-[#23ace3]" />
+                     <CalendarDays className="h-4 w-4 text-[#23ace3]" />
                     <span>{h.name}</span>
                   </div>
                 </TableCell>
@@ -51,6 +51,18 @@ export const AdminHolidays: React.FC = () => {
                 <TableCell>
                   <Badge variant="outline" className="text-[10px] border-border/60 text-muted-foreground">
                     {h.type}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] font-semibold ${
+                      h.branches === 'All Branches'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                        : 'bg-sky-500/10 text-[#23ace3] border-[#23ace3]/30'
+                    }`}
+                  >
+                    {h.branches}
                   </Badge>
                 </TableCell>
               </TableRow>

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { employeeService } from '@/services/employeeService'
+import { branchService } from '@/services/branchService'
 import { policyService } from '@/services/policyService'
 import { User, UserRole, PolicyDocument } from '@/types'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -161,6 +162,7 @@ export const AdminEmployees: React.FC = () => {
   // Search & Filters for Master Directory
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('all')
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState('all')
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -170,9 +172,27 @@ export const AdminEmployees: React.FC = () => {
   // Single Employee Form State
   const [newName, setNewName] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  const [newIdNumber, setNewIdNumber] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [newBranchId, setNewBranchId] = useState('')
+  const [newLocation, setNewLocation] = useState('')
+  const [newAddress, setNewAddress] = useState('')
   const [newRole, setNewRole] = useState<UserRole>('employee')
-  const [newDept, setNewDept] = useState('Engineering')
+  const [newDept, setNewDept] = useState('Unassigned')
   const [newTitle, setNewTitle] = useState('')
+  const [newBiometricCaptured, setNewBiometricCaptured] = useState(false)
+  const [newBiometricToken, setNewBiometricToken] = useState('')
+  const [isCapturingBiometric, setIsCapturingBiometric] = useState(false)
+
+  const handleCaptureBiometric = () => {
+    setIsCapturingBiometric(true)
+    setTimeout(() => {
+      setIsCapturingBiometric(false)
+      setNewBiometricCaptured(true)
+      const token = `FP-${Math.floor(1000 + Math.random() * 9000)}-ACT`
+      setNewBiometricToken(token)
+    }, 750)
+  }
 
   // Inside Department View State
   const [selectedDept, setSelectedDept] = useState<any | null>(null)
@@ -493,6 +513,13 @@ export const AdminEmployees: React.FC = () => {
     enabled: !!tenant?.id,
   })
 
+  // Branches Query for tenant location allocation
+  const { data: branches = [] } = useQuery({
+    queryKey: ['adminBranches', tenant?.id],
+    queryFn: () => (tenant?.id ? branchService.getBranches(tenant.id) : []),
+    enabled: !!tenant?.id,
+  })
+
   // Department Policies Query
   const { data: deptPolicies = [] } = useQuery({
     queryKey: ['deptPolicies', tenant?.id],
@@ -508,9 +535,17 @@ export const AdminEmployees: React.FC = () => {
         tenantId: tenant.id,
         name: newName,
         email: newEmail,
+        idNumber: newIdNumber || undefined,
+        phone: newPhone || undefined,
+        branchId: newBranchId || undefined,
+        branchName: newLocation || undefined,
+        location: newLocation || undefined,
+        address: newAddress || undefined,
+        password: newIdNumber || 'password123',
         role: newRole,
-        department: newDept,
-        jobTitle: newTitle || 'Team Member',
+        department: selectedDept ? selectedDept.name : 'Unassigned',
+        jobTitle: 'Pending Assignment',
+        biometricStatus: newBiometricCaptured ? `Linked (${newBiometricToken})` : 'Pending Employee Capture',
         employeeNumber: `KT-${Math.floor(1000 + Math.random() * 9000)}`,
         hireDate: new Date().toISOString().substring(0, 10),
       })
@@ -521,7 +556,13 @@ export const AdminEmployees: React.FC = () => {
       setIsAddModalOpen(false)
       setNewName('')
       setNewEmail('')
+      setNewIdNumber('')
+      setNewPhone('')
+      setNewLocation('')
+      setNewAddress('')
       setNewTitle('')
+      setNewBiometricCaptured(false)
+      setNewBiometricToken('')
     },
   })
 
@@ -547,8 +588,13 @@ export const AdminEmployees: React.FC = () => {
 
       const matchesDept = selectedDeptFilter === 'all' || e.department.toLowerCase() === selectedDeptFilter.toLowerCase()
       const matchesRole = selectedRoleFilter === 'all' || e.role.toLowerCase() === selectedRoleFilter.toLowerCase()
+      const matchesBranch =
+        selectedBranchFilter === 'all' ||
+        e.branchId === selectedBranchFilter ||
+        (e.branchName && e.branchName.toLowerCase() === selectedBranchFilter.toLowerCase()) ||
+        (e.location && e.location.toLowerCase().includes(selectedBranchFilter.toLowerCase()))
 
-      return matchesSearch && matchesDept && matchesRole
+      return matchesSearch && matchesDept && matchesRole && matchesBranch
     })
     .sort((a, b) => {
       const priorityDiff = getRolePriority(a.role) - getRolePriority(b.role)
@@ -649,12 +695,26 @@ export const AdminEmployees: React.FC = () => {
               <Select
                 value={selectedRoleFilter}
                 onChange={e => setSelectedRoleFilter(e.target.value)}
-                className="h-10 rounded-xl bg-background text-xs min-w-[130px]"
+                className="h-10 rounded-xl bg-background text-xs min-w-[120px]"
               >
                 <option value="all">All Roles</option>
                 <option value="admin">Admin</option>
                 <option value="manager">Manager</option>
                 <option value="employee">Employee</option>
+              </Select>
+
+              <Select
+                value={selectedBranchFilter}
+                onChange={e => setSelectedBranchFilter(e.target.value)}
+                className="h-10 rounded-xl bg-background text-xs min-w-[150px]"
+              >
+                <option value="all">All Branches ({branches.length})</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.name}>
+                    {b.name}
+                  </option>
+                ))}
+                <option value="Remote / Work From Home">Remote / WFH</option>
               </Select>
             </div>
           </div>
@@ -708,11 +768,34 @@ export const AdminEmployees: React.FC = () => {
                           </TableCell>
 
                           <TableCell>
-                            <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
-                              <Building className="h-3.5 w-3.5 text-[#23ace3]" />
-                              <span>{emp.department}</span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5 font-medium">{emp.jobTitle}</div>
+                            {emp.department && emp.department !== 'Unassigned' ? (
+                              <>
+                                <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                                  <Building className="h-3.5 w-3.5 text-[#23ace3]" />
+                                  <span>{emp.department}</span>
+                                </div>
+                                <div className="text-[11px] text-muted-foreground mt-0.5 font-medium">{emp.jobTitle || 'Pending Assignment'}</div>
+                                <div className="text-[10px] text-muted-foreground/80 mt-0.5 flex items-center gap-1">
+                                  <MapPin className="h-2.5 w-2.5 text-[#23ace3]" />
+                                  <span>{emp.branchName || emp.location || 'Colombo HQ'}</span>
+                                </div>
+                              </>
+                            ) : (
+                              <div>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] text-amber-500 border-amber-500/30 bg-amber-500/10 cursor-pointer hover:bg-amber-500/20"
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    setEditingUser(emp)
+                                  }}
+                                  title="Click to assign to a workspace directory"
+                                >
+                                  Unassigned Workspace
+                                </Badge>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">Pending Manager Role</div>
+                              </div>
+                            )}
                           </TableCell>
 
                           <TableCell>
@@ -798,12 +881,23 @@ export const AdminEmployees: React.FC = () => {
                                         <div className="font-mono text-foreground font-semibold">{emp.email}</div>
                                       </div>
                                       <div>
-                                        <div className="text-[10px] text-muted-foreground">Work Phone</div>
-                                        <div className="font-mono text-foreground">+94 (11) 244-8800 ext. 420</div>
+                                        <div className="text-[10px] text-muted-foreground">National ID / NIC</div>
+                                        <div className="font-mono text-foreground font-semibold">{emp.idNumber || 'Not Registered'}</div>
                                       </div>
                                       <div>
-                                        <div className="text-[10px] text-muted-foreground">Office Location</div>
-                                        <div className="text-foreground">Colombo HQ — Floor 04</div>
+                                        <div className="text-[10px] text-muted-foreground">Contact Phone</div>
+                                        <div className="font-mono text-foreground">{emp.phone || '+94 (11) 244-8800 ext. 420'}</div>
+                                      </div>
+                                      <div>
+                                        <div className="text-[10px] text-muted-foreground">Assigned Branch / Location</div>
+                                        <div className="text-foreground flex items-center gap-1">
+                                          <MapPin className="h-3 w-3 text-[#23ace3] shrink-0" />
+                                          <span>{emp.branchName || emp.location || 'Colombo Head Office'}</span>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-[10px] text-muted-foreground">Home Address</div>
+                                        <div className="text-foreground">{emp.address || 'Confidential (HR Encrypted Vault)'}</div>
                                       </div>
                                     </div>
                                   </div>
@@ -1792,11 +1886,27 @@ export const AdminEmployees: React.FC = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-xs text-foreground">
-                            <div className="font-semibold text-foreground flex items-center gap-1">
-                              <Building className="h-3 w-3 text-[#23ace3]" />
-                              <span>{emp.department}</span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">{emp.jobTitle}</div>
+                            {emp.department && emp.department !== 'Unassigned' ? (
+                              <>
+                                <div className="font-semibold text-foreground flex items-center gap-1">
+                                  <Building className="h-3 w-3 text-[#23ace3]" />
+                                  <span>{emp.department}</span>
+                                </div>
+                                <div className="text-[11px] text-muted-foreground">{emp.jobTitle || 'Pending Assignment'}</div>
+                              </>
+                            ) : (
+                              <div>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] text-amber-500 border-amber-500/30 bg-amber-500/10 cursor-pointer hover:bg-amber-500/20"
+                                  onClick={() => setEditingUser(emp)}
+                                  title="Click to assign to a workspace directory"
+                                >
+                                  Unassigned Workspace
+                                </Badge>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">Pending Manager Role</div>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge
@@ -1927,6 +2037,11 @@ export const AdminEmployees: React.FC = () => {
             setCsvParsedRecords([])
             setCsvError(null)
             setCsvSuccessMsg(null)
+            setNewName('')
+            setNewEmail('')
+            setNewPhone('')
+            setNewBiometricCaptured(false)
+            setNewBiometricToken('')
           }
         }}
       >
@@ -1982,11 +2097,28 @@ export const AdminEmployees: React.FC = () => {
                 <label className="font-semibold block mb-1">Full Name</label>
                 <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="E.g., Jane Cooper" />
               </div>
-              <div>
-                <label className="font-semibold block mb-1">Work Email</label>
-                <Input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="jane.cooper@kinetictech.io" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1">Work Email</label>
+                  <Input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="jane.cooper@kinetictech.io" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold block">National ID / NIC No</label>
+                    <span className="text-[10px] text-[#23ace3] font-medium">Default Password</span>
+                  </div>
+                  <Input
+                    value={newIdNumber}
+                    onChange={e => setNewIdNumber(e.target.value)}
+                    placeholder="E.g., 200084102941 or NIC"
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1">Contact Phone</label>
+                  <Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="E.g., +1 (555) 234-5678" />
+                </div>
                 <div>
                   <label className="font-semibold block mb-1">Role</label>
                   <Select value={newRole} onChange={e => setNewRole(e.target.value as UserRole)}>
@@ -1995,20 +2127,111 @@ export const AdminEmployees: React.FC = () => {
                     <option value="admin">HR Admin</option>
                   </Select>
                 </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold block mb-1">Department</label>
-                  <Select value={newDept} onChange={e => setNewDept(e.target.value)}>
-                    {allDeptNames.map((d: any) => (
-                      <option key={d} value={d}>
-                        {d}
+                  <label className="font-semibold block mb-1">Assigned Branch / Location</label>
+                  <Select
+                    value={newLocation}
+                    onChange={e => {
+                      const val = e.target.value
+                      setNewLocation(val)
+                      const found = branches.find(b => b.name === val)
+                      if (found) setNewBranchId(found.id)
+                      else setNewBranchId('')
+                    }}
+                    className="text-xs"
+                  >
+                    <option value="">Select an operating branch...</option>
+                    {branches.map(b => (
+                      <option key={b.id} value={b.name}>
+                        {b.name} ({b.city} — {b.type})
                       </option>
                     ))}
+                    <option value="Remote / Work From Home">Remote / Work From Home</option>
+                    <option value="Colombo HQ — Floor 04">Colombo HQ — Floor 04 (Headquarters)</option>
                   </Select>
                 </div>
+                <div>
+                  <label className="font-semibold block mb-1">Home Address</label>
+                  <Input
+                    value={newAddress}
+                    onChange={e => setNewAddress(e.target.value)}
+                    placeholder="E.g., No. 42, Temple Road, Colombo"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="font-semibold block mb-1">Job Title</label>
-                <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="E.g., Senior Systems Architect" />
+
+              {/* Informational Notice */}
+              <div className="p-3 rounded-xl bg-muted/30 border border-border/60 text-muted-foreground flex items-start gap-2.5">
+                <Briefcase className="h-4 w-4 text-[#23ace3] shrink-0 mt-0.5" />
+                <div className="text-[11px] leading-relaxed">
+                  <span className="font-semibold text-foreground">Workspace & Job Title Assignment: </span>
+                  Department assignment can be done from the Workspace Directory anytime after adding. Job title will be configured directly by the workspace manager.
+                </div>
+              </div>
+
+              {/* Biometrics Section - Taken from Employee */}
+              <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-[#23ace3]/15 text-[#23ace3]">
+                      <Fingerprint className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-foreground">Biometrics (Taken from Employee)</span>
+                      <p className="text-[11px] text-muted-foreground">Fingerprint biometric passkey registration</p>
+                    </div>
+                  </div>
+                  {newBiometricCaptured ? (
+                    <Badge variant="success" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>Biometric Linked</span>
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] text-muted-foreground border-border/60">
+                      Pending Capture
+                    </Badge>
+                  )}
+                </div>
+
+                {newBiometricCaptured ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                    <div className="flex items-center gap-2 text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      <span className="text-[11px] font-mono font-medium">Biometric Token #{newBiometricToken || 'FP-8842-ACT'} Active</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setNewBiometricCaptured(false)
+                        setNewBiometricToken('')
+                      }}
+                      className="text-[10px] text-muted-foreground hover:text-foreground h-6 px-2"
+                    >
+                      Re-scan
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Capture fingerprint passkey directly from employee reader or permit self-service capture upon initial sign-in.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isCapturingBiometric}
+                      onClick={handleCaptureBiometric}
+                      className="text-xs shrink-0 border-[#23ace3]/50 text-[#23ace3] hover:bg-[#23ace3]/15 gap-1.5 rounded-xl font-semibold cursor-pointer h-8"
+                    >
+                      <Fingerprint className="h-3.5 w-3.5" />
+                      <span>{isCapturingBiometric ? 'Scanning...' : 'Capture Biometrics'}</span>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2471,17 +2694,69 @@ export const AdminEmployees: React.FC = () => {
                 </Select>
               </div>
               <div>
-                <label className="font-semibold block mb-1">Department</label>
+                <label className="font-semibold block mb-1">Department Workspace</label>
                 <Select
-                  value={editingUser.department}
+                  value={editingUser.department || 'Unassigned'}
                   onChange={e => setEditingUser({ ...editingUser, department: e.target.value })}
                 >
+                  <option value="Unassigned">-- Unassigned Workspace --</option>
                   {allDeptNames.map((d: any) => (
                     <option key={d} value={d}>
                       {d}
                     </option>
                   ))}
                 </Select>
+              </div>
+              <div>
+                <label className="font-semibold block mb-1">National ID / NIC No</label>
+                <Input
+                  value={editingUser.idNumber || ''}
+                  onChange={e => setEditingUser({ ...editingUser, idNumber: e.target.value })}
+                  placeholder="E.g., 200084102941 or NIC"
+                />
+              </div>
+              <div>
+                <label className="font-semibold block mb-1">Contact Details (Phone)</label>
+                <Input
+                  value={editingUser.phone || ''}
+                  onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })}
+                  placeholder="E.g., +1 (555) 234-5678"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1">Assigned Branch / Location</label>
+                  <Select
+                    value={editingUser.location || editingUser.branchName || ''}
+                    onChange={e => {
+                      const val = e.target.value
+                      const found = branches.find(b => b.name === val)
+                      setEditingUser({
+                        ...editingUser,
+                        location: val,
+                        branchName: val,
+                        branchId: found ? found.id : editingUser.branchId,
+                      })
+                    }}
+                  >
+                    <option value="">Select an operating branch...</option>
+                    {branches.map(b => (
+                      <option key={b.id} value={b.name}>
+                        {b.name} ({b.city} — {b.type})
+                      </option>
+                    ))}
+                    <option value="Remote / Work From Home">Remote / Work From Home</option>
+                    <option value="Colombo HQ — Floor 04">Colombo HQ — Floor 04 (Headquarters)</option>
+                  </Select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Home Address</label>
+                  <Input
+                    value={editingUser.address || ''}
+                    onChange={e => setEditingUser({ ...editingUser, address: e.target.value })}
+                    placeholder="E.g., No. 42, Temple Road, Colombo"
+                  />
+                </div>
               </div>
             </div>
 
@@ -2496,6 +2771,11 @@ export const AdminEmployees: React.FC = () => {
                   await employeeService.updateEmployee(editingUser.id, {
                     role: editingUser.role,
                     department: editingUser.department,
+                    phone: editingUser.phone,
+                    idNumber: editingUser.idNumber,
+                    location: editingUser.location,
+                    address: editingUser.address,
+                    jobTitle: editingUser.jobTitle,
                   })
                   refetchEmployees()
                   refetchDepts()

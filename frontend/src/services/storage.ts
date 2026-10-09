@@ -1,18 +1,4 @@
 import {
-  MOCK_TENANTS,
-  MOCK_USERS,
-  MOCK_LEAVE_TYPES,
-  MOCK_LEAVE_BALANCES,
-  MOCK_LEAVE_REQUESTS,
-  MOCK_PAYSLIPS,
-  MOCK_POLICIES,
-  MOCK_AUDIT_LOGS,
-  MOCK_NOTIFICATIONS,
-  MOCK_INTEGRATIONS,
-  MOCK_AI_USAGE,
-  MOCK_DOCUMENT_REQUESTS
-} from '@/mock/data'
-import {
   Tenant,
   User,
   LeaveType,
@@ -25,12 +11,29 @@ import {
   AppNotification,
   IntegrationStatusItem,
   AIUsageMetrics,
-  HRDocumentRequest
+  HRDocumentRequest,
+  Branch
 } from '@/types'
+import {
+  MOCK_TENANTS,
+  MOCK_USERS,
+  MOCK_LEAVE_TYPES,
+  MOCK_LEAVE_BALANCES,
+  MOCK_LEAVE_REQUESTS,
+  MOCK_PAYSLIPS,
+  MOCK_POLICIES,
+  MOCK_AUDIT_LOGS,
+  MOCK_NOTIFICATIONS,
+  MOCK_INTEGRATIONS,
+  MOCK_AI_USAGE,
+  MOCK_DOCUMENT_REQUESTS,
+  MOCK_BRANCHES
+} from '@/mock/data'
 
 class AppDataStore {
   private tenants: Tenant[] = []
   private users: User[] = []
+  private branches: Branch[] = []
   private leaveTypes: LeaveType[] = []
   private leaveBalances: Record<string, LeaveBalance[]> = {}
   private leaveRequests: LeaveRequest[] = []
@@ -62,12 +65,19 @@ class AppDataStore {
         this.notifications = parsed.notifications || MOCK_NOTIFICATIONS
         this.integrations = parsed.integrations || MOCK_INTEGRATIONS
         this.documentRequests = (parsed.documentRequests && parsed.documentRequests.length > 0) ? parsed.documentRequests : MOCK_DOCUMENT_REQUESTS
+        this.branches = (parsed.branches && parsed.branches.length > 0) ? parsed.branches : MOCK_BRANCHES
         this.aiUsage = parsed.aiUsage || MOCK_AI_USAGE
 
         // Merge any new default mock users (e.g. separate employee accounts)
         MOCK_USERS.forEach(mu => {
           if (!this.users.some(u => u.id === mu.id || u.employeeNumber === mu.employeeNumber)) {
             this.users.push(mu)
+          }
+        })
+        // Merge missing branches
+        MOCK_BRANCHES.forEach(mb => {
+          if (!this.branches.some(b => b.id === mb.id)) {
+            this.branches.push(mb)
           }
         })
         // Merge missing leave balances
@@ -98,6 +108,7 @@ class AppDataStore {
     // Default seed
     this.tenants = [...MOCK_TENANTS]
     this.users = [...MOCK_USERS]
+    this.branches = [...MOCK_BRANCHES]
     this.leaveTypes = [...MOCK_LEAVE_TYPES]
     this.leaveBalances = JSON.parse(JSON.stringify(MOCK_LEAVE_BALANCES))
     this.leaveRequests = [...MOCK_LEAVE_REQUESTS]
@@ -116,6 +127,7 @@ class AppDataStore {
       localStorage.setItem('kinetic_data_store_v1', JSON.stringify({
         tenants: this.tenants,
         users: this.users,
+        branches: this.branches,
         leaveTypes: this.leaveTypes,
         leaveBalances: this.leaveBalances,
         leaveRequests: this.leaveRequests,
@@ -529,6 +541,55 @@ class AppDataStore {
       return doc
     }
     throw new Error('Document request not found')
+  }
+
+  getBranches(tenantId?: string): Branch[] {
+    const list = tenantId ? this.branches.filter(b => b.tenantId === tenantId) : this.branches
+    return list.map(b => {
+      const count = this.users.filter(
+        u => u.branchId === b.id || u.branchName === b.name || u.location === b.name
+      ).length
+      return {
+        ...b,
+        employeeCount: count > 0 ? count : b.employeeCount || 0,
+      }
+    })
+  }
+
+  getBranchById(id: string): Branch | undefined {
+    return this.branches.find(b => b.id === id)
+  }
+
+  addBranch(branch: Branch): Branch {
+    if (branch.isHeadquarters) {
+      this.branches.forEach(b => {
+        if (b.tenantId === branch.tenantId) b.isHeadquarters = false
+      })
+    }
+    this.branches.unshift(branch)
+    this.save()
+    return branch
+  }
+
+  updateBranch(branch: Branch): Branch {
+    if (branch.isHeadquarters) {
+      this.branches.forEach(b => {
+        if (b.tenantId === branch.tenantId && b.id !== branch.id) b.isHeadquarters = false
+      })
+    }
+    const idx = this.branches.findIndex(b => b.id === branch.id)
+    if (idx >= 0) {
+      this.branches[idx] = { ...branch }
+    } else {
+      this.branches.push(branch)
+    }
+    this.save()
+    return branch
+  }
+
+  deleteBranch(id: string): void {
+    this.branches = this.branches.filter(b => b.id !== id)
+    this.save()
   }
 }
 

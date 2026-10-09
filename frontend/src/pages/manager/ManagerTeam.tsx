@@ -40,15 +40,32 @@ export const ManagerTeam: React.FC = () => {
     enabled: !!tenant?.id,
   })
 
-  // Simulated October 2026 week calendar matrix
-  const daysInFocus = [
-    { date: '2026-10-02', label: 'Fri, Oct 2', isToday: true },
-    { date: '2026-10-05', label: 'Mon, Oct 5' },
-    { date: '2026-10-06', label: 'Tue, Oct 6' },
-    { date: '2026-10-07', label: 'Wed, Oct 7', hasConflict: true },
-    { date: '2026-10-08', label: 'Thu, Oct 8', hasConflict: true },
-    { date: '2026-10-09', label: 'Fri, Oct 9' },
-  ]
+  // Dynamic rolling work week calendar matrix (starts Monday or today, covering upcoming workdays)
+  const daysInFocus = useMemo(() => {
+    const days: { date: string; label: string; isToday: boolean }[] = []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayStr = today.toISOString().split('T')[0]
+
+    // Start with current day (or Monday if weekend)
+    const cur = new Date(today)
+    if (cur.getDay() === 0) cur.setDate(cur.getDate() + 1)
+    else if (cur.getDay() === 6) cur.setDate(cur.getDate() + 2)
+
+    while (days.length < 6) {
+      const dayOfWeek = cur.getDay()
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        const dateStr = cur.toISOString().split('T')[0]
+        days.push({
+          date: dateStr,
+          label: cur.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+          isToday: dateStr === todayStr,
+        })
+      }
+      cur.setDate(cur.getDate() + 1)
+    }
+    return days
+  }, [])
 
   const getMemberLeaveForDate = (memberId: string, dateStr: string) => {
     return allLeaves.find(
@@ -65,27 +82,51 @@ export const ManagerTeam: React.FC = () => {
     return daysInFocus.map(day => {
       const totalMembers = team.length || 1
       const onLeaveCount = team.filter(m => !!getMemberLeaveForDate(m.id, day.date)).length
-      const workingCount = totalMembers - onLeaveCount
+      const workingCount = Math.max(0, totalMembers - onLeaveCount)
       const coveragePct = Math.round((workingCount / totalMembers) * 100)
+      const hasConflict = coveragePct < 70 // Coverage bottleneck under 70%
       return {
         ...day,
         totalMembers,
         onLeaveCount,
         workingCount,
         coveragePct,
+        hasConflict,
       }
     })
   }, [daysInFocus, team, allLeaves])
 
   // Active today count
-  const todayStats = dayCoverage.find(d => d.isToday) || { workingCount: team.length, onLeaveCount: 0 }
+  const todayStats = dayCoverage.find(d => d.isToday) || {
+    workingCount: team.length,
+    totalMembers: team.length || 1,
+    coveragePct: 100,
+  }
 
   // Team members with approved leaves in this window
   const membersWithUpcomingLeave = team.filter(m =>
     daysInFocus.some(d => !!getMemberLeaveForDate(m.id, d.date))
   )
 
+  // Identify bottleneck days
+  const conflictDays = dayCoverage.filter(d => d.hasConflict)
+  const minCoverageDay = dayCoverage.reduce(
+    (min, d) => (d.coveragePct < min.coveragePct ? d : min),
+    dayCoverage[0] || { coveragePct: 100, label: 'Today', hasConflict: false }
+  )
 
+  // Find absent staff on bottleneck days
+  const conflictAbsentStaff = useMemo(() => {
+    const names = new Set<string>()
+    conflictDays.forEach(cd => {
+      team.forEach(m => {
+        if (getMemberLeaveForDate(m.id, cd.date)) {
+          names.add(m.name)
+        }
+      })
+    })
+    return Array.from(names)
+  }, [conflictDays, team, allLeaves])
 
   return (
     <div className="space-y-6">
@@ -94,20 +135,22 @@ export const ManagerTeam: React.FC = () => {
         subtitle="Monitor workplace attendance, daily staff presence, and scheduling coverage across teams."
       >
         <Button
-          variant="ai"
+          variant="outline"
           size="sm"
           onClick={() =>
             navigate(
               '/manager/assistant?prompt=' +
               encodeURIComponent(
-                'Are there any staffing bottlenecks or workplace presence risks for the team next week? Specifically evaluate the Oct 7-8 overlapping absences.'
+                conflictDays.length > 0
+                  ? `Evaluate team coverage risks on ${conflictDays.map(d => d.label).join(', ')}. What mitigation steps do you recommend?`
+                  : 'Assess team availability and identify any upcoming scheduling bottlenecks.'
               )
             )
           }
-          className="gap-1.5 text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+          className="gap-1.5 text-xs rounded-xl border-border/80 hover:bg-muted/40 transition-all cursor-pointer"
         >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Ask AI to Analyze Coverage</span>
+          <CalendarDays className="h-3.5 w-3.5 text-[#23ace3]" />
+          <span>Coverage Analysis</span>
         </Button>
         <Button
           variant="outline"
@@ -124,7 +167,7 @@ export const ManagerTeam: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Direct Reports"
-          value={team.length || 4}
+          value={team.length}
           subtitle="Staff members roster"
           icon={Users}
           iconColor="text-[#23ace3] bg-[#23ace3]/15"
@@ -132,78 +175,104 @@ export const ManagerTeam: React.FC = () => {
         <StatCard
           title="Available Today"
           value={todayStats.workingCount}
-          subtitle="Oct 2, 2026 present on duty"
+          subtitle={`${todayStats.workingCount} of ${team.length || 1} present`}
           icon={UserCheck}
           iconColor="text-emerald-600 dark:text-emerald-400 bg-emerald-500/15"
           badge={
             <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
-              100% Present
+              {todayStats.coveragePct}% Present
             </Badge>
           }
         />
         <StatCard
           title="Scheduled Absences"
           value={membersWithUpcomingLeave.length}
-          subtitle="Staff members on approved leave"
+          subtitle="Staff with scheduled leaves"
           icon={CalendarDays}
           iconColor="text-indigo-600 dark:text-indigo-400 bg-indigo-500/15"
           badge={
             <Badge variant="outline" className="text-[10px] border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10">
-              {membersWithUpcomingLeave.length || 3} Employees
+              {membersWithUpcomingLeave.length} Employees
             </Badge>
           }
         />
         <StatCard
           title="Min Daily Coverage"
-          value="45%"
-          subtitle="Oct 7 staffing threshold alert"
+          value={`${minCoverageDay?.coveragePct ?? 100}%`}
+          subtitle={`${minCoverageDay?.label ?? 'Window'} coverage level`}
           icon={AlertTriangle}
-          iconColor="text-[#c86b25] dark:text-[#ef8d46] bg-[#ef8d46]/15"
-          trend={{ value: 'Critical Bottleneck', positive: false }}
+          iconColor={
+            minCoverageDay?.hasConflict
+              ? 'text-[#c86b25] dark:text-[#ef8d46] bg-[#ef8d46]/15'
+              : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/15'
+          }
+          trend={
+            minCoverageDay?.hasConflict
+              ? { value: 'Staffing Risk', positive: false }
+              : { value: 'Optimal Capacity', positive: true }
+          }
         />
       </div>
 
-      {/* Modern Conflict Alert Banner */}
-      <Card className="border-[#ef8d46]/30 bg-gradient-to-r from-[#ef8d46]/15 via-[#ef8d46]/5 to-transparent p-5 rounded-2xl shadow-xs backdrop-blur-xs">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-xl bg-[#ef8d46]/20 text-[#c86b25] dark:text-[#ef8d46] border border-[#ef8d46]/30 shrink-0">
-              <ShieldAlert className="h-5 w-5" />
+      {/* Modern Conflict Alert Banner or Optimal Notice */}
+      {conflictDays.length > 0 ? (
+        <Card className="border-[#ef8d46]/30 bg-gradient-to-r from-[#ef8d46]/15 via-[#ef8d46]/5 to-transparent p-5 rounded-2xl shadow-xs backdrop-blur-xs">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-[#ef8d46]/20 text-[#c86b25] dark:text-[#ef8d46] border border-[#ef8d46]/30 shrink-0">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">
+                    Workplace Staffing Alert: {conflictDays.map(d => d.label).join(', ')}
+                  </h4>
+                  <Badge className="bg-[#ef8d46]/20 text-[#c86b25] dark:text-[#ef8d46] border border-[#ef8d46]/30 text-[10px] font-semibold">
+                    Min Coverage: {minCoverageDay.coveragePct}%
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-3xl">
+                  {conflictAbsentStaff.length > 0
+                    ? `${conflictAbsentStaff.join(', ')} will be away on approved leave. Staff presence drops below the department 70% threshold.`
+                    : 'Scheduled absences reduce presence below the recommended department 70% threshold.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  navigate(
+                    '/manager/assistant?prompt=' +
+                    encodeURIComponent(
+                      `What mitigation plan do you suggest for the staffing shortage on ${conflictDays.map(d => d.label).join(', ')} when ${conflictAbsentStaff.join(', ')} are away?`
+                    )
+                  )
+                }
+                className="text-xs border-[#ef8d46]/50 text-[#c86b25] dark:text-[#ef8d46] hover:bg-[#ef8d46]/20 rounded-xl transition-all cursor-pointer gap-1.5"
+              >
+                <span>Staffing Recommendations</span>
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <Card className="border-emerald-500/20 bg-emerald-500/5 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-foreground">
-                  Workplace Staffing Conflict Detected: October 7 & 8, 2026
-                </h4>
-                <Badge className="bg-[#ef8d46]/20 text-[#c86b25] dark:text-[#ef8d46] border border-[#ef8d46]/30 text-[10px] font-semibold">
-                  Coverage: 45%
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-3xl">
-                Marcus Chen (DevOps) and Priya Patel (Backend Lead) have concurrent approved absences on Oct 7. Alice Johnson also has approved Annual Leave on Oct 7–8. Workplace staff presence drops below the department 70% threshold.
-              </p>
+              <p className="text-xs font-semibold text-foreground">Optimal Team Coverage</p>
+              <p className="text-[11px] text-muted-foreground">All business days maintain adequate staffing above the 70% operational threshold.</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                navigate(
-                  '/manager/assistant?prompt=' +
-                  encodeURIComponent(
-                    'What mitigation plan do you suggest for the workplace staffing shortage on October 7-8 when Marcus, Priya, and Alice are away?'
-                  )
-                )
-              }
-              className="text-xs border-[#ef8d46]/50 text-[#c86b25] dark:text-[#ef8d46] hover:bg-[#ef8d46]/20 rounded-xl transition-all cursor-pointer gap-1.5"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Generate AI Mitigation Plan</span>
-            </Button>
-          </div>
-        </div>
-      </Card>
+          <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
+            100% Operational
+          </Badge>
+        </Card>
+      )}
 
       {/* Schedule Matrix Calendar */}
       <Card className="border border-border/60 bg-card/90 backdrop-blur-xs rounded-2xl shadow-xs overflow-hidden">
@@ -215,10 +284,12 @@ export const ManagerTeam: React.FC = () => {
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-foreground">
-                  Daily Staff Presence Matrix (October 2026)
+                  Daily Staff Presence Matrix
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  Daily workplace attendance breakdown across staff members
+                  {daysInFocus.length > 0
+                    ? `Attendance window: ${daysInFocus[0].label} – ${daysInFocus[daysInFocus.length - 1].label}`
+                    : 'Daily workplace attendance breakdown across staff members'}
                 </p>
               </div>
             </div>
@@ -251,7 +322,7 @@ export const ManagerTeam: React.FC = () => {
                 <th className="p-3.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[11px] w-60">
                   Team Member
                 </th>
-                {daysInFocus.map(d => (
+                {dayCoverage.map(d => (
                   <th
                     key={d.date}
                     className={`p-3 text-center font-semibold transition-colors ${
@@ -295,7 +366,7 @@ export const ManagerTeam: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  {daysInFocus.map(d => {
+                  {dayCoverage.map(d => {
                     const leave = getMemberLeaveForDate(m.id, d.date)
                     return (
                       <td

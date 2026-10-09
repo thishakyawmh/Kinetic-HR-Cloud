@@ -18,9 +18,6 @@ import {
   Moon,
   Zap,
   Activity,
-  HeartPulse,
-  Laptop,
-  Landmark,
 } from 'lucide-react'
 
 export const LandingPage: React.FC = () => {
@@ -38,15 +35,6 @@ export const LandingPage: React.FC = () => {
         : role === 'manager'
           ? '/manager/dashboard'
           : '/employee/dashboard'
-
-  const vendors = [
-    { name: 'MetLife Global', tag: 'Health & Insurance', icon: HeartPulse },
-    { name: 'Checkr Verified', tag: 'Background Checks', icon: ShieldCheck },
-    { name: 'Dell Premier', tag: 'Hardware Logistics', icon: Laptop },
-    { name: 'Coursera Enterprise', tag: 'Corporate L&D', icon: BookOpen },
-    { name: 'Fidelity Wealth', tag: '401(k) & Pensions', icon: Landmark },
-    { name: 'Quest Diagnostics', tag: 'Occupational Health', icon: Activity },
-  ]
 
   const features = [
     {
@@ -188,7 +176,7 @@ export const LandingPage: React.FC = () => {
 
           {/* Platform Description */}
           <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto">
-            Unified leave tracking, secure payroll vaults, and automated compliance under strict tenant data isolation.
+            Effortless time off, instant payslips, and AI-powered team approvals.
           </p>
 
           {/* Cover Action Buttons */}
@@ -221,36 +209,6 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* =========================================================================
-          OUR VENDORS (Sleek horizontal ribbon, zero dead space)
-          ========================================================================= */}
-      <section id="vendors" className="py-8 sm:py-10 border-y border-border/60 bg-muted/20 backdrop-blur-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-4 text-center">
-          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Our Vendors
-          </span>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-            {vendors.map((v, idx) => {
-              const Icon = v.icon
-              return (
-                <div
-                  key={idx}
-                  className="px-3 py-2.5 rounded-xl bg-card/75 border border-border/70 hover:border-[#23ace3]/50 flex items-center justify-center gap-2.5 text-center transition-all group shadow-2xs hover:-translate-y-0.5 duration-150"
-                >
-                  <div className="p-1.5 rounded-lg bg-[#23ace3]/10 text-[#23ace3] group-hover:bg-[#23ace3] group-hover:text-white transition-colors shrink-0">
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <div className="text-xs font-semibold text-foreground truncate">{v.name}</div>
-                    <div className="text-[10px] text-muted-foreground truncate">{v.tag}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
 
       {/* =========================================================================
           FEATURES (Bite-sized cards, short 1-line copy)

@@ -350,7 +350,7 @@ export const Login: React.FC = () => {
                   htmlFor="employeeId"
                   className="block text-xs font-semibold text-foreground uppercase tracking-wider"
                 >
-                  Employee ID
+                  Employee ID / National ID
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
@@ -364,6 +364,7 @@ export const Login: React.FC = () => {
                       setEmployeeIdInput(e.target.value)
                       if (errorMessage) setErrorMessage('')
                     }}
+                    placeholder="e.g. KT-8842 or National ID No"
                     className="w-full pl-10 pr-4 py-2.5 bg-background border border-border/80 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#23ace3] focus:ring-1 focus:ring-[#23ace3] transition-all"
                     autoFocus
                   />
@@ -379,6 +380,9 @@ export const Login: React.FC = () => {
                   >
                     Password
                   </label>
+                  <span className="text-[11px] text-[#23ace3]">
+                    Default: National ID No
+                  </span>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
@@ -392,6 +396,7 @@ export const Login: React.FC = () => {
                       setPasswordInput(e.target.value)
                       if (errorMessage) setErrorMessage('')
                     }}
+                    placeholder="Enter password or your National ID"
                     className="w-full pl-10 pr-10 py-2.5 bg-background border border-border/80 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#23ace3] focus:ring-1 focus:ring-[#23ace3] transition-all"
                   />
                   <button
@@ -403,6 +408,9 @@ export const Login: React.FC = () => {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  First login? Use your assigned National ID No as your default password.
+                </p>
               </div>
 
               {/* Sign In Button */}

@@ -42,8 +42,8 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-base font-bold text-foreground">{request.employeeName}</h4>
               {request.priorLeavesCount === 0 && (
-                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px]">
-                  🌟 First Time Applicant (0 Absences)
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px]">
+                  First Leave Request
                 </Badge>
               )}
             </div>
@@ -103,16 +103,15 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({ request, onStatusCha
         </p>
       </div>
 
-      {/* Action Area: Investigate Button */}
+      {/* Action Area */}
       <div className="pt-2">
         {request.status === 'pending' ? (
           <Button
             onClick={handleInvestigate}
-            className="w-full bg-gradient-to-r from-[#23ace3] to-[#0284c7] hover:from-[#1da0d4] hover:to-[#0369a1] text-white font-semibold text-xs h-10 rounded-xl gap-2 shadow-xs hover:shadow-md hover:shadow-[#23ace3]/25 transition-all cursor-pointer group"
+            className="w-full bg-[#23ace3] hover:bg-[#1da0d4] text-white font-semibold text-xs h-9 rounded-xl gap-2 shadow-xs transition-all cursor-pointer group"
           >
-            <SearchAlert className="h-4 w-4 text-cyan-200 transition-transform group-hover:rotate-12" />
-            <span>Investigate</span>
-            <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            <span>Review Request</span>
+            <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/80 group-hover:translate-x-0.5 transition-transform" />
           </Button>
         ) : (
           <div className="pt-2 border-t border-border/50 text-xs text-muted-foreground">

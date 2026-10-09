@@ -31,7 +31,7 @@ export const ManagerApprovals: React.FC = () => {
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <PageHeader
         title="Manager Approval Center"
-        subtitle="HR Document 2FA Signing & Executive Verification Desk."
+        subtitle="Review and sign official employee document requests."
       />
 
       {/* HR Document Signings Section */}
@@ -39,9 +39,9 @@ export const ManagerApprovals: React.FC = () => {
         {docRequests.length === 0 ? (
           <Card className="border border-dashed border-border/80 p-12 text-center bg-card/40 rounded-2xl">
             <FileText className="h-10 w-10 text-[#23ace3] mx-auto mb-3" />
-            <h4 className="text-base font-bold text-foreground">No pending HR document signature requests</h4>
+            <h4 className="text-base font-bold text-foreground">No pending document requests</h4>
             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto mb-4">
-              All employee HR document applications have been verified and signed.
+              All employee document applications have been reviewed and processed.
             </p>
             <Button
               variant="outline"
@@ -52,8 +52,8 @@ export const ManagerApprovals: React.FC = () => {
                 await loadDocs()
               }}
             >
-              <Sparkles className="h-3.5 w-3.5 mr-2" />
-              Generate Demo Signature Request (DOC-2026-9041)
+              <FileText className="h-3.5 w-3.5 mr-2" />
+              Generate Sample Request
             </Button>
           </Card>
         ) : (

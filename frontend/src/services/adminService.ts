@@ -58,6 +58,9 @@ export const adminService = {
   },
 
   async getAIUsageMetrics(): Promise<AIUsageMetrics> {
+    if (!useMock()) {
+      return apiClient.get<AIUsageMetrics>('/admin/ai-usage')
+    }
     await new Promise(r => setTimeout(r, 80))
     return appDataStore.getAIMetrics()
   },

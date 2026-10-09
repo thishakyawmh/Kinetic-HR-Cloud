@@ -37,6 +37,8 @@ const CONTAINERS = [
   { id: 'payslips', partitionKey: '/tenantId' },
   { id: 'policies', partitionKey: '/tenantId' },
   { id: 'audit_logs', partitionKey: '/tenantId' },
+  { id: 'departments', partitionKey: '/tenantId' },
+  { id: 'document_requests', partitionKey: '/tenantId' },
 ]
 
 function createMinimalPdfBuffer(title: string, subtitle: string, lines: string[]): Buffer {
@@ -593,6 +595,74 @@ const AUDIT_LOGS = [
   },
 ]
 
+const DEPARTMENTS = [
+  { id: 'dept-eng', tenantId: 'tenant-kinetic', name: 'Engineering', head: 'David Wilson', threshold: '70% min staffing', status: 'Active', description: 'Core product engineering and cloud infrastructure division.' },
+  { id: 'dept-hr', tenantId: 'tenant-kinetic', name: 'Human Resources', head: 'Sarah Miller', threshold: '80% min staffing', status: 'Active', description: 'People operations, talent acquisition, and compliance.' },
+  { id: 'dept-prod', tenantId: 'tenant-kinetic', name: 'Product Management', head: 'Claire Underwood', threshold: '75% min staffing', status: 'Active', description: 'Product roadmap and feature architecture.' },
+  { id: 'dept-design', tenantId: 'tenant-kinetic', name: 'Design & UX', head: 'Carlos Mendoza', threshold: '65% min staffing', status: 'Active', description: 'User interface design and brand identity systems.' },
+  { id: 'dept-ops', tenantId: 'tenant-kinetic', name: 'Operations & Cloud', head: 'Brandon Lee', threshold: '85% min staffing', status: 'Active', description: 'Cloud infrastructure, security, and biometric hardware ops.' },
+]
+
+const DOCUMENT_REQUESTS = [
+  {
+    id: 'doc-req-9041',
+    tenantId: 'tenant-kinetic',
+    employeeId: 'user-Alice',
+    employeeName: 'Alice Johnson',
+    employeeNumber: 'KT-8842',
+    department: 'Engineering',
+    jobTitle: 'Senior Frontend Engineer',
+    managerId: 'user-david',
+    managerName: 'David Wilson',
+    documentType: 'Employment Verification Letter',
+    purpose: 'For Chase Bank Home Mortgage Application',
+    status: 'pending_manager_signature',
+    requiresManagerSignature: true,
+    submittedAt: '2026-10-07T14:20:00Z',
+    referenceCode: 'DOC-2026-9041',
+    aiVerification: {
+      identityVerified: true,
+      verificationNotes: 'AI Identity Verified: Active Senior Frontend Engineer in Engineering Dept (Hired April 15, 2023). Salary $78,000/yr.',
+      policyCheckPassed: true,
+      generatedContent: 'OFFICIAL EMPLOYMENT VERIFICATION LETTER\n\nDate: October 7, 2026\nTo Whom It May Concern:\n\nThis letter serves as official verification that Alice Johnson (Employee ID: KT-8842) is employed full-time with Kinetic Technologies as a Senior Frontend Engineer since April 15, 2023.\n\nAlice Johnson is in good standing with a current annual gross salary of $78,000.00 disbursed bi-weekly.\n\nThis document is issued under corporate policy compliance reference #DOC-2026-9041.\n\nKinetic Technologies HR & Operations.',
+      verifiedAt: '2026-10-07T14:20:05Z',
+    },
+  },
+  {
+    id: 'doc-req-9040',
+    tenantId: 'tenant-kinetic',
+    employeeId: 'user-Alice',
+    employeeName: 'Alice Johnson',
+    employeeNumber: 'KT-8842',
+    department: 'Engineering',
+    jobTitle: 'Senior Frontend Engineer',
+    managerId: 'user-david',
+    managerName: 'David Wilson',
+    documentType: 'Salary Certificate',
+    purpose: 'Car Loan Verification',
+    status: 'approved_and_signed',
+    requiresManagerSignature: true,
+    submittedAt: '2026-09-28T09:10:00Z',
+    issuedAt: '2026-09-28T10:15:22Z',
+    referenceCode: 'DOC-2026-9040',
+    aiVerification: {
+      identityVerified: true,
+      verificationNotes: 'AI Identity Verified: Active Full-Time Employee.',
+      policyCheckPassed: true,
+      generatedContent: 'OFFICIAL SALARY CERTIFICATE\n\nEmployee: Alice Johnson (KT-8842)\nDepartment: Engineering\nGross Monthly Earnings: $6,500.00\nNet Disbursed Take-Home: $4,131.00\n\nVerified by Kinetic AI Engine.',
+      verifiedAt: '2026-09-28T09:10:04Z',
+    },
+    managerSignatureDetails: {
+      signedBy: 'David Wilson',
+      signedById: 'user-david',
+      signedAt: '2026-09-28T10:15:22Z',
+      mobile2faVerified: true,
+      phoneNumberMasked: '+1 (555) ***-8901',
+      signatureHash: 'SIG-2FA-98F4-41A8-88A2',
+    },
+  },
+]
+
 async function seed() {
   console.log(`\n======================================================`)
   console.log(`🔌 CONNECTING TO AZURE COSMOS DB & STORAGE`)
@@ -666,6 +736,20 @@ async function seed() {
     await auditContainer.items.upsert(log)
   }
   console.log(`✔ Seeded ${AUDIT_LOGS.length} Audit Logs into Cosmos DB`)
+
+  // 11. Seed Departments
+  const deptContainer = database.container('departments')
+  for (const dept of DEPARTMENTS) {
+    await deptContainer.items.upsert(dept)
+  }
+  console.log(`✔ Seeded ${DEPARTMENTS.length} Departments into Cosmos DB`)
+
+  // 12. Seed Document Requests
+  const docContainer = database.container('document_requests')
+  for (const doc of DOCUMENT_REQUESTS) {
+    await docContainer.items.upsert(doc)
+  }
+  console.log(`✔ Seeded ${DOCUMENT_REQUESTS.length} Document Requests into Cosmos DB`)
 
   // 11. Upload Actual Payslip & Policy PDFs to Azure Blob Storage
   console.log(`\n📄 Uploading sample PDF files to Azure Blob Storage...`)
