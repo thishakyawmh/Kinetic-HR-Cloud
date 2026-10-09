@@ -60,24 +60,35 @@ export async function validateOrganization(
           },
         }
       }
-      if (orgId === 'kinetic' || orgId === 'tenant-kinetic') {
+      if (orgId === 'sampath' || orgId === 'tenant-sampath') {
         return {
           status: 200,
           jsonBody: {
-            id: 'tenant-kinetic',
-            name: 'Kinetic Technologies',
-            code: 'KINETIC',
+            id: 'tenant-sampath',
+            name: 'Sampath Bank PLC',
+            code: 'SAMPATH',
             status: 'Active',
           },
         }
       }
-      if (orgId === 'nova' || orgId === 'tenant-nova') {
+      if (orgId === 'keells' || orgId === 'tenant-keells') {
         return {
           status: 200,
           jsonBody: {
-            id: 'tenant-nova',
-            name: 'Nova Systems',
-            code: 'NOVA',
+            id: 'tenant-keells',
+            name: 'Keells Supermarkets',
+            code: 'KEELLS',
+            status: 'Active',
+          },
+        }
+      }
+      if (orgId === 'singer' || orgId === 'tenant-singer') {
+        return {
+          status: 200,
+          jsonBody: {
+            id: 'tenant-singer',
+            name: 'Singer Sri Lanka PLC',
+            code: 'SINGER',
             status: 'Active',
           },
         }
@@ -397,12 +408,28 @@ export async function loginEmployee(
 
       if (devUser) {
         const token = signToken(devUser)
+        if (devUser.role === 'platform_admin') {
+          return {
+            status: 200,
+            jsonBody: {
+              user: devUser,
+              token,
+              tenant: { id: 'tenant-platform', name: 'Global Cloud Fleet Infrastructure', code: 'PLATFORM' },
+            },
+          }
+        }
+        const targetTenantId = (tenantId && tenantId !== 'tenant-kinetic') ? tenantId : 'tenant-sampath'
+        const tenantInfo = targetTenantId === 'tenant-keells'
+          ? { id: 'tenant-keells', name: 'Keells Supermarkets', code: 'KEELLS' }
+          : targetTenantId === 'tenant-singer'
+          ? { id: 'tenant-singer', name: 'Singer Sri Lanka PLC', code: 'SINGER' }
+          : { id: 'tenant-sampath', name: 'Sampath Bank PLC', code: 'SAMPATH' }
         return {
           status: 200,
           jsonBody: {
-            user: devUser,
+            user: { ...devUser, tenantId: tenantInfo.id },
             token,
-            tenant: { id: devUser.tenantId, name: 'Kinetic Technologies', code: 'KINETIC' },
+            tenant: tenantInfo,
           },
         }
       }

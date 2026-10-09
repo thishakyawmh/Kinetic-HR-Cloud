@@ -5,12 +5,12 @@ import { User } from '@/types'
 const useMock = () => import.meta.env.VITE_USE_MOCK_SERVICES !== 'false'
 
 export const employeeService = {
-  async getEmployees(tenantId: string, department?: string): Promise<User[]> {
+  async getEmployees(tenantId?: string, department?: string): Promise<User[]> {
     if (!useMock()) {
       return apiClient.get<User[]>('/employees', { params: { tenantId, department } })
     }
     await new Promise(r => setTimeout(r, 120))
-    let list = appDataStore.getUsers(tenantId).filter(u => u.role !== 'platform_admin')
+    let list = appDataStore.getUsers(tenantId && tenantId !== 'all' ? tenantId : undefined).filter(u => u.role !== 'platform_admin')
     if (department && department !== 'all') {
       list = list.filter(u => u.department.toLowerCase() === department.toLowerCase())
     }

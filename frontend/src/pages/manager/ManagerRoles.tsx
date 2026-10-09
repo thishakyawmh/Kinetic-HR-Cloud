@@ -29,6 +29,7 @@ export const ManagerRoles: React.FC = () => {
   const { user, tenant } = useAuth()
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all')
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -37,27 +38,43 @@ export const ManagerRoles: React.FC = () => {
 
   // Form states
   const [formName, setFormName] = useState('')
-  const [formSalary, setFormSalary] = useState<number>(120000)
-  const [formCurrency, setFormCurrency] = useState('USD')
-  const [formPeriod, setFormPeriod] = useState<'annual' | 'monthly' | 'hourly'>('annual')
+  const [formDepartment, setFormDepartment] = useState('')
+  const [formSalary, setFormSalary] = useState<number>(145000)
+  const [formCurrency, setFormCurrency] = useState(tenant?.currency || 'LKR')
+  const [formPeriod, setFormPeriod] = useState<'annual' | 'monthly' | 'hourly'>('monthly')
   const [formOvertimeMultiplier, setFormOvertimeMultiplier] = useState<number>(1.5)
   const [formDescription, setFormDescription] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  const deptName = user?.department || 'Engineering'
+  const deptName = user?.department || 'Retail Banking & Branches'
 
-  // Fetch roles
+  // Fetch all roles across workspace
   const { data: roles = [], isLoading: isLoadingRoles } = useQuery({
-    queryKey: ['workspaceRoles', deptName],
-    queryFn: () => roleService.getRoles(deptName),
+    queryKey: ['workspaceRoles', 'all'],
+    queryFn: () => roleService.getRoles('all'),
   })
+
+  // Fetch departments to offer department filter
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', tenant?.id],
+    queryFn: () => employeeService.getDepartments(tenant?.id),
+    enabled: !!tenant?.id,
+  })
+
+  // Available unique departments for filter dropdown
+  const departmentOptions = useMemo(() => {
+    const set = new Set<string>()
+    if (user?.department) set.add(user.department)
+    roles.forEach(r => { if (r.department) set.add(r.department) })
+    departments.forEach(d => { if (d.name) set.add(d.name) })
+    return Array.from(set).sort()
+  }, [roles, departments, user])
 
   // Fetch employees to count assignments
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees', tenant?.id],
-    queryFn: () => (tenant?.id ? employeeService.getEmployees(tenant.id) : []),
-    enabled: !!tenant?.id,
+    queryKey: ['employees', tenant?.id || 'all'],
+    queryFn: () => employeeService.getEmployees(tenant?.id),
   })
 
   // Mutation: Save Role (Create or Update)
@@ -73,6 +90,8 @@ export const ManagerRoles: React.FC = () => {
         throw new Error('Overtime multiplier must be at least 1.0x.')
       }
 
+      const roleDept = formDepartment.trim() || deptName
+
       if (editingRole) {
         return roleService.updateRole(editingRole.id, {
           name: formName.trim(),
@@ -81,7 +100,7 @@ export const ManagerRoles: React.FC = () => {
           salaryPeriod: formPeriod,
           overtimeMultiplier: Number(formOvertimeMultiplier),
           description: formDescription.trim(),
-          department: deptName,
+          department: roleDept,
         })
       } else {
         return roleService.createRole({
@@ -91,7 +110,7 @@ export const ManagerRoles: React.FC = () => {
           salaryPeriod: formPeriod,
           overtimeMultiplier: Number(formOvertimeMultiplier),
           description: formDescription.trim(),
-          department: deptName,
+          department: roleDept,
         })
       }
     },
@@ -123,9 +142,10 @@ export const ManagerRoles: React.FC = () => {
   const openCreateModal = () => {
     setEditingRole(null)
     setFormName('')
-    setFormSalary(120000)
-    setFormCurrency('USD')
-    setFormPeriod('annual')
+    setFormDepartment(selectedDeptFilter !== 'all' ? selectedDeptFilter : deptName)
+    setFormSalary(145000)
+    setFormCurrency(tenant?.currency || 'LKR')
+    setFormPeriod('monthly')
     setFormOvertimeMultiplier(1.5)
     setFormDescription('')
     setFormError(null)
@@ -136,9 +156,10 @@ export const ManagerRoles: React.FC = () => {
   const openEditModal = (role: WorkspaceRole) => {
     setEditingRole(role)
     setFormName(role.name)
+    setFormDepartment(role.department || deptName)
     setFormSalary(role.baseSalary)
-    setFormCurrency(role.currency || 'USD')
-    setFormPeriod(role.salaryPeriod || 'annual')
+    setFormCurrency(role.currency || tenant?.currency || 'LKR')
+    setFormPeriod(role.salaryPeriod || 'monthly')
     setFormOvertimeMultiplier(role.overtimeMultiplier || 1.5)
     setFormDescription(role.description || '')
     setFormError(null)
@@ -146,26 +167,38 @@ export const ManagerRoles: React.FC = () => {
     setIsModalOpen(true)
   }
 
-  // Filter roles by search
+  // Filter roles by search and department
   const filteredRoles = useMemo(() => {
     return roles.filter(r => {
+      if (selectedDeptFilter !== 'all') {
+        const rDept = (r.department || '').toLowerCase()
+        const target = selectedDeptFilter.toLowerCase()
+        if (rDept !== target && !rDept.includes(target) && !target.includes(rDept)) {
+          return false
+        }
+      }
       const q = searchQuery.trim().toLowerCase()
       if (!q) return true
       return (
         r.name.toLowerCase().includes(q) ||
+        (r.department && r.department.toLowerCase().includes(q)) ||
         (r.description && r.description.toLowerCase().includes(q))
       )
     })
-  }, [roles, searchQuery])
+  }, [roles, selectedDeptFilter, searchQuery])
 
   // Count assigned employees per role
   const getAssignedCount = (roleName: string) => {
-    return employees.filter(
-      e =>
-        e.department &&
-        e.department.toLowerCase() === deptName.toLowerCase() &&
-        e.jobTitle.toLowerCase() === roleName.toLowerCase()
-    ).length
+    const rLower = roleName.toLowerCase()
+    return employees.filter(e => {
+      if (!e.jobTitle) return false
+      const titleLower = e.jobTitle.toLowerCase()
+      return (
+        titleLower === rLower ||
+        titleLower.includes(rLower) ||
+        rLower.includes(titleLower)
+      )
+    }).length
   }
 
   return (
@@ -173,7 +206,7 @@ export const ManagerRoles: React.FC = () => {
       {/* Page Header */}
       <PageHeader
         title="Roles & Compensation"
-        subtitle={`Define job roles, base salary scales, and overtime multipliers for ${deptName}`}
+        subtitle="Define job roles, base salary scales, and overtime multipliers across workspace departments"
       >
         <Button
           variant="default"
@@ -186,24 +219,45 @@ export const ManagerRoles: React.FC = () => {
         </Button>
       </PageHeader>
 
-      {/* Search Toolbar */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search roles by title or description..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="pl-10 pr-9 h-10 text-xs bg-card rounded-xl border-border/80 shadow-xs"
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-3 text-muted-foreground hover:text-foreground text-xs cursor-pointer"
+      {/* Search & Department Filter Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search roles by title, department, or description..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-10 pr-9 h-10 text-xs bg-card rounded-xl border-border/80 shadow-xs"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <div className="w-full sm:w-64 shrink-0">
+          <select
+            value={selectedDeptFilter}
+            onChange={e => setSelectedDeptFilter(e.target.value)}
+            aria-label="Filter by department"
+            className="w-full h-10 px-3 text-xs bg-card rounded-xl border border-border/80 text-foreground focus:outline-none focus:ring-1 focus:ring-[#23ace3] shadow-xs cursor-pointer"
           >
-            ✕
-          </button>
-        )}
+            <option value="all">All Departments ({roles.length})</option>
+            {departmentOptions.map(dept => {
+              const count = roles.filter(r => (r.department || '').toLowerCase() === dept.toLowerCase()).length
+              return (
+                <option key={dept} value={dept}>
+                  {dept} ({count})
+                </option>
+              )
+            })}
+          </select>
+        </div>
       </div>
 
       {/* Roles Tabular Directory */}
@@ -216,8 +270,8 @@ export const ManagerRoles: React.FC = () => {
           <Briefcase className="h-8 w-8 text-muted-foreground/60 mx-auto" />
           <div className="font-bold text-foreground">No roles found</div>
           <p className="text-muted-foreground max-w-sm mx-auto">
-            {searchQuery
-              ? `No roles match "${searchQuery}".`
+            {searchQuery || selectedDeptFilter !== 'all'
+              ? `No roles match current filters.`
               : 'Start by configuring job titles, base salaries, and overtime multipliers for your workspace.'}
           </p>
           <Button
@@ -235,6 +289,7 @@ export const ManagerRoles: React.FC = () => {
             <TableHeader className="bg-muted/40">
               <TableRow className="border-border/60">
                 <TableHead className="text-xs font-bold text-foreground">Role Title</TableHead>
+                <TableHead className="text-xs font-bold text-foreground">Department</TableHead>
                 <TableHead className="text-xs font-bold text-foreground">Base Salary</TableHead>
                 <TableHead className="text-xs font-bold text-foreground">Overtime Multiplier</TableHead>
                 <TableHead className="text-xs font-bold text-foreground">Assigned Staff</TableHead>
@@ -256,18 +311,21 @@ export const ManagerRoles: React.FC = () => {
                           <span className="font-bold text-xs text-foreground block">
                             {role.name}
                           </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {role.department || deptName}
-                          </span>
                         </div>
                       </div>
                     </TableCell>
 
                     <TableCell>
+                      <Badge variant="outline" className="text-[11px] font-normal border-border/70 text-muted-foreground bg-muted/20">
+                        {role.department || 'General'}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell>
                       <div className="flex items-center gap-1 font-mono font-bold text-xs text-foreground">
-                        <DollarSign className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                        <span className="text-emerald-500 font-semibold">{role.currency === 'LKR' ? 'Rs.' : '$'}</span>
                         <span>
-                          {role.baseSalary.toLocaleString()} {role.currency}
+                          {role.baseSalary.toLocaleString()}
                         </span>
                         <span className="text-[10px] text-muted-foreground font-normal">
                           /{role.salaryPeriod === 'annual' ? 'yr' : role.salaryPeriod === 'monthly' ? 'mo' : 'hr'}
@@ -358,10 +416,38 @@ export const ManagerRoles: React.FC = () => {
                 <Input
                   value={formName}
                   onChange={e => setFormName(e.target.value)}
-                  placeholder="E.g., Senior Frontend Engineer, DevOps Lead"
+                  placeholder="E.g., Senior Branch Manager, Cashier & Counter Specialist"
                   className="h-9 text-xs bg-background rounded-xl"
                   autoFocus
                 />
+              </div>
+
+              {/* Department */}
+              <div>
+                <label className="font-semibold block mb-1 text-foreground">Department</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={formDepartment}
+                    onChange={e => setFormDepartment(e.target.value)}
+                    placeholder="E.g., Retail Banking & Branches"
+                    className="h-9 text-xs bg-background rounded-xl flex-1"
+                  />
+                  {departmentOptions.length > 0 && (
+                    <select
+                      value=""
+                      onChange={e => {
+                        if (e.target.value) setFormDepartment(e.target.value)
+                      }}
+                      aria-label="Select existing department"
+                      className="h-9 px-2 text-xs bg-background rounded-xl border border-border/80 text-foreground cursor-pointer"
+                    >
+                      <option value="">Quick Select...</option>
+                      {departmentOptions.map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
               {/* Base Salary & Currency */}

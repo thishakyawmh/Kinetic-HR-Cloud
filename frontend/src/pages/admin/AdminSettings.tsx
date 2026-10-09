@@ -24,7 +24,7 @@ export const AdminSettings: React.FC = () => {
     <div className="space-y-6 max-w-4xl mx-auto">
       <PageHeader
         title="System & Automation Configuration"
-        subtitle={`Configure automated processing services, request quotas, and compliance policies for ${tenant?.name || 'Kinetic Technologies'}.`}
+        subtitle={`Configure automated processing services, request quotas, and compliance policies for ${tenant?.name || 'Sampath Bank PLC'}.`}
       />
 
       {savedSuccess && (

@@ -28,6 +28,7 @@ export interface Tenant {
   adminEmail?: string
   createdAt?: string
   primaryColor?: string
+  currency?: string
 }
 
 export interface User {

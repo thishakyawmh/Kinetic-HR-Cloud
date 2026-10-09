@@ -91,9 +91,9 @@ export async function getOrganizations(
         ...t,
         employeeCount: userCount || 1,
         status: t.status || 'Active',
-        createdAt: t.createdAt || '2026-01-15',
-        industry: t.industry || 'Technology & Services',
-        country: t.country || 'United States',
+        createdAt: t.createdAt || '2024-01-01',
+        industry: t.industry || (t.id === 'tenant-sampath' ? 'Banking & Financial Services' : t.id === 'tenant-keells' ? 'Retail & FMCG' : t.id === 'tenant-singer' ? 'Consumer Electronics & Retail' : 'Technology & Services'),
+        country: t.country || 'Sri Lanka',
       }
     })
 

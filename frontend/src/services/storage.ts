@@ -54,8 +54,25 @@ class AppDataStore {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        this.tenants = parsed.tenants || MOCK_TENANTS
-        this.users = parsed.users || MOCK_USERS
+        // Purge obsolete legacy tenants and enforce active enterprise organizations
+        if (!parsed.tenants || parsed.tenants.some((t: any) => t.id === 'tenant-kinetic' || t.id === 'tenant-nova')) {
+          this.tenants = [...MOCK_TENANTS]
+        } else {
+          this.tenants = parsed.tenants
+        }
+        MOCK_TENANTS.forEach(mt => {
+          if (!this.tenants.some(t => t.id === mt.id)) {
+            this.tenants.push(mt)
+          }
+        })
+        this.tenants = this.tenants.filter(t => t.id !== 'tenant-kinetic' && t.id !== 'tenant-nova')
+
+        this.users = (parsed.users || MOCK_USERS).map((u: User) => {
+          if (u.tenantId === 'tenant-kinetic') {
+            return { ...u, tenantId: 'tenant-sampath' }
+          }
+          return u
+        })
         this.leaveTypes = parsed.leaveTypes || MOCK_LEAVE_TYPES
         this.leaveBalances = parsed.leaveBalances || MOCK_LEAVE_BALANCES
         this.leaveRequests = parsed.leaveRequests || MOCK_LEAVE_REQUESTS

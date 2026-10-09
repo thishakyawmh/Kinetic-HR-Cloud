@@ -82,7 +82,7 @@ export const Login: React.FC = () => {
 
     setIsLoading(true)
     try {
-      const targetTenantId = currentTenant ? currentTenant.id : 'tenant-kinetic'
+      const targetTenantId = currentTenant ? currentTenant.id : 'tenant-sampath'
       console.log('🔍 [AUTH DEBUG - Step 1: Submitting Login]', {
         inputEmployeeId: employeeIdInput.trim(),
         targetTenantId,

@@ -109,10 +109,10 @@ export const ManagerWorkforce: React.FC = () => {
 
   const deptWorkspaceName = currentDept?.name || user?.department || 'Engineering'
 
-  // Fetch defined workspace roles
+  // Fetch defined workspace roles across all departments
   const { data: roles = [] } = useQuery({
-    queryKey: ['workspaceRoles', deptWorkspaceName],
-    queryFn: () => roleService.getRoles(deptWorkspaceName),
+    queryKey: ['workspaceRoles', 'all'],
+    queryFn: () => roleService.getRoles('all'),
   })
 
   // Exclude lead account since the logged in account belongs to the lead
@@ -152,7 +152,12 @@ export const ManagerWorkforce: React.FC = () => {
 
   // Helper to find matching role configuration for an employee
   const getRoleForEmployee = (emp: User): WorkspaceRole | undefined => {
-    return roles.find(r => r.name.toLowerCase() === emp.jobTitle.toLowerCase())
+    if (!emp.jobTitle) return undefined
+    const tLower = emp.jobTitle.toLowerCase()
+    return roles.find(r => {
+      const rLower = r.name.toLowerCase()
+      return rLower === tLower || tLower.includes(rLower) || rLower.includes(tLower)
+    })
   }
 
   // Mutation: Assign Role to Member
@@ -369,7 +374,7 @@ export const ManagerWorkforce: React.FC = () => {
                   <option value="">-- Choose a Role --</option>
                   {roles.map(r => (
                     <option key={r.id} value={r.id}>
-                      {r.name} — ${r.baseSalary.toLocaleString()}/{r.salaryPeriod === 'annual' ? 'yr' : 'mo'} ({r.overtimeMultiplier}x OT)
+                      {r.name} — {r.currency === 'LKR' ? 'Rs.' : '$'}{r.baseSalary.toLocaleString()}/{r.salaryPeriod === 'annual' ? 'yr' : 'mo'} ({r.overtimeMultiplier}x OT)
                     </option>
                   ))}
                 </Select>
@@ -385,8 +390,7 @@ export const ManagerWorkforce: React.FC = () => {
                     <div className="p-2 rounded-lg bg-muted/40 space-y-0.5">
                       <div className="text-[10px] text-muted-foreground">Base Salary</div>
                       <div className="font-mono font-bold text-emerald-500 flex items-center gap-1">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        <span>${selectedRolePreview.baseSalary.toLocaleString()} {selectedRolePreview.currency}</span>
+                        <span>{selectedRolePreview.currency === 'LKR' ? 'Rs.' : '$'}{selectedRolePreview.baseSalary.toLocaleString()}</span>
                       </div>
                       <div className="text-[10px] text-muted-foreground">per {selectedRolePreview.salaryPeriod}</div>
                     </div>
@@ -509,7 +513,7 @@ export const ManagerWorkforce: React.FC = () => {
                     Phone / Extension
                   </div>
                   <div className="font-mono text-xs text-foreground">
-                    {selectedMember.phone || '+1 (555) 019-2831'}
+                    {selectedMember.phone || '+94 77 123 4567'}
                   </div>
                 </div>
 
@@ -524,7 +528,7 @@ export const ManagerWorkforce: React.FC = () => {
                         </div>
                         <div className="text-xs font-bold text-emerald-500 font-mono">
                           {role
-                            ? `$${role.baseSalary.toLocaleString()} ${role.currency} / ${role.salaryPeriod}`
+                            ? `${role.currency === 'LKR' ? 'Rs. ' : '$'}${role.baseSalary.toLocaleString()} ${role.currency} / ${role.salaryPeriod}`
                             : 'Standard Band'}
                         </div>
                       </div>
@@ -546,7 +550,7 @@ export const ManagerWorkforce: React.FC = () => {
                     Work Location
                   </div>
                   <div className="text-xs text-foreground">
-                    {selectedMember.location || 'Seattle, WA (Office)'}
+                    {selectedMember.location || 'Colombo (Head Office)'}
                   </div>
                 </div>
 

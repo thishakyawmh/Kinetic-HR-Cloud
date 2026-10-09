@@ -673,7 +673,7 @@ export const AdminBranches: React.FC = () => {
               <DialogDescription className="text-xs">
                 {editingBranch
                   ? `Update operating details, contact channels, and leadership for ${editingBranch.name}.`
-                  : `Establish an operating branch or regional office under ${tenant?.name || 'Kinetic Technologies'}.`}
+                  : `Establish an operating branch or regional office under ${tenant?.name || 'Sampath Bank PLC'}.`}
               </DialogDescription>
             </div>
           </div>

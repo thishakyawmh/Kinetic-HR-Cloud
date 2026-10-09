@@ -19,22 +19,6 @@ const PROD_DATA = generateProductionSeedData()
 
 export const MOCK_TENANTS: Tenant[] = [
   ...PROD_DATA.ORGANIZATIONS,
-  {
-    id: 'tenant-kinetic',
-    name: 'Alyxra Digital',
-    code: 'KINETIC',
-    domain: 'kinetictech.io',
-    plan: 'Enterprise',
-    primaryColor: '#0284c7',
-  },
-  {
-    id: 'tenant-nova',
-    name: 'Nova Systems',
-    code: 'NOVA',
-    domain: 'novasystems.com',
-    plan: 'Enterprise',
-    primaryColor: '#6366f1',
-  },
 ]
 
 export const MOCK_USERS: User[] = [
@@ -42,7 +26,7 @@ export const MOCK_USERS: User[] = [
   // Legacy / fallback users
   {
     id: 'user-Alice',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Alice Johnson',
     email: 'Alice.johnson@kinetictech.io',
     role: 'employee',
@@ -57,7 +41,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-david',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'David Wilson',
     email: 'david.wilson@kinetictech.io',
     role: 'manager',
@@ -70,7 +54,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-sarah',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Sarah Miller',
     email: 'sarah.miller@kinetictech.io',
     role: 'admin',
@@ -84,7 +68,7 @@ export const MOCK_USERS: User[] = [
   // David Wilson's Separate Personal Employee Account (Normal Employee ID)
   {
     id: 'user-david-emp',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'David Wilson',
     email: 'david.emp@kinetictech.io',
     role: 'employee',
@@ -100,7 +84,7 @@ export const MOCK_USERS: User[] = [
   // Sarah Miller's Separate Personal Employee Account (Normal Employee ID)
   {
     id: 'user-sarah-emp',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Sarah Miller',
     email: 'sarah.emp@kinetictech.io',
     role: 'employee',
@@ -115,7 +99,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-platform-admin',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Alex Thorne',
     email: 'alex.thorne@kineticcloud.azure.com',
     role: 'platform_admin',
@@ -128,7 +112,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-marcus',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Marcus Chen',
     email: 'marcus.chen@kinetictech.io',
     role: 'employee',
@@ -142,7 +126,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-priya',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Priya Patel',
     email: 'priya.patel@kinetictech.io',
     role: 'employee',
@@ -156,7 +140,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-jordan',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Jordan Hayes',
     email: 'jordan.hayes@kinetictech.io',
     role: 'employee',
@@ -170,7 +154,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-elena',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Elena Rostova',
     email: 'elena.rostova@kinetictech.io',
     role: 'employee',
@@ -184,7 +168,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'user-carlos',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Carlos Mendoza',
     email: 'carlos.mendoza@kinetictech.io',
     role: 'employee',
@@ -261,7 +245,7 @@ export const MOCK_USERS: User[] = [
 export const MOCK_LEAVE_TYPES: LeaveType[] = [
   {
     id: 'lt-annual',
-    tenantId: 'tenant-kinetic',
+    tenantId: 'tenant-sampath',
     name: 'Annual Leave',
     code: 'annual',
     defaultAllowance: 20,
