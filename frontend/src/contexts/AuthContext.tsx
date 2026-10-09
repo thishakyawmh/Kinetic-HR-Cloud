@@ -15,6 +15,7 @@ interface AuthContextType {
   switchRole: (role: UserRole) => void
   switchTenant: (tenantId: string) => void
   loginWithCredentials: (tenantId: string, employeeId: string, password?: string) => Promise<AuthSession>
+  loginWithEntraId: (tenantId?: string) => Promise<AuthSession>
   loginPlatformAdmin: (adminId: string, password?: string) => Promise<AuthSession>
   validateOrganization: (organizationId: string) => Promise<Tenant>
   logout: () => void
@@ -78,6 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleLoginWithCredentials = async (tenantId: string, employeeId: string, password?: string) => {
     const newSession = await authService.login(tenantId, employeeId, password)
+    setSession(newSession)
+    return newSession
+  }
+
+  const handleLoginWithEntraId = async (tenantId?: string) => {
+    const newSession = await authService.loginWithEntraId(tenantId)
     setSession(newSession)
     return newSession
   }
@@ -197,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         switchRole: handleSwitchRole,
         switchTenant: handleSwitchTenant,
         loginWithCredentials: handleLoginWithCredentials,
+        loginWithEntraId: handleLoginWithEntraId,
         loginPlatformAdmin: handleLoginPlatformAdmin,
         validateOrganization: handleValidateOrganization,
         logout: handleLogout,

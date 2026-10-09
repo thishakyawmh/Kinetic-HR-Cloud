@@ -35538,10 +35538,10 @@
       "managerName": "David Wilson",
       "documentType": "Service Letter",
       "purpose": "Consulate Visa Appointment",
-      "status": "auto_issued",
+      "status": "approved_and_signed",
       "requiresManagerSignature": false,
       "submittedAt": "2026-10-09T16:49:47.695Z",
-      "issuedAt": "2026-10-09T16:49:47.695Z",
+      "issuedAt": "2026-10-09T16:56:38.012Z",
       "referenceCode": "DOC-2026-1958",
       "aiVerification": {
         "identityVerified": true,
@@ -35549,6 +35549,19 @@
         "policyCheckPassed": true,
         "generatedContent": "OFFICIAL SERVICE LETTER\nReference Code: DOC-2026-1958\nDate: October 9, 2026\n\nTo Whom It May Concern:\n\nThis letter serves as official verification that Dinesh Weerasinghe (Employee ID: M-1001) is employed full-time with Kinetic HR Cloud (Retail Banking & Branches Department) as a Senior Branch Manager (Colombo Fort).\n\nPurpose: Consulate Visa Appointment\n\nThis document has been verified by the Kinetic Autonomous AI Engine under corporate policy compliance.\n\nTenant ID: tenant-sampath\nIssued via Kinetic HR Cloud Enterprise Portal.",
         "verifiedAt": "2026-10-09T16:49:47.695Z"
+      },
+      "_rid": "H5hZAPIcBlYHAAAAAAAAAA==",
+      "_self": "dbs/H5hZAA==/colls/H5hZAPIcBlY=/docs/H5hZAPIcBlYHAAAAAAAAAA==/",
+      "_etag": "\"2a00fb7b-0000-2200-0000-6ac91b2d0000\"",
+      "_attachments": "attachments/",
+      "_ts": 1791564589,
+      "managerSignatureDetails": {
+        "signedBy": "Dinesh Weerasinghe",
+        "signedById": "user-sb-mgr-1",
+        "signedAt": "2026-10-09T16:56:38.012Z",
+        "mobile2faVerified": true,
+        "phoneNumberMasked": "+1 (555) ***-8901",
+        "signatureHash": "SIG-2FA-54JK-8012"
       }
     }
   ],

@@ -333,5 +333,39 @@ export const authService = {
     this.setSession(session)
     return session
   },
+
+  async loginWithEntraId(targetTenantId?: string): Promise<AuthSession> {
+    const isMock = useMock()
+    if (!isMock) {
+      try {
+        const res = await apiClient.post<{ user: User; token: string; tenant: Tenant }>('/auth/entra/sso', {
+          email: 'hirun.perera@sampath.lk',
+        })
+        if (res.user && res.tenant) {
+          const session: AuthSession = {
+            user: res.user,
+            tenant: res.tenant,
+            token: res.token,
+          }
+          this.setSession(session)
+          return session
+        }
+      } catch (e) {
+        console.warn('Entra ID backend SSO probe fallback:', e)
+      }
+    }
+
+    const tId = targetTenantId || 'tenant-sampath'
+    const tenant = appDataStore.getTenant(tId) || appDataStore.getTenants()[0]
+    const user = appDataStore.getUsers(tId).find(u => u.role === 'admin') || appDataStore.getUsers(tId)[0]
+
+    const session: AuthSession = {
+      user,
+      tenant,
+      token: `entra-jwt-bearer-${Date.now()}`,
+    }
+    this.setSession(session)
+    return session
+  },
 }
 

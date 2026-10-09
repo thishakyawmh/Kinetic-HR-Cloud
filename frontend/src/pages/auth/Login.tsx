@@ -18,7 +18,7 @@ import {
 
 export const Login: React.FC = () => {
   const { companyId: routeCompanyId } = useParams<{ companyId?: string }>()
-  const { allTenants, loginWithCredentials, validateOrganization } = useAuth()
+  const { allTenants, loginWithCredentials, loginWithEntraId, validateOrganization } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
@@ -112,6 +112,29 @@ export const Login: React.FC = () => {
     } catch (err: any) {
       console.error('🔍 [AUTH DEBUG - Step 3: Login Failed]', err)
       setErrorMessage(err.message || 'Login failed. Please verify your Employee ID and password.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle Microsoft Entra ID Enterprise Single Sign-On
+  const handleEntraIdSSO = async () => {
+    setIsLoading(true)
+    setErrorMessage('')
+    try {
+      const targetTenantId = currentTenant ? currentTenant.id : 'tenant-sampath'
+      const session = await loginWithEntraId(targetTenantId)
+      const targetRoute =
+        session.user.role === 'admin'
+          ? '/admin/dashboard'
+          : session.user.role === 'manager'
+            ? '/manager/dashboard'
+            : session.user.role === 'platform_admin'
+              ? '/platform/dashboard'
+              : '/employee/dashboard'
+      navigate(targetRoute)
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Microsoft Entra ID authentication failed.')
     } finally {
       setIsLoading(false)
     }
@@ -327,6 +350,31 @@ export const Login: React.FC = () => {
               </button>
             </form>
           )}
+
+          {/* Microsoft Entra ID Enterprise SSO Section */}
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase font-semibold tracking-wider">
+              <span className="bg-card px-2.5 text-muted-foreground">or Enterprise SSO</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleEntraIdSSO}
+            disabled={isLoading}
+            className="w-full h-11 bg-background hover:bg-muted/50 border border-border/80 hover:border-[#23ace3]/60 text-foreground font-medium text-xs sm:text-sm rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 shadow-2xs group"
+          >
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+              <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+              <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+              <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+              <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+            </svg>
+            <span className="group-hover:text-[#23ace3] transition-colors">Sign in with Microsoft Entra ID</span>
+          </button>
         </Card>
 
         {/* Footer Disclaimer */}
