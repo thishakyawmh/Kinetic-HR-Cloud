@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { payrollService } from '@/services/payrollService'
@@ -11,14 +11,17 @@ import {
   Download,
   Printer,
   FileCheck,
+  SlidersHorizontal,
 } from 'lucide-react'
 
 import { PayslipStatementView } from '@/components/payroll/PayslipStatementView'
+import { PaymentOptimizationModal } from '@/components/payroll/PaymentOptimizationModal'
 
 export const EmployeePayslipDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, tenant } = useAuth()
+  const [isOptimizerOpen, setIsOptimizerOpen] = useState<boolean>(false)
 
   const { data: payslip, isLoading } = useQuery({
     queryKey: ['payslip', id],
@@ -84,8 +87,17 @@ export const EmployeePayslipDetail: React.FC = () => {
           <Button
             variant="default"
             size="sm"
+            onClick={() => setIsOptimizerOpen(true)}
+            className="text-xs gap-1.5 rounded-xl bg-[#23ace3] text-slate-950 hover:bg-[#1b96c8] font-bold cursor-pointer"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span>Payment Optimization</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleDownloadPDF}
-            className="text-xs gap-1.5 rounded-xl bg-[#23ace3] text-white hover:bg-[#23ace3]/90 font-semibold cursor-pointer"
+            className="text-xs gap-1.5 rounded-xl border-border hover:bg-muted/60 font-semibold cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
             <span>Download PDF</span>
@@ -104,6 +116,13 @@ export const EmployeePayslipDetail: React.FC = () => {
 
       {/* EXCLUSIVE 4-SECTION ITEMIZED STATEMENT DOCUMENT */}
       <PayslipStatementView payslip={payslip} user={user} tenant={tenant} />
+
+      {/* Payment Optimization Modal */}
+      <PaymentOptimizationModal
+        isOpen={isOptimizerOpen}
+        onClose={() => setIsOptimizerOpen(false)}
+        baseSalary={payslip.grossSalary || 3000.0}
+      />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Lock, Sparkles, RefreshCw, Clock, ShieldCheck, Calculator } from 'lucide-react'
+import { Lock, Sparkles, RefreshCw, Clock, ShieldCheck, Calculator, SlidersHorizontal } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { PaymentOptimizationModal } from './PaymentOptimizationModal'
 
 interface PaycheckFlowProps {
   baseHourlyRate?: number
@@ -27,6 +28,7 @@ export const PaycheckFlowDiagram: React.FC<PaycheckFlowProps> = ({
   const [otMultiplier, setOtMultiplier] = useState<number>(defaultOtMultiplier)
   const [preTax401k, setPreTax401k] = useState<number>(defaultPreTax401k)
   const [healthDental, setHealthDental] = useState<number>(defaultHealthDental)
+  const [isOptimizerOpen, setIsOptimizerOpen] = useState<boolean>(false)
 
   // Reset function to restore AI Predicted default values
   const handleResetToAIPrediction = () => {
@@ -73,14 +75,25 @@ export const PaycheckFlowDiagram: React.FC<PaycheckFlowProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleResetToAIPrediction}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-xs font-semibold text-foreground border border-border/60 transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <RefreshCw className="h-3.5 w-3.5 text-[#23ace3]" />
-          <span>Reset to AI Prediction</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsOptimizerOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#23ace3] hover:bg-[#1b96c8] text-slate-950 font-bold text-xs transition-colors cursor-pointer shadow-xs"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span>Payment Optimization</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResetToAIPrediction}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-xs font-semibold text-foreground border border-border/60 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5 text-[#23ace3]" />
+            <span>Reset to AI Prediction</span>
+          </button>
+        </div>
       </div>
 
       {/* Top Stat Summary Cards */}
@@ -311,6 +324,13 @@ export const PaycheckFlowDiagram: React.FC<PaycheckFlowProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Payment Optimization Modal */}
+      <PaymentOptimizationModal
+        isOpen={isOptimizerOpen}
+        onClose={() => setIsOptimizerOpen(false)}
+        baseSalary={grossSalary}
+      />
     </div>
   )
 }

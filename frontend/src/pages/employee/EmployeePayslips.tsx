@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { payrollService } from '@/services/payrollService'
@@ -12,16 +12,19 @@ import {
   Sparkles,
   DollarSign,
   ShieldCheck,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { formatCurrency } from '@/lib/utils'
 
 import { TakeHomePredictionChart } from '@/components/payroll/TakeHomePredictionChart'
 import { PaycheckFlowDiagram } from '@/components/payroll/PaycheckFlowDiagram'
+import { PaymentOptimizationModal } from '@/components/payroll/PaymentOptimizationModal'
 
 export const EmployeePayslips: React.FC = () => {
   const { user, tenant } = useAuth()
   const navigate = useNavigate()
+  const [isOptimizerOpen, setIsOptimizerOpen] = useState<boolean>(false)
 
   const { data: payslips = [] } = useQuery({
     queryKey: ['payslips', tenant?.id, user?.id],
@@ -36,7 +39,15 @@ export const EmployeePayslips: React.FC = () => {
       <PageHeader
         title="Payslips & Compensation"
         subtitle="Access your authorized monthly earnings statements, tax withholdings, and benefits deductions."
-      />
+      >
+        <Button
+          onClick={() => setIsOptimizerOpen(true)}
+          className="bg-[#23ace3] hover:bg-[#1b96c8] text-slate-950 font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-2 px-4 py-2"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          <span>Payment Optimization</span>
+        </Button>
+      </PageHeader>
 
       {/* 1. TAKE-HOME PAY PREDICTION LINE GRAPH */}
       <TakeHomePredictionChart />
@@ -112,6 +123,13 @@ export const EmployeePayslips: React.FC = () => {
           </Table>
         </div>
       </div>
+
+      {/* Payment Optimization Modal */}
+      <PaymentOptimizationModal
+        isOpen={isOptimizerOpen}
+        onClose={() => setIsOptimizerOpen(false)}
+        baseSalary={latestPayslip?.grossSalary || 3000.0}
+      />
     </div>
   )
 }
