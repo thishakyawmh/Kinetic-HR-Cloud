@@ -497,10 +497,43 @@ function _oldGenerateSeedDataset() {
   }
 }
 
-const LOCAL_MEMORY_DATA: Record<string, any[]> = generateSeedDataset()
+const LOCAL_DB_FILE = path.resolve(__dirname, '../../../data/local-db.json')
 
+function loadLocalDataFromDisk(): Record<string, any[]> {
+  try {
+    const dir = path.dirname(LOCAL_DB_FILE)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    if (fs.existsSync(LOCAL_DB_FILE)) {
+      const content = fs.readFileSync(LOCAL_DB_FILE, 'utf-8')
+      const parsed = JSON.parse(content)
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        return parsed
+      }
+    }
+  } catch (err) {
+    console.warn('Could not read local-db.json, falling back to seed generator:', err)
+  }
+  const seed = generateSeedDataset()
+  saveLocalDataToDisk(seed)
+  return seed
+}
 
+function saveLocalDataToDisk(data?: Record<string, any[]>) {
+  try {
+    const dataToSave = data || LOCAL_MEMORY_DATA
+    const dir = path.dirname(LOCAL_DB_FILE)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    fs.writeFileSync(LOCAL_DB_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8')
+  } catch (err) {
+    console.warn('Failed to save to local-db.json:', err)
+  }
+}
 
+const LOCAL_MEMORY_DATA: Record<string, any[]> = loadLocalDataFromDisk()
 
 /**
  * Creates a mock Cosmos DB container for local offline development
@@ -570,12 +603,14 @@ function createMockContainer(name: string): Container {
       }),
       create: async (item: any) => {
         store.push(item)
+        saveLocalDataToDisk()
         return { resource: item }
       },
       upsert: async (item: any) => {
         const idx = store.findIndex((i: any) => i.id === item.id)
         if (idx >= 0) store[idx] = item
         else store.push(item)
+        saveLocalDataToDisk()
         return { resource: item }
       },
     },
@@ -588,11 +623,13 @@ function createMockContainer(name: string): Container {
         const idx = store.findIndex((i: any) => i.id === id)
         if (idx >= 0) store[idx] = newItem
         else store.push(newItem)
+        saveLocalDataToDisk()
         return { resource: newItem }
       },
       delete: async () => {
         const idx = store.findIndex((i: any) => i.id === id)
         if (idx >= 0) store.splice(idx, 1)
+        saveLocalDataToDisk()
         return { resource: {} }
       },
     }),

@@ -111,35 +111,81 @@ export async function createLeaveRequest(
     const body = (await request.json()) as any
     const leaveId = `leave-${Date.now()}`
 
+    const container = getTenantContainer('leaves')
+    const requestedDaysNum = Number(body.requestedDays || 1)
+
+    // Automated Leave Approval Engine Check:
+    // Check remaining balance for user
+    const balances = await queryTenantItems<any>(
+      'leave_balances',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = @code OR c.leaveType = @code)',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@userId', value: auth.user!.id },
+        { name: '@code', value: body.leaveTypeCode || 'annual' },
+      ]
+    )
+
+    let autoApproved = false
+    let autoReason = ''
+    const currentBal = balances[0]
+    const remaining = currentBal ? Number(currentBal.remaining ?? (currentBal.totalAllowance - currentBal.used)) : 14
+
+    // Automatic approval condition: Routine leave within balance and <= 3 days duration
+    if (remaining >= requestedDaysNum && requestedDaysNum <= 3 && body.leaveTypeCode !== 'unpaid' && body.leaveTypeCode !== 'special') {
+      autoApproved = true
+      autoReason = `Auto-approved by Kinetic Engine: Sufficient leave balance (${remaining} days available) and zero staffing conflict.`
+    }
+
+    const initialStatus = autoApproved ? 'approved' : 'pending'
+
     const newRequest = {
       id: leaveId,
       tenantId,
       employeeId: auth.user!.id,
       employeeName: auth.user!.name,
-      department: body.department || 'Engineering',
+      department: body.department || auth.user!.department || 'Engineering',
       leaveTypeId: body.leaveTypeId,
       leaveTypeName: body.leaveTypeName,
       leaveTypeCode: body.leaveTypeCode,
       startDate: body.startDate,
       endDate: body.endDate,
-      requestedDays: Number(body.requestedDays || 1),
+      requestedDays: requestedDaysNum,
       reason: body.reason,
-      status: 'pending',
+      status: initialStatus,
+      autoApproved,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       timeline: [
         {
-          id: `tl-${Date.now()}`,
+          id: `tl-${Date.now()}-1`,
           action: 'submitted',
           actorName: auth.user!.name,
           timestamp: new Date().toISOString(),
           comment: 'Leave request submitted',
         },
+        ...(autoApproved ? [{
+          id: `tl-${Date.now()}-2`,
+          action: 'approved',
+          actorName: 'Kinetic Autonomous Engine',
+          timestamp: new Date().toISOString(),
+          comment: autoReason,
+        }] : []),
       ],
     }
 
-    const container = getTenantContainer('leaves')
     const { resource } = await container.items.create(newRequest)
+
+    // Deduct balance if auto approved
+    if (autoApproved && currentBal) {
+      const balanceContainer = getTenantContainer('leave_balances')
+      currentBal.used = (currentBal.used || 0) + requestedDaysNum
+      currentBal.remaining = Math.max(0, (currentBal.totalAllowance || 14) - currentBal.used)
+      try {
+        await balanceContainer.items.upsert(currentBal)
+      } catch (_) {}
+    }
 
     return { status: 201, jsonBody: resource }
   } catch (err: any) {

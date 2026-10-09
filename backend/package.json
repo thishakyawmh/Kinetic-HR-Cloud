@@ -13,14 +13,16 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "@azure/functions": "^4.6.0",
     "@azure/cosmos": "^4.2.0",
+    "@azure/functions": "^4.6.0",
     "@azure/storage-blob": "^12.26.0",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
     "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.0",
     "typescript": "^5.4.5"
   },
   "main": "dist/src/index.js"

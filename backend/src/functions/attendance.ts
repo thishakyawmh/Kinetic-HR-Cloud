@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
-import { queryTenantItems, createTenantItem } from '../config/cosmos'
+import { queryTenantItems, createTenantItem, getTenantContainer } from '../config/cosmos'
 import { authenticateRequest } from '../middleware/auth'
 
 /**
@@ -101,6 +101,98 @@ export async function recordAttendanceClock(
     }
 
     return { status: 400, jsonBody: { error: 'Invalid attendance action specified.' } }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+/**
+ * POST /api/attendance/fingerprint-sync
+ * Ingests biometric fingerprint scanner logs automatically
+ */
+export async function syncFingerprintLogs(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  try {
+    const body = (await request.json()) as {
+      tenantId?: string
+      deviceId?: string
+      logs: Array<{
+        employeeId: string
+        employeeName?: string
+        timestamp: string
+        scanType: 'IN' | 'OUT'
+        verificationType?: 'FINGERPRINT' | 'BIOMETRIC_FACE' | 'RFID'
+      }>
+    }
+
+    const tenantId = auth.user!.tenantId
+    const deviceId = body.deviceId || 'FP-BIOMETRIC-GATE-1'
+    const processedRecords: any[] = []
+
+    for (const log of body.logs || []) {
+      const scanDate = new Date(log.timestamp)
+      const dateStr = scanDate.toISOString().split('T')[0]
+      const attId = `att-${log.employeeId}-${dateStr}`
+
+      const existing = await queryTenantItems<any>(
+        'attendance',
+        tenantId,
+        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND c.date = @date',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@userId', value: log.employeeId },
+          { name: '@date', value: dateStr },
+        ]
+      )
+
+      let record = existing.length > 0 ? existing[0] : {
+        id: attId,
+        tenantId,
+        userId: log.employeeId,
+        userName: log.employeeName || log.employeeId,
+        date: dateStr,
+        clockIn: null,
+        clockOut: null,
+        totalHours: 0,
+        overtimeHours: 0,
+        status: 'Present',
+        workMode: 'Office',
+        verificationMethod: log.verificationType || 'FINGERPRINT',
+        deviceId,
+      }
+
+      if (log.scanType === 'IN') {
+        record.clockIn = log.timestamp
+      } else if (log.scanType === 'OUT') {
+        record.clockOut = log.timestamp
+      }
+
+      if (record.clockIn && record.clockOut) {
+        const inMs = new Date(record.clockIn).getTime()
+        const outMs = new Date(record.clockOut).getTime()
+        const diffHours = Math.max(0, (outMs - inMs) / (1000 * 60 * 60))
+        record.totalHours = parseFloat(diffHours.toFixed(2))
+        record.overtimeHours = parseFloat(Math.max(0, diffHours - 8.0).toFixed(2))
+      }
+
+      const container = getTenantContainer('attendance')
+      await container.items.upsert(record)
+      processedRecords.push(record)
+    }
+
+    return {
+      status: 200,
+      jsonBody: {
+        message: `Biometric fingerprint logs synchronized successfully (${processedRecords.length} records processed)`,
+        deviceId,
+        records: processedRecords,
+      },
+    }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
   }
