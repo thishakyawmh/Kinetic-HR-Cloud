@@ -42,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const employeeNav: NavItem[] = [
     { label: 'Kinetic AI Assistant', to: '/employee/dashboard', icon: Sparkles, badge: 'Main' },
+    { label: 'Leave Plans & Coverage', to: '/employee/leave-plans', icon: CalendarDays, badge: 'Realtime' },
     { label: 'My Leaves & Balances', to: '/employee/leave', icon: CalendarDays },
     { label: 'My Payslips', to: '/employee/payslips', icon: FileSpreadsheet },
     { label: 'Document Requests', to: '/employee/requests', icon: FileCheck2 },
@@ -53,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const managerNav: NavItem[] = [
     { label: 'Assistant', to: '/manager/assistant', icon: Sparkles, badge: 'AI' },
     { label: 'Overview', to: '/manager/dashboard', icon: LayoutDashboard },
+    { label: 'Leave Plans & Wiring', to: '/employee/leave-plans', icon: CalendarDays, badge: 'Realtime' },
     { label: 'Roles', to: '/manager/roles', icon: Briefcase },
     { label: 'Workforce Management', to: '/manager/workforce', icon: Users },
     { label: 'Document Approvals', to: '/manager/approvals', icon: FileCheck2, badge: '1 Pending' },

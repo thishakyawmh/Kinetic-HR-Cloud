@@ -17,6 +17,7 @@ import { EmployeePayslipDetail } from '@/pages/employee/EmployeePayslipDetail'
 import { EmployeeRequests } from '@/pages/employee/EmployeeRequests'
 import { EmployeeAssistant } from '@/pages/employee/EmployeeAssistant'
 import { EmployeePolicies } from '@/pages/employee/EmployeePolicies'
+import { EmployeeLeavePlans } from '@/pages/employee/EmployeeLeavePlans'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
 
 // Manager Pages
@@ -92,6 +93,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/employee/assistant" element={<EmployeeWorkspace />} />
         <Route path="/employee/overview" element={<EmployeeDashboard />} />
         <Route path="/employee/leave" element={<EmployeeLeave />} />
+        <Route path="/employee/leave-plans" element={<EmployeeLeavePlans />} />
         <Route path="/employee/leave/apply" element={<EmployeeLeaveApply />} />
         <Route path="/employee/payslips" element={<EmployeePayslips />} />
         <Route path="/employee/payslips/:id" element={<EmployeePayslipDetail />} />

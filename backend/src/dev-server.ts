@@ -9,6 +9,8 @@ import {
   updateLeaveStatus,
   getLeaveTypes,
   evaluateAIFairnessLeaves,
+  getLeavePlans,
+  createLeavePlan,
 } from './functions/leaves'
 import {
   getEmployees,
@@ -140,6 +142,8 @@ addRoute('GET', '/api/leaves', getLeaveRequests)
 addRoute('POST', '/api/leaves', createLeaveRequest)
 addRoute('PATCH', '/api/leaves/{id}/status', updateLeaveStatus)
 addRoute('POST', '/api/leaves/ai-evaluate', evaluateAIFairnessLeaves)
+addRoute('GET', '/api/leaves/plans', getLeavePlans)
+addRoute('POST', '/api/leaves/plans', createLeavePlan)
 
 // Employees
 addRoute('POST', '/api/employees/import', bulkImportEmployees)
