@@ -31,6 +31,24 @@ export function getCosmosDatabase(): Database | null {
 
 // Generates full substantial seed dataset for local memory database
 function generateSeedDataset() {
+  const { generateProductionSeedData } = require('../scripts/seedDataGenerator')
+  const data = generateProductionSeedData()
+  return {
+    organizations: data.ORGANIZATIONS,
+    departments: data.DEPARTMENTS,
+    users: data.USERS,
+    leave_balances: data.LEAVE_BALANCES,
+    leaves: data.LEAVE_REQUESTS,
+    attendance: data.ATTENDANCE_RECORDS,
+    payslips: data.PAYSLIPS,
+    policies: data.POLICIES,
+    document_requests: data.DOCUMENT_REQUESTS,
+    notifications: data.NOTIFICATIONS,
+    audit_logs: data.AUDIT_LOGS,
+    branches: data.BRANCHES,
+  }
+}
+function _oldGenerateSeedDataset() {
   const organizations = [
     { id: 'tenant-kinetic', tenantId: 'tenant-kinetic', name: 'Kinetic Technologies', code: 'KINETIC', status: 'Active' },
     { id: 'tenant-nova', tenantId: 'tenant-nova', name: 'Nova Systems', code: 'NOVA', status: 'Active' },

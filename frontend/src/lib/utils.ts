@@ -5,9 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount?: number | null | string, currency: string = 'USD'): string {
+export function formatCurrency(amount?: number | null | string, currency: string = 'LKR'): string {
   const num = typeof amount === 'number' ? amount : parseFloat(String(amount || 0))
   const safeVal = isNaN(num) ? 0 : num
+  if (currency === 'LKR' || currency === 'Rs.' || currency === 'Rs') {
+    return `Rs. ${safeVal.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

@@ -27,7 +27,39 @@ export async function validateOrganization(
     const { resources } = await container.items.query(querySpec).fetchAll()
 
     if (resources.length === 0) {
-      // Fallback/Demo org info if during initial setup
+      if (orgId === 'sampath' || orgId === 'tenant-sampath') {
+        return {
+          status: 200,
+          jsonBody: {
+            id: 'tenant-sampath',
+            name: 'Sampath Bank PLC',
+            code: 'SAMPATH',
+            status: 'Active',
+          },
+        }
+      }
+      if (orgId === 'keells' || orgId === 'tenant-keells') {
+        return {
+          status: 200,
+          jsonBody: {
+            id: 'tenant-keells',
+            name: 'Keells Supermarkets',
+            code: 'KEELLS',
+            status: 'Active',
+          },
+        }
+      }
+      if (orgId === 'singer' || orgId === 'tenant-singer') {
+        return {
+          status: 200,
+          jsonBody: {
+            id: 'tenant-singer',
+            name: 'Singer Sri Lanka PLC',
+            code: 'SINGER',
+            status: 'Active',
+          },
+        }
+      }
       if (orgId === 'kinetic' || orgId === 'tenant-kinetic') {
         return {
           status: 200,
@@ -126,7 +158,176 @@ export async function loginEmployee(
     if (users.length === 0) {
       // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
       let devUser: any = null
-      if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice') || cleanEmp === 'employee') {
+      if (cleanEmp.includes('a-1001') || (cleanEmp.includes('kasun') && !cleanEmp.includes('sb'))) {
+        devUser = {
+          id: 'user-sb-admin',
+          tenantId: 'tenant-sampath',
+          name: 'Kasun Perera',
+          email: 'kasun.perera@sampath.lk',
+          role: 'admin' as const,
+          department: 'People Operations & HR',
+          jobTitle: 'Head of Human Resources & Statutory Governance',
+          employeeNumber: 'A-1001',
+          branchId: 'br-sb-1',
+          branchName: 'Colombo Fort Head Office Branch',
+        }
+      } else if (cleanEmp.includes('m-1001') || (cleanEmp.includes('dinesh') && !cleanEmp.includes('sb'))) {
+        devUser = {
+          id: 'user-sb-mgr-1',
+          tenantId: 'tenant-sampath',
+          name: 'Dinesh Weerasinghe',
+          email: 'dinesh.weerasinghe@sampath.lk',
+          role: 'manager' as const,
+          department: 'Retail Banking & Branches',
+          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          employeeNumber: 'M-1001',
+          branchId: 'br-sb-1',
+          branchName: 'Colombo Fort Head Office Branch',
+        }
+      } else if (cleanEmp.includes('sb-1001')) {
+        devUser = {
+          id: 'user-sb-admin-emp',
+          tenantId: 'tenant-sampath',
+          name: 'Kasun Perera',
+          email: 'kasun.emp@sampath.lk',
+          role: 'employee' as const,
+          department: 'People Operations & HR',
+          jobTitle: 'Head of Human Resources & Statutory Governance',
+          employeeNumber: 'SB-1001',
+          branchId: 'br-sb-1',
+          branchName: 'Colombo Fort Head Office Branch',
+        }
+      } else if (cleanEmp.includes('sb-1002')) {
+        devUser = {
+          id: 'user-sb-mgr-1-emp',
+          tenantId: 'tenant-sampath',
+          name: 'Dinesh Weerasinghe',
+          email: 'dinesh.weerasinghe.emp@sampath.lk',
+          role: 'employee' as const,
+          department: 'Retail Banking & Branches',
+          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          employeeNumber: 'SB-1002',
+          branchId: 'br-sb-1',
+          branchName: 'Colombo Fort Head Office Branch',
+        }
+      } else if (cleanEmp.includes('sb-1007') || cleanEmp.includes('nalaka')) {
+        devUser = {
+          id: 'user-sb-emp-1007',
+          tenantId: 'tenant-sampath',
+          name: 'Nalaka Perera',
+          email: 'nalaka.perera@sampath.lk',
+          role: 'employee' as const,
+          department: 'Retail Banking & Branches',
+          jobTitle: 'Customer Relationship Officer',
+          employeeNumber: 'SB-1007',
+          branchId: 'br-sb-1',
+          branchName: 'Colombo Fort Head Office Branch',
+        }
+      } else if (cleanEmp.includes('a-2001') || (cleanEmp.includes('supun') && !cleanEmp.includes('ks'))) {
+        devUser = {
+          id: 'user-ks-admin',
+          tenantId: 'tenant-keells',
+          name: 'Supun Dissanayake',
+          email: 'supun.dissanayake@keells.com',
+          role: 'admin' as const,
+          department: 'People & Culture',
+          jobTitle: 'Head of People & Retail Talent Operations',
+          employeeNumber: 'A-2001',
+          branchId: 'br-ks-1',
+          branchName: 'Crescat Boulevard Superstore',
+        }
+      } else if (cleanEmp.includes('m-2001') || (cleanEmp.includes('priyantha') && !cleanEmp.includes('ks'))) {
+        devUser = {
+          id: 'user-ks-mgr-1',
+          tenantId: 'tenant-keells',
+          name: 'Priyantha Rathnayake',
+          email: 'priyantha.rathnayake@keells.com',
+          role: 'manager' as const,
+          department: 'Store Operations & Front End',
+          jobTitle: 'Store General Manager (Crescat)',
+          employeeNumber: 'M-2001',
+          branchId: 'br-ks-1',
+          branchName: 'Crescat Boulevard Superstore',
+        }
+      } else if (cleanEmp.includes('ks-2001')) {
+        devUser = {
+          id: 'user-ks-admin-emp',
+          tenantId: 'tenant-keells',
+          name: 'Supun Dissanayake',
+          email: 'supun.emp@keells.com',
+          role: 'employee' as const,
+          department: 'People & Culture',
+          jobTitle: 'Head of People & Retail Talent Operations',
+          employeeNumber: 'KS-2001',
+          branchId: 'br-ks-1',
+          branchName: 'Crescat Boulevard Superstore',
+        }
+      } else if (cleanEmp.includes('ks-2012') || cleanEmp.includes('gunaratne')) {
+        devUser = {
+          id: 'user-ks-emp-2012',
+          tenantId: 'tenant-keells',
+          name: 'Kasun Gunaratne',
+          email: 'kasun.gunaratne@keells.com',
+          role: 'employee' as const,
+          department: 'Store Operations & Front End',
+          jobTitle: 'Senior Retail Associate',
+          employeeNumber: 'KS-2012',
+          branchId: 'br-ks-1',
+          branchName: 'Crescat Boulevard Superstore',
+        }
+      } else if (cleanEmp.includes('a-3001') || (cleanEmp.includes('kavinda') && !cleanEmp.includes('sng'))) {
+        devUser = {
+          id: 'user-sn-admin',
+          tenantId: 'tenant-singer',
+          name: 'Kavinda Samarasinghe',
+          email: 'kavinda.samarasinghe@singersl.com',
+          role: 'admin' as const,
+          department: 'Human Resources & Training',
+          jobTitle: 'Head of HR Operations & Statutory Affairs',
+          employeeNumber: 'A-3001',
+          branchId: 'br-sn-1',
+          branchName: 'Singer Mega - Duplication Road',
+        }
+      } else if (cleanEmp.includes('m-3001') || (cleanEmp.includes('ashen') && !cleanEmp.includes('sng'))) {
+        devUser = {
+          id: 'user-sn-mgr-1',
+          tenantId: 'tenant-singer',
+          name: 'Ashen Senanayake',
+          email: 'ashen.senanayake@singersl.com',
+          role: 'manager' as const,
+          department: 'Showroom Retail Sales',
+          jobTitle: 'Mega Store Manager (Duplication Road)',
+          employeeNumber: 'M-3001',
+          branchId: 'br-sn-1',
+          branchName: 'Singer Mega - Duplication Road',
+        }
+      } else if (cleanEmp.includes('sng-3001')) {
+        devUser = {
+          id: 'user-sn-admin-emp',
+          tenantId: 'tenant-singer',
+          name: 'Kavinda Samarasinghe',
+          email: 'kavinda.emp@singersl.com',
+          role: 'employee' as const,
+          department: 'Human Resources & Training',
+          jobTitle: 'Head of HR Operations & Statutory Affairs',
+          employeeNumber: 'SNG-3001',
+          branchId: 'br-sn-1',
+          branchName: 'Singer Mega - Duplication Road',
+        }
+      } else if (cleanEmp.includes('sng-3008') || cleanEmp.includes('sahan')) {
+        devUser = {
+          id: 'user-sn-emp-3008',
+          tenantId: 'tenant-singer',
+          name: 'Sahan Alahakoon',
+          email: 'sahan.alahakoon@singersl.com',
+          role: 'employee' as const,
+          department: 'Showroom Retail Sales',
+          jobTitle: 'Senior Showroom Sales Consultant',
+          employeeNumber: 'SNG-3008',
+          branchId: 'br-sn-1',
+          branchName: 'Singer Mega - Duplication Road',
+        }
+      } else if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice') || cleanEmp === 'employee') {
         devUser = {
           id: 'user-Alice',
           tenantId: 'tenant-kinetic',

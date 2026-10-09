@@ -168,7 +168,7 @@ export const authService = {
 
     if (!targetUser) {
       throw new Error(
-        `Employee ID "${employeeId}" not found. Try KT-8842 (Employee), M-1044 (Manager), A-0012 (HR Admin), or KC-0001 (Platform Admin).`
+        `Employee ID "${employeeId}" not found in this organization. Please verify your Employee ID or contact HR operations.`
       )
     }
 

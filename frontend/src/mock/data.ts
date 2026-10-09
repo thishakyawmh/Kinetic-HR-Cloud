@@ -13,8 +13,12 @@ import {
   HRDocumentRequest,
   Branch
 } from '@/types'
+import { generateProductionSeedData } from './seedDataGenerator'
+
+const PROD_DATA = generateProductionSeedData()
 
 export const MOCK_TENANTS: Tenant[] = [
+  ...PROD_DATA.ORGANIZATIONS,
   {
     id: 'tenant-kinetic',
     name: 'Alyxra Digital',
@@ -34,7 +38,8 @@ export const MOCK_TENANTS: Tenant[] = [
 ]
 
 export const MOCK_USERS: User[] = [
-  // Kinetic Technologies Users
+  ...PROD_DATA.USERS,
+  // Legacy / fallback users
   {
     id: 'user-Alice',
     tenantId: 'tenant-kinetic',
@@ -306,7 +311,18 @@ export const MOCK_LEAVE_TYPES: LeaveType[] = [
   },
 ]
 
+const PROD_BALANCES_DICT: Record<string, LeaveBalance[]> = {}
+PROD_DATA.USERS.forEach(u => {
+  PROD_BALANCES_DICT[u.id] = [
+    { leaveTypeId: 'annual', leaveTypeName: 'Annual Leave', code: 'annual', totalAllowance: 14, used: 3, pending: 0, remaining: 11 },
+    { leaveTypeId: 'casual', leaveTypeName: 'Casual Leave', code: 'casual', totalAllowance: 7, used: 2, pending: 0, remaining: 5 },
+    { leaveTypeId: 'medical', leaveTypeName: 'Medical Leave', code: 'sick', totalAllowance: 14, used: 1, pending: 0, remaining: 13 },
+    { leaveTypeId: 'maternity', leaveTypeName: 'Maternity Leave', code: 'other', totalAllowance: 84, used: 0, pending: 0, remaining: 84 },
+  ]
+})
+
 export const MOCK_LEAVE_BALANCES: Record<string, LeaveBalance[]> = {
+  ...PROD_BALANCES_DICT,
   'user-Alice': [
     {
       leaveTypeId: 'lt-annual',
@@ -426,6 +442,7 @@ export const MOCK_LEAVE_BALANCES: Record<string, LeaveBalance[]> = {
 }
 
 export const MOCK_LEAVE_REQUESTS: LeaveRequest[] = [
+  ...PROD_DATA.LEAVE_REQUESTS,
   // Autonomous AI Optimization Cluster: 8 Requests for Oct 25, 2026 (Max Daily Quota: 5)
   {
     id: 'leave-clash-1',
@@ -751,6 +768,7 @@ export const MOCK_LEAVE_REQUESTS: LeaveRequest[] = [
 ]
 
 export const MOCK_PAYSLIPS: Payslip[] = [
+  ...PROD_DATA.PAYSLIPS,
   {
     id: 'pay-2026-10',
     tenantId: 'tenant-kinetic',
@@ -1276,6 +1294,7 @@ export const MOCK_AI_USAGE: AIUsageMetrics = {
 }
 
 export const MOCK_BRANCHES: Branch[] = [
+  ...PROD_DATA.BRANCHES,
   {
     id: 'br-colombo-hq',
     tenantId: 'tenant-kinetic',
