@@ -1,5 +1,5 @@
 import { app } from '@azure/functions'
-import { validateOrganization, loginEmployee } from './functions/auth'
+import { validateOrganization, loginEmployee, loginPlatformAdmin } from './functions/auth'
 import {
   getLeaveBalances,
   getLeaveRequests,
@@ -70,6 +70,13 @@ app.http('loginEmployee', {
   authLevel: 'anonymous',
   route: 'auth/login',
   handler: loginEmployee,
+})
+
+app.http('loginPlatformAdmin', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'auth/platform-login',
+  handler: loginPlatformAdmin,
 })
 
 // Leaves & Approvals

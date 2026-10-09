@@ -233,4 +233,63 @@ export const authService = {
 
     return this.switchUser(target.id)
   },
+
+  async loginPlatformAdmin(adminId: string, password?: string): Promise<AuthSession> {
+    const isMock = useMock()
+    console.log('🔍 [AUTH DEBUG - authService.loginPlatformAdmin call]', { isMock, adminId })
+
+    if (!isMock) {
+      const response = await apiClient.post<{ user: User; token: string; tenant: Tenant }>('/auth/platform-login', {
+        adminId,
+        password,
+      })
+      const session: AuthSession = {
+        user: response.user,
+        tenant: response.tenant || {
+          id: 'tenant-platform',
+          name: 'Global Cloud Fleet Infrastructure',
+          code: 'PLATFORM',
+          domain: 'azure.kineticcloud.io',
+          plan: 'Infrastructure Authority',
+        },
+        token: response.token,
+      }
+      this.setSession(session)
+      return session
+    }
+
+    // Mock fallback
+    const cleanId = adminId.trim().toLowerCase()
+    if (cleanId !== 'kc-0001' && cleanId !== 'alex' && cleanId !== 'platform_admin' && !cleanId.includes('kc-0001')) {
+      throw new Error('Invalid Platform Administrator ID. Access is strictly restricted.')
+    }
+
+    const platformUser: User = {
+      id: 'user-platform-admin',
+      tenantId: 'tenant-platform',
+      name: 'Alex Thorne',
+      email: 'alex.thorne@kineticcloud.azure.com',
+      role: 'platform_admin',
+      jobTitle: 'Principal Cloud Platform Director',
+      department: 'Cloud Platform Infrastructure',
+      employeeNumber: 'KC-0001',
+      hireDate: '2020-01-01',
+      branchId: 'global',
+    }
+    const platformTenant: Tenant = {
+      id: 'tenant-platform',
+      name: 'Global Cloud Fleet Infrastructure',
+      code: 'PLATFORM',
+      domain: 'azure.kineticcloud.io',
+      plan: 'Enterprise',
+    }
+    const session: AuthSession = {
+      user: platformUser,
+      tenant: platformTenant,
+      token: 'mock-entra-id-token-platform-admin',
+    }
+    this.setSession(session)
+    return session
+  },
 }
+

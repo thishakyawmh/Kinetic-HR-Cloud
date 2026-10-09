@@ -19,7 +19,15 @@ export const AppShell: React.FC = () => {
   const { user, tenant, role, isAuthenticated } = useAuth()
 
   if (!isAuthenticated || !user) {
+    if (location.pathname.startsWith('/platform')) {
+      return <Navigate to="/platform" replace />
+    }
     return <Navigate to="/login" replace />
+  }
+
+  // Strictly guard /platform routes for platform_admin role only
+  if (location.pathname.startsWith('/platform') && role !== 'platform_admin') {
+    return <Navigate to="/platform" replace />
   }
 
   // Fetch balances for quick drawer

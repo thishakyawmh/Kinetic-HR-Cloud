@@ -1,7 +1,7 @@
 import http from 'http'
 import fs from 'fs'
 import path from 'path'
-import { validateOrganization, loginEmployee } from './functions/auth'
+import { validateOrganization, loginEmployee, loginPlatformAdmin } from './functions/auth'
 import {
   getLeaveBalances,
   getLeaveRequests,
@@ -126,6 +126,7 @@ function addRoute(
 // Auth
 addRoute('POST', '/api/auth/organization', validateOrganization)
 addRoute('POST', '/api/auth/login', loginEmployee)
+addRoute('POST', '/api/auth/platform-login', loginPlatformAdmin)
 
 // Leaves
 addRoute('GET', '/api/leaves/balances', getLeaveBalances)

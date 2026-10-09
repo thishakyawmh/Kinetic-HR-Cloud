@@ -47,6 +47,15 @@ import { PlatformDashboard } from '@/pages/platform/PlatformDashboard'
 import { PlatformOrganizations } from '@/pages/platform/PlatformOrganizations'
 import { PlatformSubscriptions } from '@/pages/platform/PlatformSubscriptions'
 import { PlatformSystemHealth } from '@/pages/platform/PlatformSystemHealth'
+import { PlatformLogin } from '@/pages/platform/PlatformLogin'
+
+const PlatformGate: React.FC = () => {
+  const { role, isAuthenticated } = useAuth()
+  if (isAuthenticated && role === 'platform_admin') {
+    return <Navigate to="/platform/dashboard" replace />
+  }
+  return <PlatformLogin />
+}
 
 const RootRedirect: React.FC = () => {
   const { role, isAuthenticated } = useAuth()
@@ -64,9 +73,15 @@ export const AppRoutes: React.FC = () => {
       {/* Public Landing Page */}
       <Route path="/" element={<LandingPage />} />
 
-      {/* Authentication */}
+      {/* Enterprise Company Authentication */}
       <Route path="/login" element={<Login />} />
       <Route path="/login/:companyId" element={<Login />} />
+
+      {/* Dedicated Azure & Cloud Infrastructure Platform Gateway (Bypasses regular login) */}
+      <Route path="/platform" element={<PlatformGate />} />
+      <Route path="/platform/:companyId" element={<PlatformGate />} />
+      <Route path="/platform/login" element={<PlatformLogin />} />
+      <Route path="/login/:companyId/platform" element={<PlatformGate />} />
 
       {/* Main Authenticated Application Layout */}
       <Route element={<AppShell />}>

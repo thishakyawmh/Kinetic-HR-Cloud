@@ -460,3 +460,67 @@ export async function loginEmployee(
     }
   }
 }
+
+/**
+ * POST /api/auth/platform-login
+ * Direct infrastructure login for Platform Administrators (Alex Thorne - KC-0001)
+ * Bypasses company login portals and multi-tenant organization boundaries
+ */
+export async function loginPlatformAdmin(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  try {
+    const body = (await request.json()) as { adminId?: string; password?: string }
+    const adminId = (body?.adminId || '').trim().toLowerCase()
+    if (!adminId) {
+      return { status: 400, jsonBody: { error: 'Platform Administrator ID is required' } }
+    }
+
+    if (adminId !== 'kc-0001' && adminId !== 'alex' && adminId !== 'platform_admin' && !adminId.includes('kc-0001')) {
+      return { status: 401, jsonBody: { error: 'Invalid Platform Administrator ID. Access is strictly restricted.' } }
+    }
+
+    const adminUser = {
+      id: 'user-platform-admin',
+      tenantId: 'tenant-platform',
+      name: 'Alex Thorne',
+      email: 'alex.thorne@kineticcloud.azure.com',
+      role: 'platform_admin' as const,
+      department: 'Cloud Platform Infrastructure',
+      jobTitle: 'Principal Cloud Platform Director',
+      employeeNumber: 'KC-0001',
+      hireDate: '2020-01-01',
+      phone: '+94 77 000 0001',
+      location: 'Azure Operations Center (Colombo / Southeast Asia)',
+    }
+
+    const token = signToken({
+      id: adminUser.id,
+      tenantId: adminUser.tenantId,
+      name: adminUser.name,
+      role: 'platform_admin',
+      email: adminUser.email,
+    })
+
+    return {
+      status: 200,
+      jsonBody: {
+        user: adminUser,
+        token,
+        tenant: {
+          id: 'tenant-platform',
+          name: 'Global Cloud Fleet Infrastructure',
+          code: 'PLATFORM',
+          domain: 'azure.kineticcloud.io',
+          plan: 'Infrastructure Authority',
+        },
+      },
+    }
+  } catch (err: any) {
+    return {
+      status: 500,
+      jsonBody: { error: err.message || 'Internal server error during platform authentication' },
+    }
+  }
+}

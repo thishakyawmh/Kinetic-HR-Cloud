@@ -26,7 +26,37 @@ export async function getLeaveBalances(
       ]
     )
 
-    return { status: 200, jsonBody: balances }
+    const typeNames: Record<string, string> = {
+      annual: 'Annual Leave',
+      casual: 'Casual Leave',
+      medical: 'Medical Leave',
+      sick: 'Medical Leave',
+      maternity: 'Maternity Leave',
+      emergency: 'Emergency Leave',
+      other: 'Other Leave',
+    }
+
+    const normalized = balances.map(b => {
+      const type = (b.code || b.leaveType || 'annual').toLowerCase()
+      const total = Number(b.totalAllowance || b.allocated || 14)
+      const used = Number(b.used || 0)
+      const remaining = Number(b.remaining !== undefined ? b.remaining : Math.max(0, total - used))
+      return {
+        ...b,
+        id: b.id || `bal-${b.userId}-${type}`,
+        leaveTypeId: b.leaveTypeId || b.id || `lt-${type}`,
+        leaveTypeName: b.leaveTypeName || typeNames[type] || `${type.charAt(0).toUpperCase() + type.slice(1)} Leave`,
+        code: type,
+        leaveType: type,
+        totalAllowance: total,
+        allocated: total,
+        used,
+        pending: Number(b.pending || 0),
+        remaining,
+      }
+    })
+
+    return { status: 200, jsonBody: normalized }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
   }
