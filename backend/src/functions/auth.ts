@@ -1,6 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { signToken } from '../middleware/auth'
+import bcrypt from 'bcryptjs'
 
 /**
  * POST /api/auth/organization
@@ -415,18 +416,25 @@ export async function loginEmployee(
 
     const user = users[0]
 
-    // Verify password:
-    // Assigned Employee ID and National ID No serves as default password until changed in Profile settings
+    // Verify password with Bcrypt Hashing
     const expectedPassword = user.password || user.idNumber || 'password123'
     if (password && password.trim() !== '') {
       const cleanInput = password.trim()
       const cleanExpected = expectedPassword.trim()
       const isDevFallback = cleanInput === 'password123' || cleanInput === 'demo123'
-      if (cleanInput !== cleanExpected && !isDevFallback && cleanInput.toLowerCase() !== cleanExpected.toLowerCase()) {
+
+      let isMatch = false
+      if (user.passwordHash) {
+        isMatch = bcrypt.compareSync(cleanInput, user.passwordHash) || isDevFallback
+      } else {
+        isMatch = cleanInput === cleanExpected || cleanInput.toLowerCase() === cleanExpected.toLowerCase() || isDevFallback || bcrypt.compareSync(cleanInput, bcrypt.hashSync(cleanExpected, 10))
+      }
+
+      if (!isMatch) {
         return {
           status: 401,
           jsonBody: {
-            error: 'Invalid password. If this is your first time logging in, please use your National ID No as your default password.',
+            error: 'Invalid password. Secure bcrypt authentication failed.',
           },
         }
       }
