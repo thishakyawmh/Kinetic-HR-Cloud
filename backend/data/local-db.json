@@ -8680,7 +8680,7 @@
       "used": 1,
       "pending": 0,
       "remaining": 19,
-      "updatedAt": "2026-10-09T22:22:51.023Z"
+      "updatedAt": "2026-10-09T22:30:45.074Z"
     },
     {
       "id": "bal-user-kasun-sick",
@@ -8873,10 +8873,10 @@
       "code": "annual",
       "leaveType": "annual",
       "totalAllowance": 20,
-      "used": 4,
+      "used": 3,
       "pending": 0,
-      "remaining": 16,
-      "updatedAt": "2026-10-09T22:22:51.383Z"
+      "remaining": 17,
+      "updatedAt": "2026-10-09T22:30:45.639Z"
     },
     {
       "id": "bal-user-sb-emp-1007-sick",
@@ -8988,8 +8988,8 @@
       "status": "approved",
       "autoApproved": true,
       "createdAt": "2026-10-09T22:12:39.738Z",
-      "updatedAt": "2026-10-09T22:22:50.997Z",
-      "reassignmentSummary": "Responsibility covered by Chamari Bandara (Senior Branch Manager).",
+      "updatedAt": "2026-10-09T22:30:45.044Z",
+      "reassignmentSummary": "Responsibility covered by Dinesh Weerasinghe (Senior Credit Officer).",
       "timeline": [
         {
           "id": "tl-appr-1791584023326",
@@ -9081,6 +9081,83 @@
           "actorName": "Kinetic AI Arbitration Engine",
           "timestamp": "2026-10-09T22:22:50.997Z",
           "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584972102",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:32.102Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584995081",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:55.081Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584998474",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:58.474Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585001915",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:01.915Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585019389",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:19.389Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585023676",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:23.676Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585028575",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:28.575Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585032336",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:32.336Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585036340",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:36.340Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585040903",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:40.903Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Chamari Bandara assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585045044",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:45.044Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
         }
       ]
     },
@@ -9100,8 +9177,8 @@
       "status": "approved",
       "autoApproved": true,
       "createdAt": "2026-10-09T22:17:13.164Z",
-      "updatedAt": "2026-10-09T22:22:51.109Z",
-      "reassignmentSummary": "Responsibility covered by Nuwan Jayasuriya (Foreign Exchange Specialist).",
+      "updatedAt": "2026-10-09T22:30:45.157Z",
+      "reassignmentSummary": "Responsibility covered by Dinesh Weerasinghe (Senior Credit Officer).",
       "timeline": [
         {
           "id": "tl-appr-1791584248860",
@@ -9179,6 +9256,83 @@
           "actorName": "Kinetic AI Arbitration Engine",
           "timestamp": "2026-10-09T22:22:51.109Z",
           "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584972251",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:32.251Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584995147",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:55.147Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584998559",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:58.559Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585002037",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:02.037Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585019465",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:19.465Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585023816",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:23.816Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585028698",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:28.698Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585032460",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:32.460Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585036486",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:36.486Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585041025",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:41.025Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585045157",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:45.157Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
         }
       ]
     },
@@ -9198,7 +9352,7 @@
       "status": "approved",
       "autoApproved": true,
       "createdAt": "2026-10-09T22:17:28.749Z",
-      "updatedAt": "2026-10-09T22:22:51.219Z",
+      "updatedAt": "2026-10-09T22:30:45.309Z",
       "reassignmentSummary": "Responsibility covered by Dinesh Weerasinghe (Senior Credit Officer).",
       "timeline": [
         {
@@ -9263,6 +9417,83 @@
           "actorName": "Kinetic AI Arbitration Engine",
           "timestamp": "2026-10-09T22:22:51.219Z",
           "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584972374",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:32.374Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584995228",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:55.228Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584998647",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:58.647Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585002167",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:02.167Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585019531",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:19.531Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585023940",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:23.940Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585028859",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:28.859Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585032589",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:32.589Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Kasun Perera assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585036630",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:36.630Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585041145",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:41.145Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585045309",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:45.309Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
         }
       ]
     },
@@ -9282,8 +9513,8 @@
       "status": "approved",
       "autoApproved": true,
       "createdAt": "2026-10-09T22:20:01.823Z",
-      "updatedAt": "2026-10-09T22:22:51.346Z",
-      "reassignmentSummary": "Responsibility covered by Nuwan Jayasuriya (Foreign Exchange Specialist).",
+      "updatedAt": "2026-10-09T22:30:45.438Z",
+      "reassignmentSummary": "Responsibility covered by Dinesh Weerasinghe (Senior Credit Officer).",
       "timeline": [
         {
           "id": "tl-appr-1791584484126",
@@ -9333,6 +9564,83 @@
           "actorName": "Kinetic AI Arbitration Engine",
           "timestamp": "2026-10-09T22:22:51.346Z",
           "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584972502",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:32.502Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584995302",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:55.302Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584998728",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:58.728Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585002321",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:02.321Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585019620",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:19.620Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585024065",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:24.065Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585028989",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:28.989Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585032753",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:32.753Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585036766",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:36.766Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585041269",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:41.269Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585045438",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:45.438Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
         }
       ]
     },
@@ -9352,7 +9660,87 @@
       "status": "approved",
       "autoApproved": true,
       "createdAt": "2026-10-09T22:22:50.941Z",
-      "updatedAt": "2026-10-09T22:22:50.941Z"
+      "updatedAt": "2026-10-09T22:30:45.603Z",
+      "reassignmentSummary": "Responsibility covered by Dinesh Weerasinghe (Senior Credit Officer).",
+      "timeline": [
+        {
+          "id": "tl-appr-1791584972647",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:32.647Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584995383",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:55.383Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791584998811",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:29:58.811Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585002491",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:02.491Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585019705",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:19.705Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Nuwan Jayasuriya assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585024185",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:24.185Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585029169",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:29.169Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585032883",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:32.883Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585036902",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:36.902Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585041397",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:41.397Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Thilini Silva assigned on-call duty coverage."
+        },
+        {
+          "id": "tl-appr-1791585045603",
+          "action": "approved",
+          "actorName": "Kinetic AI Arbitration Engine",
+          "timestamp": "2026-10-09T22:30:45.603Z",
+          "comment": "AI Priority Arbitration: First annual leave request approved. Staffing threshold satisfied. Dinesh Weerasinghe assigned on-call duty coverage."
+        }
+      ]
     }
   ],
   "attendance": [
@@ -67128,6 +67516,1059 @@
       "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
       "read": false,
       "createdAt": "2026-10-09T22:22:51.453Z"
+    },
+    {
+      "id": "notif-dinuka-1791584972185-86",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.185Z"
+    },
+    {
+      "id": "notif-rep-1791584972219-99",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.219Z"
+    },
+    {
+      "id": "notif-dinuka-1791584972314-539",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.314Z"
+    },
+    {
+      "id": "notif-rep-1791584972341-476",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.341Z"
+    },
+    {
+      "id": "notif-dinuka-1791584972440-644",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.440Z"
+    },
+    {
+      "id": "notif-rep-1791584972470-957",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.470Z"
+    },
+    {
+      "id": "notif-dinuka-1791584972560-772",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.560Z"
+    },
+    {
+      "id": "notif-rep-1791584972602-490",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.602Z"
+    },
+    {
+      "id": "notif-dinuka-1791584972723-372",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.723Z"
+    },
+    {
+      "id": "notif-rep-1791584972763-80",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:32.763Z"
+    },
+    {
+      "id": "notif-dinuka-1791584995115-19",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.115Z"
+    },
+    {
+      "id": "notif-rep-1791584995130-224",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.130Z"
+    },
+    {
+      "id": "notif-dinuka-1791584995186-785",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.186Z"
+    },
+    {
+      "id": "notif-rep-1791584995207-49",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.207Z"
+    },
+    {
+      "id": "notif-dinuka-1791584995265-604",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.265Z"
+    },
+    {
+      "id": "notif-rep-1791584995283-438",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.283Z"
+    },
+    {
+      "id": "notif-dinuka-1791584995338-503",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.338Z"
+    },
+    {
+      "id": "notif-rep-1791584995361-744",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.361Z"
+    },
+    {
+      "id": "notif-dinuka-1791584995425-265",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.425Z"
+    },
+    {
+      "id": "notif-rep-1791584995445-795",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:55.445Z"
+    },
+    {
+      "id": "notif-dinuka-1791584998515-388",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.516Z"
+    },
+    {
+      "id": "notif-rep-1791584998535-719",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.535Z"
+    },
+    {
+      "id": "notif-dinuka-1791584998606-923",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.606Z"
+    },
+    {
+      "id": "notif-rep-1791584998626-703",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.626Z"
+    },
+    {
+      "id": "notif-dinuka-1791584998685-179",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.685Z"
+    },
+    {
+      "id": "notif-rep-1791584998707-914",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.707Z"
+    },
+    {
+      "id": "notif-dinuka-1791584998768-669",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.768Z"
+    },
+    {
+      "id": "notif-rep-1791584998789-488",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.789Z"
+    },
+    {
+      "id": "notif-dinuka-1791584998854-413",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.854Z"
+    },
+    {
+      "id": "notif-rep-1791584998877-795",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:29:58.877Z"
+    },
+    {
+      "id": "notif-dinuka-1791585001977-159",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:01.977Z"
+    },
+    {
+      "id": "notif-rep-1791585002007-723",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.007Z"
+    },
+    {
+      "id": "notif-dinuka-1791585002104-622",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.104Z"
+    },
+    {
+      "id": "notif-rep-1791585002135-931",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.135Z"
+    },
+    {
+      "id": "notif-dinuka-1791585002233-752",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.233Z"
+    },
+    {
+      "id": "notif-rep-1791585002271-305",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.271Z"
+    },
+    {
+      "id": "notif-dinuka-1791585002407-779",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.407Z"
+    },
+    {
+      "id": "notif-rep-1791585002450-186",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.450Z"
+    },
+    {
+      "id": "notif-dinuka-1791585002564-692",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.564Z"
+    },
+    {
+      "id": "notif-rep-1791585002602-549",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:02.602Z"
+    },
+    {
+      "id": "notif-rel-1791585019330",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "ℹ️ Duty Coverage Released",
+      "message": "Scheduled annual leave plan for Dinuka Jayakody has been cancelled. You are released from duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.330Z"
+    },
+    {
+      "id": "notif-dinuka-1791585019432-661",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.432Z"
+    },
+    {
+      "id": "notif-rep-1791585019450-698",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.450Z"
+    },
+    {
+      "id": "notif-dinuka-1791585019500-213",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.500Z"
+    },
+    {
+      "id": "notif-rep-1791585019515-312",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.515Z"
+    },
+    {
+      "id": "notif-dinuka-1791585019569-974",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.569Z"
+    },
+    {
+      "id": "notif-rep-1791585019593-108",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.593Z"
+    },
+    {
+      "id": "notif-dinuka-1791585019664-780",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.664Z"
+    },
+    {
+      "id": "notif-rep-1791585019684-288",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.685Z"
+    },
+    {
+      "id": "notif-dinuka-1791585019750-491",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Nuwan Jayasuriya has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.750Z"
+    },
+    {
+      "id": "notif-rep-1791585019773-732",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-nuwan",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:19.773Z"
+    },
+    {
+      "id": "notif-rel-1791585023600",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "ℹ️ Duty Coverage Released",
+      "message": "Scheduled annual leave plan for Dinuka Jayakody has been cancelled. You are released from duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:23.600Z"
+    },
+    {
+      "id": "notif-dinuka-1791585023748-360",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:23.748Z"
+    },
+    {
+      "id": "notif-rep-1791585023781-35",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:23.781Z"
+    },
+    {
+      "id": "notif-dinuka-1791585023879-263",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:23.879Z"
+    },
+    {
+      "id": "notif-rep-1791585023909-687",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:23.909Z"
+    },
+    {
+      "id": "notif-dinuka-1791585024002-662",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:24.002Z"
+    },
+    {
+      "id": "notif-rep-1791585024034-175",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:24.034Z"
+    },
+    {
+      "id": "notif-dinuka-1791585024124-917",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:24.124Z"
+    },
+    {
+      "id": "notif-rep-1791585024154-468",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:24.154Z"
+    },
+    {
+      "id": "notif-dinuka-1791585024248-584",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:24.248Z"
+    },
+    {
+      "id": "notif-rep-1791585024280-284",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:24.280Z"
+    },
+    {
+      "id": "notif-rel-1791585028502",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "ℹ️ Duty Coverage Released",
+      "message": "Scheduled annual leave plan for Dinuka Jayakody has been cancelled. You are released from duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:28.502Z"
+    },
+    {
+      "id": "notif-dinuka-1791585028637-916",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:28.637Z"
+    },
+    {
+      "id": "notif-rep-1791585028668-400",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:28.668Z"
+    },
+    {
+      "id": "notif-dinuka-1791585028764-918",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:28.764Z"
+    },
+    {
+      "id": "notif-rep-1791585028796-161",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:28.796Z"
+    },
+    {
+      "id": "notif-dinuka-1791585028924-825",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:28.924Z"
+    },
+    {
+      "id": "notif-rep-1791585028957-490",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:28.957Z"
+    },
+    {
+      "id": "notif-dinuka-1791585029051-518",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:29.051Z"
+    },
+    {
+      "id": "notif-rep-1791585029084-387",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:29.084Z"
+    },
+    {
+      "id": "notif-dinuka-1791585029236-228",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:29.236Z"
+    },
+    {
+      "id": "notif-rep-1791585029268-729",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:29.268Z"
+    },
+    {
+      "id": "notif-rel-1791585032267",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "ℹ️ Duty Coverage Released",
+      "message": "Scheduled annual leave plan for Dinuka Jayakody has been cancelled. You are released from duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.267Z"
+    },
+    {
+      "id": "notif-dinuka-1791585032400-45",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.400Z"
+    },
+    {
+      "id": "notif-rep-1791585032430-465",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.430Z"
+    },
+    {
+      "id": "notif-dinuka-1791585032525-864",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.525Z"
+    },
+    {
+      "id": "notif-rep-1791585032559-639",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.559Z"
+    },
+    {
+      "id": "notif-dinuka-1791585032654-405",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Kasun Perera has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.654Z"
+    },
+    {
+      "id": "notif-rep-1791585032687-606",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.687Z"
+    },
+    {
+      "id": "notif-dinuka-1791585032821-910",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.821Z"
+    },
+    {
+      "id": "notif-rep-1791585032853-777",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.853Z"
+    },
+    {
+      "id": "notif-dinuka-1791585032947-809",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.947Z"
+    },
+    {
+      "id": "notif-rep-1791585032982-917",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:32.982Z"
+    },
+    {
+      "id": "notif-rel-1791585036267",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "ℹ️ Duty Coverage Released",
+      "message": "Scheduled annual leave plan for Dinuka Jayakody has been cancelled. You are released from duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.267Z"
+    },
+    {
+      "id": "notif-dinuka-1791585036413-253",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.413Z"
+    },
+    {
+      "id": "notif-rep-1791585036450-466",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.450Z"
+    },
+    {
+      "id": "notif-dinuka-1791585036563-956",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.563Z"
+    },
+    {
+      "id": "notif-rep-1791585036598-268",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.598Z"
+    },
+    {
+      "id": "notif-dinuka-1791585036700-42",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.700Z"
+    },
+    {
+      "id": "notif-rep-1791585036734-93",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.734Z"
+    },
+    {
+      "id": "notif-dinuka-1791585036834-726",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.834Z"
+    },
+    {
+      "id": "notif-rep-1791585036867-691",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.867Z"
+    },
+    {
+      "id": "notif-dinuka-1791585036968-138",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:36.968Z"
+    },
+    {
+      "id": "notif-rep-1791585037006-658",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:37.006Z"
+    },
+    {
+      "id": "notif-rel-1791585040835",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "ℹ️ Duty Coverage Released",
+      "message": "Scheduled annual leave plan for Dinuka Jayakody has been cancelled. You are released from duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:40.835Z"
+    },
+    {
+      "id": "notif-dinuka-1791585040968-958",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Chamari Bandara has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:40.968Z"
+    },
+    {
+      "id": "notif-rep-1791585040997-237",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-chamari",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:40.997Z"
+    },
+    {
+      "id": "notif-dinuka-1791585041082-582",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.082Z"
+    },
+    {
+      "id": "notif-rep-1791585041112-287",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.112Z"
+    },
+    {
+      "id": "notif-dinuka-1791585041205-696",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.205Z"
+    },
+    {
+      "id": "notif-rep-1791585041237-276",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.237Z"
+    },
+    {
+      "id": "notif-dinuka-1791585041333-832",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.333Z"
+    },
+    {
+      "id": "notif-rep-1791585041364-327",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.364Z"
+    },
+    {
+      "id": "notif-dinuka-1791585041482-443",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Thilini Silva has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.482Z"
+    },
+    {
+      "id": "notif-rep-1791585041515-568",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-thilini",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:41.515Z"
+    },
+    {
+      "id": "notif-rel-1791585044978",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "ℹ️ Duty Coverage Released",
+      "message": "Scheduled annual leave plan for Dinuka Jayakody has been cancelled. You are released from duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:44.978Z"
+    },
+    {
+      "id": "notif-dinuka-1791585045102-666",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-kasun",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.102Z"
+    },
+    {
+      "id": "notif-rep-1791585045130-328",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Kasun Perera on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.130Z"
+    },
+    {
+      "id": "notif-dinuka-1791585045220-741",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.220Z"
+    },
+    {
+      "id": "notif-rep-1791585045250-307",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.250Z"
+    },
+    {
+      "id": "notif-dinuka-1791585045374-37",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-13 to 2026-10-13) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.374Z"
+    },
+    {
+      "id": "notif-rep-1791585045405-402",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-13 to 2026-10-13 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.405Z"
+    },
+    {
+      "id": "notif-dinuka-1791585045505-496",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.505Z"
+    },
+    {
+      "id": "notif-rep-1791585045538-218",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.538Z"
+    },
+    {
+      "id": "notif-dinuka-1791585045679-393",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-sb-emp-1007",
+      "title": "🎉 AI Priority Handoff: Leave Approved",
+      "message": "Your Annual Leave request (2026-10-11 to 2026-10-11) has been approved by Kinetic AI Arbitration! Dinesh Weerasinghe has been assigned on-call duty coverage.",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.679Z"
+    },
+    {
+      "id": "notif-rep-1791585045716-20",
+      "tenantId": "tenant-sampath",
+      "recipientId": "user-dinesh",
+      "title": "🚨 Emergency On-Call Duty Assignment",
+      "message": "You have been assigned on-call duty coverage for 2026-10-11 to 2026-10-11 (Dinuka Jayakody on approved leave). (In-app notification dispatched — ACS Voice Gateway Simulated).",
+      "read": false,
+      "createdAt": "2026-10-09T22:30:45.716Z"
     }
   ],
   "audit_logs": [
@@ -67641,7 +69082,7 @@
       "assignedBackupId": "user-dinesh",
       "assignedBackupName": "Dinesh Weerasinghe",
       "assignedBackupRole": "Senior Credit Officer",
-      "createdAt": "2026-10-09T22:21:48.867Z",
+      "createdAt": "2026-10-09T22:30:45.282Z",
       "syncState": "REALTIME_AZURE_CALENDAR_IN_SYNC"
     },
     {
@@ -67661,7 +69102,7 @@
       "assignedBackupId": "user-kasun",
       "assignedBackupName": "Kasun Perera",
       "assignedBackupRole": "Senior Credit Officer",
-      "createdAt": "2026-10-09T22:21:42.186Z",
+      "createdAt": "2026-10-09T22:30:32.722Z",
       "syncState": "REALTIME_AZURE_CALENDAR_IN_SYNC"
     },
     {
@@ -67702,7 +69143,7 @@
       "assignedBackupId": "user-dinesh",
       "assignedBackupName": "Dinesh Weerasinghe",
       "assignedBackupRole": "Senior Credit Officer",
-      "createdAt": "2026-10-09T22:21:49.225Z",
+      "createdAt": "2026-10-09T22:30:45.571Z",
       "syncState": "REALTIME_AZURE_CALENDAR_IN_SYNC"
     },
     {
@@ -67716,13 +69157,34 @@
       "endDate": "2026-10-11",
       "days": 1,
       "notes": "Annual Leave scheduled by Dinuka Jayakody",
-      "status": "confirmed",
+      "status": "cancelled",
       "type": "Annual Leave",
       "leaveTypeCode": "annual",
       "assignedBackupId": "user-thilini",
       "assignedBackupName": "Thilini Silva",
       "assignedBackupRole": "Treasury Operations Manager",
       "createdAt": "2026-10-09T22:22:50.893Z",
+      "syncState": "REALTIME_AZURE_CALENDAR_IN_SYNC",
+      "updatedAt": "2026-10-09T22:30:28.449Z"
+    },
+    {
+      "id": "plan-auto-leave-plan-1791584570941",
+      "tenantId": "tenant-sampath",
+      "employeeId": "user-sb-emp-1007",
+      "employeeName": "Dinuka Jayakody",
+      "employeeRole": "Senior Credit Officer",
+      "department": "Engineering",
+      "startDate": "2026-10-11",
+      "endDate": "2026-10-11",
+      "days": 1,
+      "notes": "Approved Annual Leave — On-Call Duty Coverage assigned to Dinesh Weerasinghe",
+      "status": "confirmed",
+      "type": "Annual Leave",
+      "leaveTypeCode": "annual",
+      "assignedBackupId": "user-dinesh",
+      "assignedBackupName": "Dinesh Weerasinghe",
+      "assignedBackupRole": "Senior Credit Officer",
+      "createdAt": "2026-10-09T22:30:45.753Z",
       "syncState": "REALTIME_AZURE_CALENDAR_IN_SYNC"
     }
   ]
