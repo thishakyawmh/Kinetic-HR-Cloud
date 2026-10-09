@@ -497,9 +497,6 @@ function _oldGenerateSeedDataset() {
   }
 }
 
-import fs from 'fs'
-import path from 'path'
-
 const LOCAL_DB_FILE = path.resolve(__dirname, '../../../data/local-db.json')
 
 function loadLocalDataFromDisk(): Record<string, any[]> {

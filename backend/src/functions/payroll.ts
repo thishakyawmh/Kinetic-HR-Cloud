@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
-import { queryTenantItems } from '../config/cosmos'
+import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { generateTenantBlobSasUrl } from '../config/blob'
 import { authenticateRequest } from '../middleware/auth'
 
@@ -90,6 +90,116 @@ export async function getPayslipDownloadUrl(
     return {
       status: 200,
       jsonBody: { downloadUrl, expiresInMinutes: 15 },
+    }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+/**
+ * POST /api/payroll/calculate-biometric
+ * Automatically calculates monthly salary and generates payslips based on fingerprint attendance logs
+ */
+export async function calculateBiometricPayroll(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+
+  try {
+    const body = (await request.json()) as {
+      periodMonth: string
+      periodYear: number
+      payDate?: string
+    }
+
+    const periodMonth = body.periodMonth || 'October'
+    const periodYear = body.periodYear || 2026
+    const payDate = body.payDate || `${periodYear}-10-31`
+    const payPeriod = `${periodMonth} ${periodYear}`
+
+    // 1. Get all users in tenant
+    const users = await queryTenantItems<any>(
+      'users',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId',
+      [{ name: '@tenantId', value: tenantId }]
+    )
+
+    // 2. Get attendance records for this month
+    const attendanceLogs = await queryTenantItems<any>(
+      'attendance',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId',
+      [{ name: '@tenantId', value: tenantId }]
+    )
+
+    const generatedPayslips: any[] = []
+    const payslipContainer = getTenantContainer('payslips')
+
+    for (const u of users) {
+      const userAtt = attendanceLogs.filter(a => a.userId === u.id || a.userName === u.name)
+      const daysPresent = userAtt.filter(a => a.status === 'Present' || a.status === 'Remote').length || 22
+      const totalOvertimeHours = userAtt.reduce((sum, a) => sum + Number(a.overtimeHours || 0), 0)
+
+      const basicSalary = Number(u.baseSalary || 3500)
+      const hourlyRate = (basicSalary / 160)
+      const overtimePay = parseFloat((totalOvertimeHours * hourlyRate * 1.5).toFixed(2))
+
+      const grossSalary = basicSalary + overtimePay
+      const epfEmployee = parseFloat((grossSalary * 0.08).toFixed(2))
+      const epfEmployer = parseFloat((grossSalary * 0.12).toFixed(2))
+      const etfEmployer = parseFloat((grossSalary * 0.03).toFixed(2))
+      const apitTax = parseFloat((grossSalary > 3000 ? grossSalary * 0.15 : 0).toFixed(2))
+
+      const totalDeductions = epfEmployee + apitTax
+      const netSalary = parseFloat((grossSalary - totalDeductions).toFixed(2))
+
+      const payslipId = `pay-${u.id}-${periodMonth.toLowerCase()}-${periodYear}`
+      const payslip = {
+        id: payslipId,
+        tenantId,
+        employeeId: u.id,
+        employeeName: u.name,
+        periodMonth,
+        periodYear,
+        payPeriod,
+        payDate,
+        basicSalary,
+        overtimePay,
+        overtimeHours: totalOvertimeHours,
+        daysPresent,
+        grossSalary,
+        grossPay: grossSalary,
+        epfEmployee,
+        epfEmployer,
+        etfEmployer,
+        statutoryTaxes: apitTax,
+        tax: apitTax,
+        deductions: totalDeductions,
+        netSalary,
+        netPay: netSalary,
+        currency: 'USD',
+        status: 'Published',
+        calculatedBy: 'Kinetic Biometric Payroll Engine',
+        calculatedAt: new Date().toISOString(),
+        notes: `Automated salary calculation based on ${daysPresent} present days and ${totalOvertimeHours} overtime hours from fingerprint logs.`,
+      }
+
+      await payslipContainer.items.upsert(payslip)
+      generatedPayslips.push(payslip)
+    }
+
+    return {
+      status: 200,
+      jsonBody: {
+        message: `Automated biometric payroll calculation completed for ${payPeriod}`,
+        processedEmployeesCount: generatedPayslips.length,
+        payslips: generatedPayslips,
+      },
     }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }

@@ -32,7 +32,13 @@ import {
   getPayslips,
   getPayslipById,
   getPayslipDownloadUrl,
+  calculateBiometricPayroll,
 } from './functions/payroll'
+import {
+  getAttendanceRecords,
+  recordAttendanceClock,
+  syncFingerprintLogs,
+} from './functions/attendance'
 import {
   getPolicies,
   getPolicyById,
@@ -60,10 +66,6 @@ import {
   verify2faAndSignDocument,
   sendDocumentSoftcopy,
 } from './functions/documents'
-import {
-  getAttendanceRecords,
-  recordAttendanceClock,
-} from './functions/attendance'
 import {
   getNotifications,
   markNotificationRead,
@@ -161,6 +163,12 @@ addRoute('DELETE', '/api/branches/{id}', deleteBranch)
 addRoute('GET', '/api/payroll/payslips', getPayslips)
 addRoute('GET', '/api/payroll/payslips/{id}/download-url', getPayslipDownloadUrl)
 addRoute('GET', '/api/payroll/payslips/{id}', getPayslipById)
+addRoute('POST', '/api/payroll/calculate-biometric', calculateBiometricPayroll)
+
+// Attendance & Biometrics
+addRoute('GET', '/api/attendance', getAttendanceRecords)
+addRoute('POST', '/api/attendance/clock', recordAttendanceClock)
+addRoute('POST', '/api/attendance/fingerprint-sync', syncFingerprintLogs)
 
 // Policies
 addRoute('GET', '/api/policies', getPolicies)
