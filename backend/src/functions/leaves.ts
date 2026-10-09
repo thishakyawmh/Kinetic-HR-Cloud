@@ -660,61 +660,11 @@ export async function getLeavePlans(
 
   const tenantId = auth.user!.tenantId
   try {
-    let plans = await queryTenantItems<any>('leave_plans', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId', [
+    const plans = await queryTenantItems<any>('leave_plans', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.status != "cancelled"', [
       { name: '@tenantId', value: tenantId },
     ])
 
-    // If no plans in DB yet, initialize realistic default scenario (Marcus leave Oct 6-10 covered by Alice)
-    if (!plans || plans.length === 0) {
-      const defaultScenarioPlans = [
-        {
-          id: 'plan-kasun-oct',
-          tenantId,
-          employeeId: 'user-kasun',
-          employeeName: 'Kasun Perera',
-          employeeRole: 'Senior Credit Officer',
-          department: 'Retail Banking & Branches',
-          startDate: '2026-10-06',
-          endDate: '2026-10-10',
-          days: 5,
-          notes: 'Approved Annual Leave — Credit Underwriting Duty Coverage by Dinesh Weerasinghe',
-          status: 'confirmed',
-          type: 'Annual Leave',
-          assignedBackupId: 'user-dinesh',
-          assignedBackupName: 'Dinesh Weerasinghe',
-          assignedBackupRole: 'Senior Credit Officer',
-          createdAt: new Date().toISOString(),
-          syncState: 'REALTIME_AZURE_CALENDAR_IN_SYNC',
-        },
-        {
-          id: 'plan-nuwan-oct',
-          tenantId,
-          employeeId: 'user-nuwan',
-          employeeName: 'Nuwan Jayasuriya',
-          employeeRole: 'Foreign Exchange Specialist',
-          department: 'Treasury & Investment',
-          startDate: '2026-10-19',
-          endDate: '2026-10-21',
-          days: 3,
-          notes: 'Annual Leave Plan — Foreign Exchange Settlement Coverage',
-          status: 'confirmed',
-          type: 'Annual Leave',
-          assignedBackupId: 'user-thilini',
-          assignedBackupName: 'Thilini Silva',
-          assignedBackupRole: 'Treasury Operations Manager',
-          createdAt: new Date().toISOString(),
-          syncState: 'REALTIME_AZURE_CALENDAR_IN_SYNC',
-        },
-      ]
-
-      const planContainer = getTenantContainer('leave_plans')
-      for (const p of defaultScenarioPlans) {
-        await planContainer.items.upsert(p)
-      }
-      plans = defaultScenarioPlans
-    }
-
-    return { status: 200, jsonBody: plans }
+    return { status: 200, jsonBody: plans || [] }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
   }
@@ -762,6 +712,13 @@ export async function createLeavePlan(
       { name: '@tenantId', value: tenantId },
     ])
 
+    // Helper: Check if candidate is on leave during requested dates (in either leaves or leave_plans)
+    const isCandidateOnLeave = (candId: string) => {
+      const inLeaves = allLeaves.some(l => l.employeeId === candId && l.status !== 'cancelled' && datesOverlap(l.startDate, l.endDate, startDate, endDate))
+      const inPlans = allPlans.some(p => p.employeeId === candId && p.status !== 'cancelled' && datesOverlap(p.startDate, p.endDate, startDate, endDate))
+      return inLeaves || inPlans
+    }
+
     // Cascading Candidate Backup Search:
     // Level 1: Same job title & same department
     let candidates = allUsers.filter(u => u.id !== userId && u.jobTitle === userRole && u.department === userDept)
@@ -781,20 +738,25 @@ export async function createLeavePlan(
       candidates = allUsers.filter(u => u.id !== userId)
     }
 
-    // Select candidate who is NOT on leave during these dates
+    // Select candidate who is NOT on leave AND NOT already assigned another backup duty during these dates
     let eligibleBackup = candidates.find(cand => {
-      const isOnLeave = allLeaves.some(l => l.employeeId === cand.id && datesOverlap(l.startDate, l.endDate, startDate, endDate))
-      const isBackup = allPlans.some(p => p.assignedBackupId === cand.id && datesOverlap(p.startDate, p.endDate, startDate, endDate))
+      const isOnLeave = isCandidateOnLeave(cand.id)
+      const isBackup = allPlans.some(p => p.assignedBackupId === cand.id && p.status !== 'cancelled' && datesOverlap(p.startDate, p.endDate, startDate, endDate))
       return !isOnLeave && !isBackup
     })
 
-    // Fallback if everyone has high duty load: Pick candidate not on leave
+    // Fallback: Pick candidate not on leave (even if they already have another backup duty)
     if (!eligibleBackup && candidates.length > 0) {
-      eligibleBackup = candidates.find(cand => {
-        const isOnLeave = allLeaves.some(l => l.employeeId === cand.id && datesOverlap(l.startDate, l.endDate, startDate, endDate))
-        return !isOnLeave
-      }) || candidates[0]
+      eligibleBackup = candidates.find(cand => !isCandidateOnLeave(cand.id))
     }
+
+    // CRITICAL: If no candidate is available without being on leave themselves,
+    // eligibleBackup remains undefined! DO NOT force assign someone who is on leave!
+
+    const rawType = ((body as any).type || (body as any).leaveTypeCode || 'Annual Leave').toString()
+    const isCasual = rawType.toLowerCase().includes('casual')
+    const leaveTypeCode = isCasual ? 'casual' : 'annual'
+    const leaveTypeName = isCasual ? 'Casual Leave' : 'Annual Leave'
 
     const planId = `plan-${Date.now()}`
     const planItem = {
@@ -807,9 +769,10 @@ export async function createLeavePlan(
       startDate,
       endDate,
       days: daysCount,
-      notes: body.notes || 'Annual leave plan scheduled',
+      notes: body.notes || `${leaveTypeName} scheduled`,
       status: eligibleBackup ? 'confirmed' : 'Coverage Needed',
-      type: 'Annual Leave',
+      type: leaveTypeName,
+      leaveTypeCode,
       assignedBackupId: eligibleBackup ? eligibleBackup.id : '',
       assignedBackupName: eligibleBackup ? eligibleBackup.name : 'Coverage Needed — Manager Action Required',
       assignedBackupRole: eligibleBackup ? (eligibleBackup.jobTitle || userRole) : userRole,
@@ -820,23 +783,24 @@ export async function createLeavePlan(
     const container = getTenantContainer('leave_plans')
     await container.items.upsert(planItem)
 
-    // Automatically Update Authoritative Leave Balance in Database
+    // Automatically Update Authoritative Leave Balance in Database (Annual or Casual)
     try {
       const balContainer = getTenantContainer('leave_balances')
       const balances = await queryTenantItems<any>(
         'leave_balances',
         tenantId,
-        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = "annual" OR c.leaveType = "annual")',
+        'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = @code OR c.leaveType = @code)',
         [
           { name: '@tenantId', value: tenantId },
           { name: '@userId', value: userId },
+          { name: '@code', value: leaveTypeCode },
         ]
       )
 
       if (balances.length > 0) {
         const bal = balances[0]
         bal.used = (bal.used || 0) + daysCount
-        bal.remaining = Math.max(0, (bal.totalAllowance || 20) - bal.used - (bal.pending || 0))
+        bal.remaining = Math.max(0, (bal.totalAllowance || (isCasual ? 7 : 20)) - bal.used - (bal.pending || 0))
         bal.updatedAt = new Date().toISOString()
         await balContainer.items.upsert(bal)
       }
@@ -849,13 +813,13 @@ export async function createLeavePlan(
         employeeId: userId,
         employeeName: userName,
         department: userDept,
-        leaveTypeId: 'lt-annual',
-        leaveTypeName: 'Annual Leave',
-        leaveTypeCode: 'annual',
+        leaveTypeId: isCasual ? 'lt-casual' : 'lt-annual',
+        leaveTypeName,
+        leaveTypeCode,
         startDate,
         endDate,
         requestedDays: daysCount,
-        reason: body.notes || 'Annual leave plan scheduled on team calendar',
+        reason: body.notes || `${leaveTypeName} plan scheduled on team calendar`,
         status: 'approved',
         autoApproved: true,
         createdAt: new Date().toISOString(),
@@ -866,6 +830,108 @@ export async function createLeavePlan(
     }
 
     return { status: 201, jsonBody: planItem }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+/**
+ * POST /api/leaves/auto-casual-leave
+ * Auto-registers Casual Leave for biometric fingerprint unannounced absence and deducts 1 day from Casual Leave balance
+ */
+export async function triggerAutoCasualLeave(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+  const userId = auth.user!.id
+  const userName = auth.user!.name
+  const userDept = auth.user!.department || 'Banking Operations'
+  const userRole = auth.user!.jobTitle || 'Senior Credit Officer'
+
+  try {
+    const body = (await request.json().catch(() => ({}))) as any
+    const dateStr = body.date || new Date().toISOString().split('T')[0]
+
+    // 1. Create Casual Leave item in `leaves` container
+    const leavesContainer = getTenantContainer('leaves')
+    const leaveId = `leave-casual-auto-${Date.now()}`
+    const leaveRecord = {
+      id: leaveId,
+      tenantId,
+      employeeId: userId,
+      employeeName: userName,
+      department: userDept,
+      leaveTypeId: 'lt-casual',
+      leaveTypeName: 'Casual Leave',
+      leaveTypeCode: 'casual',
+      startDate: dateStr,
+      endDate: dateStr,
+      requestedDays: 1,
+      reason: '1-Hour Unannounced Absence — Biometric Fingerprint Auto Casual Leave',
+      status: 'approved',
+      autoApproved: true,
+      isCasualAbsence: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    await leavesContainer.items.create(leaveRecord)
+
+    // 2. Create Casual Leave Plan item in `leave_plans` container so it displays on Team Calendar
+    const plansContainer = getTenantContainer('leave_plans')
+    const planItem = {
+      id: `plan-casual-${Date.now()}`,
+      tenantId,
+      employeeId: userId,
+      employeeName: userName,
+      employeeRole: userRole,
+      department: userDept,
+      startDate: dateStr,
+      endDate: dateStr,
+      days: 1,
+      notes: 'Biometric fingerprint unannounced absence auto-marked as Casual Leave',
+      status: 'confirmed',
+      type: 'Casual Leave',
+      leaveTypeCode: 'casual',
+      isCasualAbsence: true,
+      assignedBackupId: '',
+      assignedBackupName: 'System Duty Backup Active',
+      createdAt: new Date().toISOString(),
+    }
+    await plansContainer.items.upsert(planItem)
+
+    // 3. Deduct 1 day from Casual Leave Balance in `leave_balances` container
+    const balContainer = getTenantContainer('leave_balances')
+    const balances = await queryTenantItems<any>(
+      'leave_balances',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = "casual" OR c.leaveType = "casual")',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@userId', value: userId },
+      ]
+    )
+
+    let casualBal = balances[0]
+    if (casualBal) {
+      casualBal.used = (casualBal.used || 0) + 1
+      casualBal.remaining = Math.max(0, (casualBal.totalAllowance || 7) - casualBal.used - (casualBal.pending || 0))
+      casualBal.updatedAt = new Date().toISOString()
+      await balContainer.items.upsert(casualBal)
+    }
+
+    return {
+      status: 201,
+      jsonBody: {
+        message: 'Unannounced absence successfully auto-marked as Casual Leave. 1 day deducted from Casual Leave Balance.',
+        leaveRecord,
+        planItem,
+        updatedBalance: casualBal,
+      },
+    }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
   }

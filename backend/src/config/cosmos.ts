@@ -262,7 +262,7 @@ function _oldGenerateSeedDataset() {
   const leave_balances: any[] = []
   users.forEach((u) => {
     leaveTypes.forEach((lt) => {
-      const used = (u.employeeNumber.charCodeAt(3) || 5) % 8
+      const used = 0
       leave_balances.push({
         id: `bal-${u.id}-${lt.code}`,
         tenantId: u.tenantId,
@@ -270,51 +270,13 @@ function _oldGenerateSeedDataset() {
         leaveTypeName: lt.name,
         code: lt.code,
         totalAllowance: lt.allowance,
-        used,
-        remaining: lt.allowance - used,
+        used: 0,
+        remaining: lt.allowance,
       })
     })
   })
 
   const leaves: any[] = []
-  const statuses: Array<'pending' | 'approved' | 'rejected' | 'cancelled'> = ['approved', 'pending', 'approved', 'rejected', 'approved', 'cancelled']
-
-  users.forEach((u, uIdx) => {
-    for (let r = 1; r <= 2; r++) {
-      const reqId = `leave-req-${u.id}-${r}`
-      const status = statuses[(uIdx + r) % statuses.length]
-      const leaveType = leaveTypes[(uIdx + r) % leaveTypes.length]
-      const month = (r % 9) + 1
-      const startDay = (r * 7) % 20 + 1
-      const startDate = `2026-${month < 10 ? '0' + month : month}-${startDay < 10 ? '0' + startDay : startDay}`
-      const endDate = `2026-${month < 10 ? '0' + month : month}-${(startDay + 2) < 10 ? '0' + (startDay + 2) : startDay + 2}`
-
-      leaves.push({
-        id: reqId,
-        tenantId: u.tenantId,
-        employeeId: u.id,
-        employeeName: u.name,
-        department: u.department,
-        leaveTypeName: leaveType.name,
-        leaveTypeCode: leaveType.code,
-        startDate,
-        endDate,
-        requestedDays: 3,
-        reason: `Personal leave request #${r} for ${leaveType.name.toLowerCase()}`,
-        status,
-        createdAt: `2026-0${month}-01T08:00:00Z`,
-        priorLeavesCount: (uIdx + r) % 6,
-        approvalHistory: status !== 'pending' ? [
-          {
-            action: status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Cancelled',
-            actorName: u.tenantId === 'tenant-kinetic' ? 'David Wilson' : 'Claire Underwood',
-            timestamp: `2026-0${month}-02T10:00:00Z`,
-            comments: status === 'approved' ? 'Approved based on team coverage schedule.' : 'Rejected due to project release overlap.'
-          }
-        ] : [],
-      })
-    }
-  })
 
   const attendance: any[] = []
   users.slice(0, 30).forEach((u, idx) => {

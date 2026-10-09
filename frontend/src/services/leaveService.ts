@@ -63,7 +63,7 @@ export const leaveService = {
     return []
   },
 
-  async createLeavePlan(data: { startDate: string; endDate: string; notes?: string }): Promise<any> {
+  async createLeavePlan(data: { startDate: string; endDate: string; notes?: string; type?: string; leaveTypeCode?: string }): Promise<any> {
     if (!useMock()) {
       return apiClient.post<any>('/leaves/plans', data)
     }
@@ -74,6 +74,14 @@ export const leaveService = {
   async cancelLeavePlan(planId: string): Promise<any> {
     if (!useMock()) {
       return apiClient.delete(`/leaves/plans/${planId}`)
+    }
+    await new Promise(r => setTimeout(r, 150))
+    return true
+  },
+
+  async triggerAutoCasualLeave(date?: string): Promise<any> {
+    if (!useMock()) {
+      return apiClient.post('/leaves/auto-casual-leave', { date })
     }
     await new Promise(r => setTimeout(r, 150))
     return true

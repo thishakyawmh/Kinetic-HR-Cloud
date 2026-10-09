@@ -82,46 +82,14 @@ interface LeavePlanEntry {
   assignedBackupName: string
   assignedBackupRole?: string
   type?: string
+  leaveTypeCode?: string
   notes?: string
   reassignedFrom?: string
   isCasualAbsence?: boolean
   hoursUnannounced?: number
 }
 
-const DEFAULT_PLANS: LeavePlanEntry[] = [
-  {
-    id: 'plan-kasun-oct',
-    employeeId: 'user-kasun',
-    employeeName: 'Kasun Perera',
-    role: 'Senior Credit Officer',
-    employeeRole: 'Senior Credit Officer',
-    startDate: '2026-10-06',
-    endDate: '2026-10-10',
-    days: 5,
-    status: 'confirmed',
-    assignedBackupId: 'user-dinesh',
-    assignedBackupName: 'Dinesh Weerasinghe',
-    assignedBackupRole: 'Senior Credit Officer',
-    type: 'Annual Leave',
-    notes: 'Approved Annual Leave — Credit Underwriting Covered by Dinesh Weerasinghe',
-  },
-  {
-    id: 'plan-nuwan-oct',
-    employeeId: 'user-nuwan',
-    employeeName: 'Nuwan Jayasuriya',
-    role: 'Foreign Exchange Specialist',
-    employeeRole: 'Foreign Exchange Specialist',
-    startDate: '2026-10-19',
-    endDate: '2026-10-21',
-    days: 3,
-    status: 'confirmed',
-    assignedBackupId: 'user-thilini',
-    assignedBackupName: 'Thilini Silva',
-    assignedBackupRole: 'Treasury Operations Manager',
-    type: 'Annual Leave',
-    notes: 'Annual Leave Plan — Foreign Exchange Settlement Coverage',
-  },
-]
+const DEFAULT_PLANS: LeavePlanEntry[] = []
 
 export const EmployeeLeavePlans: React.FC = () => {
   const { user } = useAuth()
@@ -142,8 +110,8 @@ export const EmployeeLeavePlans: React.FC = () => {
     queryFn: () => leaveService.getLeavePlans(),
   })
 
-  // Merge API plans with default scenario plans
-  const plans: LeavePlanEntry[] = (apiPlans && apiPlans.length > 0 ? apiPlans : DEFAULT_PLANS).map(p => ({
+  // Real plans from database without mock fallback
+  const plans: LeavePlanEntry[] = (apiPlans || []).map(p => ({
     ...p,
     role: p.employeeRole || p.role || 'Senior Frontend Engineer',
     type: p.type || 'Annual Leave',
@@ -164,12 +132,15 @@ export const EmployeeLeavePlans: React.FC = () => {
     )
   }
 
+  const [selectedLeaveType, setSelectedLeaveType] = useState<'Annual Leave' | 'Casual Leave'>('Annual Leave')
+
   const createPlanMutation = useMutation({
-    mutationFn: (data: { startDate: string; endDate: string; notes?: string }) =>
+    mutationFn: (data: { startDate: string; endDate: string; notes?: string; type?: string; leaveTypeCode?: string }) =>
       leaveService.createLeavePlan(data),
     onSuccess: (newPlan) => {
       queryClient.invalidateQueries({ queryKey: ['leavePlans'] })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      queryClient.invalidateQueries({ queryKey: ['leaveRequests'] })
       setSyncStatus('JUST_UPDATED')
       setTimeout(() => setSyncStatus('REALTIME_SYNCED'), 3000)
 
@@ -196,7 +167,7 @@ export const EmployeeLeavePlans: React.FC = () => {
       const daysRestored = targetPlan?.days || 1
 
       setCancelSuccessMsg(
-        `✅ Leave plan cancelled successfully! ${daysRestored} day(s) have been credited back to your annual leave balance.`
+        `✅ Leave plan cancelled successfully! ${daysRestored} day(s) have been credited back to your leave balance.`
       )
       setCancellingPlan(null)
       setSelectedPlanDetails(null)
@@ -204,7 +175,20 @@ export const EmployeeLeavePlans: React.FC = () => {
     },
   })
 
-  // Handle Mark Annual Leave directly on calendar
+  const autoCasualMutation = useMutation({
+    mutationFn: (date?: string) => leaveService.triggerAutoCasualLeave(date),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leavePlans'] })
+      queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      queryClient.invalidateQueries({ queryKey: ['leaveRequests'] })
+      setCancelSuccessMsg(
+        '⚡ Biometric Fingerprint Unannounced Absence detected! Automatically registered 1 day Casual Leave and deducted 1 day from Casual Leave balance.'
+      )
+      setTimeout(() => setCancelSuccessMsg(null), 7000)
+    },
+  })
+
+  // Handle Mark Leave directly on calendar
   const handleMarkAnnualLeave = (day: number) => {
     const startDateStr = `2026-10-${day < 10 ? '0' + day : day}`
     const endDayNum = Math.min(31, day + selectedDaysCount - 1)
@@ -213,7 +197,9 @@ export const EmployeeLeavePlans: React.FC = () => {
     createPlanMutation.mutate({
       startDate: startDateStr,
       endDate: endDateStr,
-      notes: `Annual leave plan scheduled by ${user?.name || 'Alice Johnson'}`,
+      type: selectedLeaveType,
+      leaveTypeCode: selectedLeaveType === 'Casual Leave' ? 'casual' : 'annual',
+      notes: `${selectedLeaveType} scheduled by ${user?.name || 'Kasun Perera'}`,
     })
   }
 
@@ -280,6 +266,19 @@ export const EmployeeLeavePlans: React.FC = () => {
         </Card>
       )}
 
+      {/* Success Banner when plan is cancelled and balance is restored */}
+      {cancelSuccessMsg && (
+        <Card className="border border-emerald-500/40 bg-emerald-500/10 p-4 rounded-2xl animate-in fade-in zoom-in-95">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold text-emerald-300">Leave Balance Recalculated & Restored</h4>
+              <p className="text-xs text-emerald-200/90 leading-relaxed">{cancelSuccessMsg}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Role Color Legend & Realtime Status */}
       <Card className="border border-border/60 bg-card p-4 rounded-2xl shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -324,22 +323,43 @@ export const EmployeeLeavePlans: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground font-medium mr-2">Plan Duration:</span>
-                {[1, 2, 3, 5].map(days => (
-                  <button
-                    key={days}
-                    type="button"
-                    onClick={() => setSelectedDaysCount(days)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      selectedDaysCount === days
-                        ? 'bg-sky-500 text-white shadow-xs'
-                        : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {days} {days === 1 ? 'Day' : 'Days'}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/40">
+                  {(['Annual Leave', 'Casual Leave'] as const).map(lType => (
+                    <button
+                      key={lType}
+                      type="button"
+                      onClick={() => setSelectedLeaveType(lType)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        selectedLeaveType === lType
+                          ? lType === 'Casual Leave'
+                            ? 'bg-amber-500 text-slate-950 shadow-xs'
+                            : 'bg-sky-500 text-white shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {lType}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/40">
+                  <span className="text-[11px] text-muted-foreground font-medium px-2">Days:</span>
+                  {[1, 2, 3, 5].map(days => (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => setSelectedDaysCount(days)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        selectedDaysCount === days
+                          ? 'bg-sky-500 text-white shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {days}d
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -394,13 +414,13 @@ export const EmployeeLeavePlans: React.FC = () => {
 
                 {daysInMonth.map(day => {
                   const dayPlans = getPlansForDay(day)
-                  const isMyPlan = dayPlans.some(p => p.employeeId === user?.id || p.employeeId === 'user-Alice')
+                  const isMyPlan = dayPlans.some(p => isPlanOwner(p))
                   const hasCasualAbsence = dayPlans.some(p => p.isCasualAbsence)
 
                   return (
                     <div
                       key={day}
-                      onClick={() => handleMarkAnnualLeave(day)}
+                      onClick={() => handleCellClick(day)}
                       className={`h-24 p-2 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between ${
                         isMyPlan
                           ? 'border-sky-500/80 bg-sky-500/5 shadow-xs'
@@ -424,54 +444,36 @@ export const EmployeeLeavePlans: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Render Leave Chips with Role Color Bar */}
-                      <div className="space-y-1 my-1 overflow-hidden">
-                        {dayPlans.map(dp => {
-                          const roleKey = dp.role || 'Senior Frontend Engineer'
-                          const roleCfg = ROLE_COLORS[roleKey] || ROLE_COLORS['Senior Frontend Engineer']
-                          return (
-                            <div
-                              key={dp.id}
-                              className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold truncate flex items-center justify-between border shadow-2xs"
-                              style={{
-                                backgroundColor: `${roleCfg.color}15`,
-                                borderColor: `${roleCfg.color}40`,
-                                color: roleCfg.color,
-                              }}
-                              title={`${dp.employeeName} (${dp.role}) -> Backup: ${dp.assignedBackupName}`}
-                            >
-                              <span className="truncate">{dp.employeeName.split(' ')[0]}</span>
-                              <span className="text-[9px] opacity-80">➔ {dp.assignedBackupName.split(' ')[0]}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Render Leave Chips with Role Color Bar */}
+                      {/* Render Leave Chips with Role Color Bar (Displayed ONCE per plan) */}
                       <div className="space-y-1 my-1 overflow-hidden">
                         {dayPlans.map(dp => {
                           const roleCfg = ROLE_COLORS[dp.role || 'Senior Frontend Engineer'] || ROLE_COLORS['Senior Frontend Engineer']
                           const isCoverageNeeded = dp.status === 'Coverage Needed' || dp.assignedBackupName?.includes('Coverage Needed')
                           const isReassigned = dp.status === 'Reassigned'
+                          const isCasual = dp.type?.toLowerCase().includes('casual') || dp.leaveTypeCode === 'casual' || dp.isCasualAbsence
 
                           return (
                             <div
                               key={dp.id}
                               onClick={e => {
                                 e.stopPropagation()
-                                setSelectedPlanDetails(dp)
+                                if (isPlanOwner(dp)) {
+                                  setCancellingPlan(dp)
+                                } else {
+                                  setSelectedPlanDetails(dp)
+                                }
                               }}
                               className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold truncate flex items-center justify-between border shadow-2xs cursor-pointer hover:scale-[1.02] transition-transform"
                               style={{
-                                backgroundColor: isCoverageNeeded ? '#ef444420' : isReassigned ? '#a855f720' : `${roleCfg.color}15`,
-                                borderColor: isCoverageNeeded ? '#ef444460' : isReassigned ? '#a855f760' : `${roleCfg.color}40`,
-                                color: isCoverageNeeded ? '#f87171' : isReassigned ? '#c084fc' : roleCfg.color,
+                                backgroundColor: isCoverageNeeded ? '#ef444420' : isReassigned ? '#a855f720' : isCasual ? '#f59e0b25' : `${roleCfg.color}15`,
+                                borderColor: isCoverageNeeded ? '#ef444460' : isReassigned ? '#a855f760' : isCasual ? '#f59e0b60' : `${roleCfg.color}40`,
+                                color: isCoverageNeeded ? '#f87171' : isReassigned ? '#c084fc' : isCasual ? '#fbbf24' : roleCfg.color,
                               }}
-                              title={`${dp.employeeName} (${dp.role}) -> Backup: ${dp.assignedBackupName}`}
+                              title={`${dp.employeeName} (${dp.type || 'Annual Leave'}) -> Backup: ${dp.assignedBackupName}`}
                             >
                               <span className="truncate">{dp.employeeName.split(' ')[0]}</span>
                               <span className="text-[9px] opacity-80">
-                                {isCoverageNeeded ? '⚠️ Needed' : `➔ ${dp.assignedBackupName.split(' ')[0]}`}
+                                {isCasual ? '⚡ Casual' : isCoverageNeeded ? '⚠️ Needed' : `➔ ${dp.assignedBackupName.split(' ')[0]}`}
                               </span>
                             </div>
                           )
@@ -480,7 +482,7 @@ export const EmployeeLeavePlans: React.FC = () => {
 
                       {/* Quick Hover Hint */}
                       <div className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                        + Mark Plan
+                        {isMyPlan ? 'Click to Manage' : '+ Mark Plan'}
                       </div>
                     </div>
                   )
@@ -570,16 +572,25 @@ export const EmployeeLeavePlans: React.FC = () => {
               If an employee takes an unannounced casual or sick leave, real-time fingerprint sensors monitor clock-in times. After <strong>1 hour of no clock-in</strong>, the system automatically triggers backup responsibility re-assignment to the next available colleague in the same role.
             </p>
 
-            <div className="p-3 bg-card rounded-2xl border border-border/60 text-xs space-y-1.5">
+            <div className="p-3 bg-card rounded-2xl border border-border/60 text-xs space-y-2">
               <div className="flex justify-between items-center text-amber-300 font-medium">
-                <span>Marcus Chen (Casual Leave)</span>
+                <span>Biometric Sensor SLA Trigger</span>
                 <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">
-                  1.2h Unannounced
+                  1-Hour Fingerprint Alert
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                ➔ System automatically assigned Marcus's duties to Alice Johnson (Same Role: Senior Frontend Engineer).
+                Click below to simulate an unannounced absence. The system will automatically mark a <strong>Casual Leave</strong>, deduct 1 day from your Casual Leave balance, and connect duty backup.
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={autoCasualMutation.isPending}
+                onClick={() => autoCasualMutation.mutate()}
+                className="w-full text-xs font-bold rounded-xl bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 transition-all cursor-pointer"
+              >
+                {autoCasualMutation.isPending ? 'Processing Fingerprint Event...' : '⚡ Trigger Fingerprint Unannounced Absence (-1 Casual Day)'}
+              </Button>
             </div>
           </Card>
         </div>
@@ -667,7 +678,23 @@ export const EmployeeLeavePlans: React.FC = () => {
               </div>
             )}
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex items-center justify-between gap-3">
+              {isPlanOwner(selectedPlanDetails) ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const planToCancel = selectedPlanDetails
+                    setSelectedPlanDetails(null)
+                    setCancellingPlan(planToCancel)
+                  }}
+                  className="text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
+                >
+                  Cancel Leave Plan & Restore Balance
+                </Button>
+              ) : (
+                <div />
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -675,6 +702,71 @@ export const EmployeeLeavePlans: React.FC = () => {
                 className="text-xs rounded-xl"
               >
                 Close Details Panel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Confirmation Modal Popup for Leave Plan Cancellation */}
+      {cancellingPlan && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <Card className="max-w-md w-full bg-card border border-rose-500/40 rounded-[28px] shadow-2xl p-6 space-y-5 relative">
+            <button
+              onClick={() => setCancellingPlan(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted/60 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold">
+                <AlertTriangle className="h-6 w-6 text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">Cancel Scheduled Annual Leave Plan</h3>
+                <p className="text-xs text-muted-foreground">Restore Leave Days & Revoke Handoff</p>
+              </div>
+            </div>
+
+            <div className="bg-muted/30 p-4 rounded-2xl border border-border/60 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Employee:</span>
+                <span className="font-semibold text-foreground">{cancellingPlan.employeeName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Scheduled Period:</span>
+                <span className="font-semibold text-foreground">
+                  {cancellingPlan.startDate} to {cancellingPlan.endDate} ({cancellingPlan.days || 1} business days)
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Assigned Duty Backup:</span>
+                <span className="font-semibold text-emerald-400">{cancellingPlan.assignedBackupName}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Do you want to cancel this scheduled annual leave plan? Cancelling will release <strong>{cancellingPlan.assignedBackupName}</strong> from duty coverage and immediately recalculate and refund <strong>{cancellingPlan.days || 1} day(s)</strong> back to your authoritative annual leave balance.
+            </p>
+
+            <div className="pt-2 flex items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCancellingPlan(null)}
+                className="text-xs rounded-xl"
+              >
+                Keep Leave Schedule
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={cancelPlanMutation.isPending}
+                onClick={() => cancelPlanMutation.mutate(cancellingPlan.id)}
+                className="text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
+              >
+                {cancelPlanMutation.isPending ? 'Cancelling Plan...' : 'Yes, Cancel Leave Plan & Refund Days'}
               </Button>
             </div>
           </Card>

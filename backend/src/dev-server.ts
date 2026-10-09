@@ -12,6 +12,7 @@ import {
   getLeavePlans,
   createLeavePlan,
   deleteLeavePlan,
+  triggerAutoCasualLeave,
 } from './functions/leaves'
 import {
   getEmployees,
@@ -146,6 +147,7 @@ addRoute('POST', '/api/leaves/ai-evaluate', evaluateAIFairnessLeaves)
 addRoute('GET', '/api/leaves/plans', getLeavePlans)
 addRoute('POST', '/api/leaves/plans', createLeavePlan)
 addRoute('DELETE', '/api/leaves/plans/{id}', deleteLeavePlan)
+addRoute('POST', '/api/leaves/auto-casual-leave', triggerAutoCasualLeave)
 
 // Employees
 addRoute('POST', '/api/employees/import', bulkImportEmployees)

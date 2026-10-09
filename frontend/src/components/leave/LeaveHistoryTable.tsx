@@ -35,6 +35,18 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
   const [complaintText, setComplaintText] = useState('')
   const [isSubmittingComplaint, setIsSubmittingComplaint] = useState(false)
 
+  const displayRequests = React.useMemo(() => {
+    const active = requests.filter(r => r.status !== 'cancelled')
+    const map = new Map<string, LeaveRequest>()
+    active.forEach(r => {
+      const key = `${r.startDate}_${r.endDate}_${r.leaveTypeCode || r.leaveTypeName}`
+      if (!map.has(key)) {
+        map.set(key, r)
+      }
+    })
+    return Array.from(map.values())
+  }, [requests])
+
   const handleSubmitComplaint = async () => {
     if (!complaintModalReq || !complaintText.trim()) return
     setIsSubmittingComplaint(true)
@@ -48,7 +60,7 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
     }
   }
 
-  if (requests.length === 0) {
+  if (displayRequests.length === 0) {
     return (
       <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-2xl border border-dashed border-border/80">
         No leave records found in this category.
@@ -73,7 +85,7 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {requests.map(req => (
+            {displayRequests.map(req => (
               <TableRow key={req.id}>
                 {showEmployeeName && (
                   <TableCell className="font-semibold text-foreground text-xs whitespace-nowrap">
