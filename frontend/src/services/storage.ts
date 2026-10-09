@@ -115,6 +115,12 @@ class AppDataStore {
             this.documentRequests.push(md)
           }
         })
+        // Merge missing leave requests (e.g. newly added approved schedule matrix leaves)
+        MOCK_LEAVE_REQUESTS.forEach(ml => {
+          if (!this.leaveRequests.some(l => l.id === ml.id)) {
+            this.leaveRequests.push(ml)
+          }
+        })
         this.save()
         return
       } catch (e) {

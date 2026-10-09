@@ -95,7 +95,7 @@ export interface LeaveRequest {
   department: string
   leaveTypeId: string
   leaveTypeName: string
-  leaveTypeCode: 'annual' | 'sick' | 'casual' | 'emergency' | 'other'
+  leaveTypeCode: 'annual' | 'sick' | 'medical' | 'casual' | 'emergency' | 'other'
   startDate: string
   endDate: string
   requestedDays: number

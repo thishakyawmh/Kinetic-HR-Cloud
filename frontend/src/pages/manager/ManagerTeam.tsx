@@ -28,6 +28,8 @@ export const ManagerTeam: React.FC = () => {
   const { user, tenant } = useAuth()
   const navigate = useNavigate()
 
+  const activeTenantId = tenant?.id || user?.tenantId || 'tenant-sampath'
+
   const { data: team = [] } = useQuery({
     queryKey: ['teamMembers', user?.id],
     queryFn: () => (user?.id ? employeeService.getTeamMembers(user.id) : []),
@@ -35,27 +37,36 @@ export const ManagerTeam: React.FC = () => {
   })
 
   const { data: allLeaves = [] } = useQuery({
-    queryKey: ['leaveRequests', tenant?.id],
-    queryFn: () => (tenant?.id ? leaveService.getLeaveRequests(tenant.id) : []),
-    enabled: !!tenant?.id,
+    queryKey: ['leaveRequests', activeTenantId],
+    queryFn: () => leaveService.getLeaveRequests(activeTenantId),
+    enabled: !!activeTenantId,
   })
 
   // Dynamic rolling work week calendar matrix (starts Monday or today, covering upcoming workdays)
   const daysInFocus = useMemo(() => {
     const days: { date: string; label: string; isToday: boolean }[] = []
+
+    // Format Date to local YYYY-MM-DD string without UTC timezone offset shift
+    const toLocalDateStr = (d: Date) => {
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const todayStr = today.toISOString().split('T')[0]
+    const todayStr = toLocalDateStr(today)
 
     // Start with current day (or Monday if weekend)
     const cur = new Date(today)
+    cur.setHours(12, 0, 0, 0) // Midday prevents daylight-saving / midnight shifts
     if (cur.getDay() === 0) cur.setDate(cur.getDate() + 1)
     else if (cur.getDay() === 6) cur.setDate(cur.getDate() + 2)
 
     while (days.length < 6) {
       const dayOfWeek = cur.getDay()
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        const dateStr = cur.toISOString().split('T')[0]
+        const dateStr = toLocalDateStr(cur)
         days.push({
           date: dateStr,
           label: cur.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
@@ -67,13 +78,20 @@ export const ManagerTeam: React.FC = () => {
     return days
   }, [])
 
-  const getMemberLeaveForDate = (memberId: string, dateStr: string) => {
+  const getMemberLeaveForDate = (member: { id: string; employeeNumber?: string }, dateStr: string) => {
+    const d = dateStr.split('T')[0]
     return allLeaves.find(
-      l =>
-        l.employeeId === memberId &&
-        l.status === 'approved' &&
-        new Date(dateStr) >= new Date(l.startDate) &&
-        new Date(dateStr) <= new Date(l.endDate)
+      l => {
+        const isEmpMatch =
+          l.employeeId === member.id ||
+          (member.employeeNumber && l.employeeId === member.employeeNumber) ||
+          l.employeeId === member.id.replace('user-sb-emp-', 'SB-')
+        if (!isEmpMatch) return false
+        if ((l.status || '').toLowerCase() !== 'approved') return false
+        const start = (l.startDate || '').split('T')[0]
+        const end = (l.endDate || '').split('T')[0]
+        return d >= start && d <= end
+      }
     )
   }
 
@@ -81,7 +99,7 @@ export const ManagerTeam: React.FC = () => {
   const dayCoverage = useMemo(() => {
     return daysInFocus.map(day => {
       const totalMembers = team.length || 1
-      const onLeaveCount = team.filter(m => !!getMemberLeaveForDate(m.id, day.date)).length
+      const onLeaveCount = team.filter(m => !!getMemberLeaveForDate(m, day.date)).length
       const workingCount = Math.max(0, totalMembers - onLeaveCount)
       const coveragePct = Math.round((workingCount / totalMembers) * 100)
       const hasConflict = coveragePct < 70 // Coverage bottleneck under 70%
@@ -105,7 +123,7 @@ export const ManagerTeam: React.FC = () => {
 
   // Team members with approved leaves in this window
   const membersWithUpcomingLeave = team.filter(m =>
-    daysInFocus.some(d => !!getMemberLeaveForDate(m.id, d.date))
+    daysInFocus.some(d => !!getMemberLeaveForDate(m, d.date))
   )
 
   // Identify bottleneck days
@@ -120,7 +138,7 @@ export const ManagerTeam: React.FC = () => {
     const names = new Set<string>()
     conflictDays.forEach(cd => {
       team.forEach(m => {
-        if (getMemberLeaveForDate(m.id, cd.date)) {
+        if (getMemberLeaveForDate(m, cd.date)) {
           names.add(m.name)
         }
       })
@@ -214,8 +232,8 @@ export const ManagerTeam: React.FC = () => {
         />
       </div>
 
-      {/* Modern Conflict Alert Banner or Optimal Notice */}
-      {conflictDays.length > 0 ? (
+      {/* Modern Conflict Alert Banner (shown only when staffing falls below 70%) */}
+      {conflictDays.length > 0 && (
         <Card className="border-[#ef8d46]/30 bg-gradient-to-r from-[#ef8d46]/15 via-[#ef8d46]/5 to-transparent p-5 rounded-2xl shadow-xs backdrop-blur-xs">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
@@ -256,21 +274,6 @@ export const ManagerTeam: React.FC = () => {
               </Button>
             </div>
           </div>
-        </Card>
-      ) : (
-        <Card className="border-emerald-500/20 bg-emerald-500/5 p-4 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-foreground">Optimal Team Coverage</p>
-              <p className="text-[11px] text-muted-foreground">All business days maintain adequate staffing above the 70% operational threshold.</p>
-            </div>
-          </div>
-          <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
-            100% Operational
-          </Badge>
         </Card>
       )}
 
@@ -367,7 +370,7 @@ export const ManagerTeam: React.FC = () => {
                     </div>
                   </td>
                   {dayCoverage.map(d => {
-                    const leave = getMemberLeaveForDate(m.id, d.date)
+                    const leave = getMemberLeaveForDate(m, d.date)
                     return (
                       <td
                         key={d.date}
@@ -384,8 +387,10 @@ export const ManagerTeam: React.FC = () => {
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border shadow-2xs ${
                               leave.isEmergency || leave.leaveTypeCode === 'emergency'
                                 ? 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30'
-                                : leave.leaveTypeCode === 'sick'
-                                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30'
+                                : leave.leaveTypeCode === 'sick' || leave.leaveTypeCode === 'medical'
+                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                                : leave.leaveTypeCode === 'casual'
+                                ? 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30'
                                 : 'bg-[#23ace3]/15 text-[#0284c7] dark:text-[#23ace3] border-[#23ace3]/30'
                             }`}
                           >

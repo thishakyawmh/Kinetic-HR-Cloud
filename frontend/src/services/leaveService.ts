@@ -36,7 +36,7 @@ export const leaveService = {
     department: string
     leaveTypeId: string
     leaveTypeName: string
-    leaveTypeCode: 'annual' | 'sick' | 'casual' | 'emergency' | 'other'
+    leaveTypeCode: LeaveRequest['leaveTypeCode']
     startDate: string
     endDate: string
     requestedDays: number

@@ -544,6 +544,18 @@ function createMockContainer(name: string): Container {
                 (item.id && item.id.toLowerCase() === uVal)
               )
             }
+            // Filter by managerId
+            const mgrParam = querySpec.parameters.find((p: any) => p.name === '@managerId')
+            if (mgrParam) {
+              const mVal = String(mgrParam.value).toLowerCase()
+              results = results.filter((item: any) => item.managerId && item.managerId.toLowerCase() === mVal)
+            }
+            // Filter by employeeId
+            const empIdParam = querySpec.parameters.find((p: any) => p.name === '@employeeId')
+            if (empIdParam) {
+              const eIdVal = String(empIdParam.value).toLowerCase()
+              results = results.filter((item: any) => item.employeeId && item.employeeId.toLowerCase() === eIdVal)
+            }
             // If searching for organization code/id
             const orgParam = querySpec.parameters.find((p: any) => p.name === '@orgId')
             if (orgParam) {

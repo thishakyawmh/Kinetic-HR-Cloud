@@ -914,6 +914,65 @@ export function generateProductionSeedData(): GeneratedSeedData {
     }
   })
 
+  // Active Approved Leaves in October 2026 (for live schedule matrix & availability calendar)
+  const activeApprovedScenarios = [
+    // Sampath Bank - Dinesh Weerasinghe's team (Colombo Fort Head Office Branch)
+    { empId: 'user-sb-emp-1008', mgrId: 'user-sb-mgr-1', type: 'Annual Leave', code: 'annual', days: 2, reason: 'Family vacation to Kandy and ancestral home visit', start: '2026-10-13', end: '2026-10-14' },
+    { empId: 'user-sb-emp-1011', mgrId: 'user-sb-mgr-1', type: 'Medical Leave', code: 'medical', days: 1, reason: 'Outpatient consultation and prescription rest (MC attached)', start: '2026-10-09', end: '2026-10-09' },
+    { empId: 'user-sb-emp-1013', mgrId: 'user-sb-mgr-1', type: 'Casual Leave', code: 'casual', days: 1, reason: 'Personal legal documentation and land registry appointment', start: '2026-10-14', end: '2026-10-14' },
+    { empId: 'user-sb-emp-1014', mgrId: 'user-sb-mgr-1', type: 'Annual Leave', code: 'annual', days: 2, reason: 'Attending family religious ceremony in Galle', start: '2026-10-12', end: '2026-10-13' },
+    { empId: 'user-sb-emp-1016', mgrId: 'user-sb-mgr-1', type: 'Casual Leave', code: 'casual', days: 2, reason: 'Child school sports meet and parent-teacher conference', start: '2026-10-15', end: '2026-10-16' },
+    { empId: 'user-sb-emp-1017', mgrId: 'user-sb-mgr-1', type: 'Medical Leave', code: 'medical', days: 1, reason: 'Dental appointment and recovery', start: '2026-10-16', end: '2026-10-16' },
+
+    // Sampath Bank - Kandy Super Branch (user-sb-mgr-2 team)
+    { empId: 'user-sb-emp-1022', mgrId: 'user-sb-mgr-2', type: 'Casual Leave', code: 'casual', days: 1, reason: 'Family commitment in Peradeniya', start: '2026-10-09', end: '2026-10-09' },
+    { empId: 'user-sb-emp-1025', mgrId: 'user-sb-mgr-2', type: 'Annual Leave', code: 'annual', days: 3, reason: 'Annual holiday with family', start: '2026-10-13', end: '2026-10-15' },
+    { empId: 'user-sb-emp-1028', mgrId: 'user-sb-mgr-2', type: 'Medical Leave', code: 'medical', days: 1, reason: 'Doctor consultation at Kandy General Hospital', start: '2026-10-16', end: '2026-10-16' },
+
+    // Keells Super - Priyantha Rathnayake's team (Crescat Boulevard Superstore)
+    { empId: 'user-ks-emp-2008', mgrId: 'user-ks-mgr-1', type: 'Casual Leave', code: 'casual', days: 2, reason: 'Personal matters and family assistance', start: '2026-10-12', end: '2026-10-13' },
+    { empId: 'user-ks-emp-2010', mgrId: 'user-ks-mgr-1', type: 'Medical Leave', code: 'medical', days: 1, reason: 'Outpatient clinic consultation', start: '2026-10-09', end: '2026-10-09' },
+    { empId: 'user-ks-emp-2014', mgrId: 'user-ks-mgr-1', type: 'Annual Leave', code: 'annual', days: 3, reason: 'Family pilgrimage to Kataragama', start: '2026-10-14', end: '2026-10-16' },
+
+    // Singer PLC - Ashen Senanayake's team (Colombo Showroom)
+    { empId: 'user-sn-emp-3002', mgrId: 'user-sn-mgr-1', type: 'Casual Leave', code: 'casual', days: 2, reason: 'Home renovation repair work', start: '2026-10-13', end: '2026-10-14' },
+    { empId: 'user-sn-emp-3004', mgrId: 'user-sn-mgr-1', type: 'Annual Leave', code: 'annual', days: 1, reason: 'Personal holiday', start: '2026-10-09', end: '2026-10-09' },
+    { empId: 'user-sn-emp-3006', mgrId: 'user-sn-mgr-1', type: 'Medical Leave', code: 'medical', days: 2, reason: 'Medical rest prescribed by doctor', start: '2026-10-15', end: '2026-10-16' },
+  ]
+
+  activeApprovedScenarios.forEach((sc, idx) => {
+    const emp = USERS.find(u => u.id === sc.empId)
+    const mgr = USERS.find(u => u.id === sc.mgrId)
+    if (emp && mgr) {
+      LEAVE_REQUESTS.push({
+        id: `leave-approved-oct-${idx + 1}`,
+        tenantId: emp.tenantId,
+        employeeId: emp.id,
+        employeeName: emp.name,
+        department: emp.department,
+        managerId: mgr.id,
+        managerName: mgr.name,
+        leaveTypeName: sc.type,
+        leaveTypeCode: sc.code,
+        startDate: sc.start,
+        endDate: sc.end,
+        requestedDays: sc.days,
+        reason: sc.reason,
+        status: 'approved',
+        createdAt: '2026-10-06T09:00:00Z',
+        priorLeavesCount: 1,
+        approvalHistory: [
+          {
+            action: 'Approved',
+            actorName: mgr.name,
+            timestamp: '2026-10-07T10:00:00Z',
+            comments: 'Approved based on branch operational coverage guidelines.',
+          },
+        ],
+      })
+    }
+  })
+
   // Historical Approved & Rejected requests
   USERS.slice(0, 45).forEach((u, uIdx) => {
     const statuses: Array<'approved' | 'rejected'> = ['approved', 'approved', 'rejected', 'approved']
