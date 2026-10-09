@@ -39,6 +39,7 @@ import {
   getAdminAuditLogs,
   getAdminIntegrations,
   getAdminAIUsage,
+  getAzureFleetDiagnostic,
 } from './functions/admin'
 import {
   getOrganizations,
@@ -46,6 +47,15 @@ import {
   getPlatformMetrics,
   getSubscriptionPlans,
 } from './functions/platform'
+import {
+  getAttendanceRecords,
+  recordAttendanceClock,
+} from './functions/attendance'
+import {
+  getNotifications,
+  markNotificationRead,
+} from './functions/notifications'
+
 
 // Auth Routes
 app.http('validateOrganization', {
@@ -329,3 +339,40 @@ app.http('deleteBranch', {
   route: 'branches/{id}',
   handler: deleteBranch,
 })
+
+app.http('getAzureFleetDiagnostic', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/azure-fleet-diagnostic',
+  handler: getAzureFleetDiagnostic,
+})
+
+app.http('getAttendanceRecords', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'attendance',
+  handler: getAttendanceRecords,
+})
+
+app.http('recordAttendanceClock', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'attendance/clock',
+  handler: recordAttendanceClock,
+})
+
+app.http('getNotifications', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'notifications',
+  handler: getNotifications,
+})
+
+app.http('markNotificationRead', {
+  methods: ['PATCH'],
+  authLevel: 'anonymous',
+  route: 'notifications/{id}/read',
+  handler: markNotificationRead,
+})
+
+

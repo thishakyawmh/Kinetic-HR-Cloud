@@ -176,3 +176,30 @@ export async function getAdminAIUsage(
     },
   }
 }
+
+/**
+ * GET /api/admin/azure-fleet-diagnostic
+ * Executes real live connectivity and evidence check across all 10 Azure services
+ */
+export async function getAzureFleetDiagnostic(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
+  try {
+    const { runFullAzureFleetDiagnostic } = await import('../config/azureDiagnostics')
+    const report = await runFullAzureFleetDiagnostic()
+    return {
+      status: 200,
+      jsonBody: report,
+    }
+  } catch (err: any) {
+    return {
+      status: 500,
+      jsonBody: { error: `Azure Fleet Diagnostic failed: ${err.message}` },
+    }
+  }
+}
+

@@ -106,6 +106,12 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
     ]
     enableAutomaticFailover: true
     enableMultipleWriteLocations: false
+    backupPolicy: {
+      type: 'Continuous'
+      continuousModeProperties: {
+        tier: 'Continuous7Days'
+      }
+    }
     capabilities: [
       {
         name: 'EnableServerless' // FinOps: Pure consumption billing during off-peak hours
@@ -160,7 +166,7 @@ resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/sq
 }]
 
 // ------------------------------------------------------------------------------
-// 4. Azure Blob Storage (Document Vault & Lifecycle Tiering)
+// 4. Azure Blob Storage (Document Vault, Soft Delete & Versioning Data Protection)
 // ------------------------------------------------------------------------------
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: storageAccountName
@@ -180,6 +186,17 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
   parent: storageAccount
   name: 'default'
+  properties: {
+    deleteRetentionPolicy: {
+      enabled: true
+      days: 30
+    }
+    containerDeleteRetentionPolicy: {
+      enabled: true
+      days: 30
+    }
+    isVersioningEnabled: true
+  }
 }
 
 resource tenantContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {

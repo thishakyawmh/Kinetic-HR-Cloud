@@ -44,6 +44,7 @@ import {
   getAdminAuditLogs,
   getAdminIntegrations,
   getAdminAIUsage,
+  getAzureFleetDiagnostic,
 } from './functions/admin'
 import {
   getOrganizations,
@@ -57,6 +58,15 @@ import {
   verify2faAndSignDocument,
   sendDocumentSoftcopy,
 } from './functions/documents'
+import {
+  getAttendanceRecords,
+  recordAttendanceClock,
+} from './functions/attendance'
+import {
+  getNotifications,
+  markNotificationRead,
+} from './functions/notifications'
+
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { isCosmosConfigured, getCosmosDatabase } from './config/cosmos'
 
@@ -160,6 +170,8 @@ addRoute('GET', '/api/admin/stats', getAdminDashboardStats)
 addRoute('GET', '/api/admin/audit-logs', getAdminAuditLogs)
 addRoute('GET', '/api/admin/integrations', getAdminIntegrations)
 addRoute('GET', '/api/admin/ai-usage', getAdminAIUsage)
+addRoute('GET', '/api/admin/azure-fleet-diagnostic', getAzureFleetDiagnostic)
+
 
 // Platform Admin
 addRoute('GET', '/api/platform/organizations', getOrganizations)
@@ -172,6 +184,15 @@ addRoute('POST', '/api/documents/request', createDocumentRequest)
 addRoute('GET', '/api/documents', getDocumentRequests)
 addRoute('POST', '/api/documents/{id}/verify-2fa-sign', verify2faAndSignDocument)
 addRoute('POST', '/api/documents/{id}/send-softcopy', sendDocumentSoftcopy)
+
+// Attendance
+addRoute('GET', '/api/attendance', getAttendanceRecords)
+addRoute('POST', '/api/attendance/clock', recordAttendanceClock)
+
+// Notifications
+addRoute('GET', '/api/notifications', getNotifications)
+addRoute('PATCH', '/api/notifications/{id}/read', markNotificationRead)
+
 
 
 const server = http.createServer(async (req, res) => {
@@ -320,7 +341,32 @@ server.listen(PORT, async () => {
     const containerName = process.env.BLOB_CONTAINER_TENANTS || 'tenants'
     console.log(`🟢 [AZURE BLOB STORAGE] STATUS: CONFIGURED (Container: "${containerName}")`)
   } else {
-    console.log(`🟡 [AZURE BLOB STORAGE] STATUS: OFFLINE (Blob storage not configured)`)
+    console.log(`🟡 [AZURE BLOB STORAGE] STATUS: OFFLINE (Local SAS Token Simulator Active)`)
+  }
+
+  // Additional Azure Services Telemetry Badges
+  if (process.env.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING || process.env.AZURE_ACS_CONNECTION_STRING) {
+    console.log(`🟢 [AZURE COMMUNICATION SERVICES] STATUS: CONFIGURED (Twilio / ACS SMS & Email Gateway)`)
+  } else {
+    console.log(`🟡 [AZURE COMMUNICATION SERVICES] STATUS: SIMULATED (Local SMS & Email Gateway Active)`)
+  }
+
+  if (process.env.AZURE_SERVICE_BUS_CONNECTION_STRING) {
+    console.log(`🟢 [AZURE SERVICE BUS] STATUS: CONFIGURED (Live Pub/Sub Topic Pipeline)`)
+  } else {
+    console.log(`🟡 [AZURE SERVICE BUS] STATUS: SIMULATED (In-Memory Pub/Sub Queue Active)`)
+  }
+
+  if (process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
+    console.log(`🟢 [AZURE AI DOCUMENT INTELLIGENCE] STATUS: CONFIGURED (Form Recognizer OCR Engine)`)
+  } else {
+    console.log(`🟡 [AZURE AI DOCUMENT INTELLIGENCE] STATUS: SIMULATED (Local OCR Extraction Engine Active)`)
+  }
+
+  if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
+    console.log(`🟢 [AZURE APPLICATION INSIGHTS] STATUS: CONFIGURED (Live APM Telemetry Tracing)`)
+  } else {
+    console.log(`🟡 [AZURE APPLICATION INSIGHTS] STATUS: SIMULATED (In-Memory APM Tracing Active)`)
   }
 
   console.log(`--------------------------------------------------------------------------------`)
