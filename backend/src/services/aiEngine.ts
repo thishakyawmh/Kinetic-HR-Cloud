@@ -1,4 +1,5 @@
 import { queryTenantItems } from '../config/cosmos'
+import { callAzureOpenAIChat, getOpenAIConfig } from '../config/openai'
 
 export interface LeaveConflictCandidate {
   id: string
@@ -137,38 +138,23 @@ export async function arbitrateLeaveConflict(
   evaluatedCandidates.sort((a, b) => b.aiScore - a.aiScore)
 
   // 5. Assign ranks and recommendations based on capacity limit
-  const openAiApiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_KEY
+  const aiConfig = getOpenAIConfig()
   let engineMode: 'OpenAI/Azure OpenAI LLM' | 'Kinetic Autonomous NLP & Audit Log Engine' = 'Kinetic Autonomous NLP & Audit Log Engine'
 
-  if (openAiApiKey) {
+  if (aiConfig.isConfigured) {
     try {
-      const endpoint = process.env.AZURE_OPENAI_ENDPOINT
-        ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o'}/chat/completions?api-version=2024-02-01`
-        : 'https://api.openai.com/v1/chat/completions'
+      const llmResult = await callAzureOpenAIChat([
+        {
+          role: 'system',
+          content: 'You are Kinetic HR Autonomous AI. Arbitrate department leave conflicts based on attendance integrity, urgency, and capacity limits. Provide concise reasoning for your evaluations.',
+        },
+        {
+          role: 'user',
+          content: `Arbitrate leaves for ${department} on ${conflictDate}. Capacity limit: ${allowedCapacityLimit}. Candidates: ${JSON.stringify(evaluatedCandidates.map(c => ({ name: c.employeeName, score: c.aiScore, urgency: c.urgencyLevel })))}`,
+        },
+      ], { maxTokens: 400 })
 
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (process.env.AZURE_OPENAI_KEY) {
-        headers['api-key'] = process.env.AZURE_OPENAI_KEY
-      } else {
-        headers['Authorization'] = `Bearer ${openAiApiKey}`
-      }
-
-      const promptPayload = {
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are Kinetic HR Autonomous AI. Arbitrate department leave conflicts based on attendance integrity, urgency, and capacity limits. Return JSON object with evaluations summary.',
-          },
-          {
-            role: 'user',
-            content: `Arbitrate leaves for ${department} on ${conflictDate}. Capacity limit: ${allowedCapacityLimit}. Candidates: ${JSON.stringify(evaluatedCandidates)}`,
-          },
-        ],
-      }
-
-      const llmRes = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(promptPayload) })
-      if (llmRes.ok) {
+      if (llmResult.content) {
         engineMode = 'OpenAI/Azure OpenAI LLM'
       }
     } catch (e) {

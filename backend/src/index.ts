@@ -398,6 +398,23 @@ app.http('markNotificationRead', {
   handler: markNotificationRead,
 })
 
+// Azure OpenAI Endpoints
+import { handleAIChat, getAIHealth } from './functions/ai'
+
+app.http('handleAIChat', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'ai/chat',
+  handler: handleAIChat,
+})
+
+app.http('getAIHealth', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'ai/health',
+  handler: getAIHealth,
+})
+
 
 
 

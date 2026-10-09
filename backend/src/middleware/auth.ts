@@ -57,41 +57,82 @@ export function authenticateRequest(
           jobTitle: 'Principal Cloud Platform Director',
           employeeNumber: 'KC-0001',
         }
-      } else if (lower.includes('david') || lower.includes('manager')) {
+      } else if (lower.includes('admin') || lower.includes('sarah') || lower.includes('kasun') || lower.includes('a-1001')) {
         decoded = {
-          id: 'user-david',
+          id: 'user-sb-admin',
           tenantId: 'tenant-sampath',
-          name: 'David Wilson',
-          email: 'david.wilson@sampath.lk',
-          role: 'manager',
-          department: 'Engineering',
-          jobTitle: 'Engineering Director',
-          employeeNumber: 'M-1044',
-        }
-      } else if (lower.includes('alice') || lower.includes('employee')) {
-        decoded = {
-          id: 'user-Alice',
-          tenantId: 'tenant-sampath',
-          name: 'Alice Johnson',
-          email: 'alice.johnson@sampath.lk',
-          role: 'employee',
-          department: 'Engineering',
-          jobTitle: 'Senior Frontend Engineer',
-          employeeNumber: 'KT-8842',
-        }
-      } else if (lower.includes('sarah') || lower.includes('admin')) {
-        decoded = {
-          id: 'user-sarah',
-          tenantId: 'tenant-sampath',
-          name: 'Sarah Miller',
-          email: 'sarah.miller@sampath.lk',
+          name: 'Kasun Perera',
+          email: 'kasun.perera@sampath.lk',
           role: 'admin',
-          department: 'Human Resources',
-          jobTitle: 'VP of People & Operations',
-          employeeNumber: 'A-0012',
+          department: 'People Operations & HR',
+          jobTitle: 'Head of People Operations',
+          employeeNumber: 'A-1001',
+        }
+      } else if (
+        lower.includes('dinesh') ||
+        lower.includes('user-sb-mgr-1') ||
+        lower.includes('mgr') ||
+        lower.includes('manager') ||
+        lower.includes('m-1001') ||
+        lower.includes('david')
+      ) {
+        decoded = {
+          id: 'user-sb-mgr-1',
+          tenantId: 'tenant-sampath',
+          name: 'Dinesh Weerasinghe',
+          email: 'dinesh.weerasinghe@sampath.lk',
+          role: 'manager',
+          department: 'Retail Banking & Branches',
+          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          employeeNumber: 'M-1001',
+        }
+      } else if (lower.includes('keells') || lower.includes('priyantha') || lower.includes('user-ks-mgr-1')) {
+        decoded = {
+          id: 'user-ks-mgr-1',
+          tenantId: 'tenant-keells',
+          name: 'Priyantha Rathnayake',
+          email: 'priyantha.rathnayake@keells.com',
+          role: 'manager',
+          department: 'Store Operations & Front End',
+          jobTitle: 'Store General Manager (Crescat)',
+          employeeNumber: 'M-2001',
+        }
+      } else if (lower.includes('singer') || lower.includes('ashen') || lower.includes('user-sn-mgr-1')) {
+        decoded = {
+          id: 'user-sn-mgr-1',
+          tenantId: 'tenant-singer',
+          name: 'Ashen Senanayake',
+          email: 'ashen.senanayake@singersl.com',
+          role: 'manager',
+          department: 'Showroom Retail Sales',
+          jobTitle: 'Mega Store Manager (Duplication Road)',
+          employeeNumber: 'M-3001',
+        }
+      } else if (lower.includes('alice') || lower.includes('employee') || lower.includes('emp')) {
+        decoded = {
+          id: 'user-sb-emp-1007',
+          tenantId: 'tenant-sampath',
+          name: 'Nalaka Perera',
+          email: 'nalaka.perera@sampath.lk',
+          role: 'employee',
+          department: 'Retail Banking & Branches',
+          jobTitle: 'Senior Personal Banking Officer',
+          employeeNumber: 'SB-1007',
+          managerId: 'user-sb-mgr-1',
+          managerName: 'Dinesh Weerasinghe',
         }
       } else {
-        throw new Error('Unrecognized mock token')
+        // Fallback default in dev mode: Dinesh Weerasinghe (Senior Branch Manager)
+        decoded = {
+          id: 'user-sb-mgr-1',
+          tenantId: 'tenant-sampath',
+          name: 'Dinesh Weerasinghe',
+          email: 'dinesh.weerasinghe@sampath.lk',
+          role: 'manager',
+          department: 'Retail Banking & Branches',
+          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          employeeNumber: 'M-1001',
+        }
       }
     }
 

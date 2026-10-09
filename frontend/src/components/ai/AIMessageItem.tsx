@@ -143,6 +143,21 @@ export const AIMessageItem: React.FC<AIMessageItemProps> = ({ message, onActionC
           {renderFormattedContent(message.content)}
         </div>
 
+        {/* Model Inference & Telemetry Badges */}
+        {message.toolExecutions && message.toolExecutions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {message.toolExecutions.map((tool, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 shadow-2xs"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{tool.label}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Embedded Action Card if applicable */}
         {message.actionCard && (
           <AIActionCard card={message.actionCard} onActionComplete={onActionComplete} />

@@ -1,5 +1,6 @@
 import { AIMessage } from '@/types'
 import { appDataStore } from './storage'
+import { apiClient } from './apiClient'
 
 export interface AIServiceStreamCallback {
   onToolStep?: (toolName: string, label: string) => void
@@ -19,6 +20,31 @@ export const aiService = {
     callback?: AIServiceStreamCallback
   ): Promise<AIMessage> {
     const q = userMessage.toLowerCase()
+
+    // 0. Live Azure OpenAI Inference via Backend API
+    try {
+      callback?.onToolStep?.('azure_openai_inference', 'Querying live Azure OpenAI GPT-4o model...')
+      const apiRes = await apiClient.post<{ reply: string; model?: string }>('/ai/chat', {
+        message: userMessage,
+        context,
+      })
+      if (apiRes?.reply) {
+        appDataStore.incrementAIMetrics(1, 1)
+        const liveResponse: AIMessage = {
+          id: `ai-msg-${Date.now()}`,
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          content: apiRes.reply,
+          toolExecutions: [
+            { name: 'azure_openai', label: `Inference via Azure OpenAI (${apiRes.model || 'gpt-4o'})`, status: 'completed' },
+          ],
+        }
+        callback?.onComplete?.(liveResponse)
+        return liveResponse
+      }
+    } catch (e) {
+      console.warn('Live Azure OpenAI fallback to local scenario engine:', e)
+    }
 
     // 0A. Manager Supervisory Scenario: Team Coverage & Capacity Risk Assessment
     if (
@@ -537,7 +563,32 @@ Your gross salary remained identical at **$3,350.00**. No unpaid leave or puniti
       return response
     }
 
-    // Default conversational response
+    // Live Azure OpenAI GPT-4o Inference via Backend
+    try {
+      callback?.onToolStep?.('azure_openai_inference', 'Querying live Azure OpenAI GPT-4o model...')
+      const apiRes = await apiClient.post<{ reply: string; model?: string }>('/ai/chat', {
+        message: userMessage,
+        context,
+      })
+      if (apiRes?.reply) {
+        appDataStore.incrementAIMetrics(1, 1)
+        const liveResponse: AIMessage = {
+          id: `ai-msg-${Date.now()}`,
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          content: apiRes.reply,
+          toolExecutions: [
+            { name: 'azure_openai', label: `Inference via Azure OpenAI (${apiRes.model || 'GPT-4o'})`, status: 'completed' },
+          ],
+        }
+        callback?.onComplete?.(liveResponse)
+        return liveResponse
+      }
+    } catch (e) {
+      console.warn('Live Azure OpenAI fallback to local knowledge base:', e)
+    }
+
+    // Fallback conversational response
     callback?.onToolStep?.('rag_search', 'Consulting Kinetic Enterprise Knowledge Base...')
     await new Promise(r => setTimeout(r, 400))
     appDataStore.incrementAIMetrics(1, 1)

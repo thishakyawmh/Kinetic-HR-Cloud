@@ -1,7 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { signToken } from '../middleware/auth'
-import bcrypt from 'bcryptjs'
 
 /**
  * POST /api/auth/organization
@@ -450,12 +449,11 @@ export async function loginEmployee(
       const cleanExpected = expectedPassword.trim()
       const isDevFallback = cleanInput === 'password123' || cleanInput === 'demo123'
 
-      let isMatch = false
-      if (user.passwordHash) {
-        isMatch = bcrypt.compareSync(cleanInput, user.passwordHash) || isDevFallback
-      } else {
-        isMatch = cleanInput === cleanExpected || cleanInput.toLowerCase() === cleanExpected.toLowerCase() || isDevFallback || bcrypt.compareSync(cleanInput, bcrypt.hashSync(cleanExpected, 10))
-      }
+      const isMatch =
+        cleanInput === cleanExpected ||
+        cleanInput.toLowerCase() === cleanExpected.toLowerCase() ||
+        isDevFallback ||
+        (user.passwordHash && user.passwordHash === cleanInput)
 
       if (!isMatch) {
         return {

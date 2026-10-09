@@ -70,6 +70,7 @@ import {
   getNotifications,
   markNotificationRead,
 } from './functions/notifications'
+import { handleAIChat, getAIHealth } from './functions/ai'
 
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { isCosmosConfigured, getCosmosDatabase } from './config/cosmos'
@@ -205,6 +206,10 @@ addRoute('POST', '/api/attendance/clock', recordAttendanceClock)
 // Notifications
 addRoute('GET', '/api/notifications', getNotifications)
 addRoute('PATCH', '/api/notifications/{id}/read', markNotificationRead)
+
+// Azure OpenAI
+addRoute('POST', '/api/ai/chat', handleAIChat)
+addRoute('GET', '/api/ai/health', getAIHealth)
 
 
 
