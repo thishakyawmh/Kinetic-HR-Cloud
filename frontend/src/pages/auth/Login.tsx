@@ -297,25 +297,37 @@ export const Login: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setEmployeeIdInput('KT-1044')
+                      setEmployeeIdInput('M-1044')
                       setPasswordInput('password123')
                     }}
                     className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
                   >
                     <div className="font-semibold text-[11px] text-[#23ace3]">Manager Account</div>
-                    <div className="text-[10px] text-muted-foreground truncate">David (KT-1044 - Approvals)</div>
+                    <div className="text-[10px] text-muted-foreground truncate">David (M-1044 - Approvals)</div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setEmployeeIdInput('KT-1044-EMP')
+                      setEmployeeIdInput('KT-1044')
                       setPasswordInput('password123')
                     }}
                     className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
                   >
                     <div className="font-semibold text-[11px] text-[#ef8d46]">David's Employee Account</div>
-                    <div className="text-[10px] text-muted-foreground truncate">David (KT-1044-EMP)</div>
+                    <div className="text-[10px] text-muted-foreground truncate">David (KT-1044 - Self-Service)</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeIdInput('A-0012')
+                      setPasswordInput('password123')
+                    }}
+                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                  >
+                    <div className="font-semibold text-[11px] text-[#23ace3]">HR Admin Account</div>
+                    <div className="text-[10px] text-muted-foreground truncate">Sarah (A-0012 - HR Hub)</div>
                   </button>
 
                   <button
@@ -326,20 +338,8 @@ export const Login: React.FC = () => {
                     }}
                     className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
                   >
-                    <div className="font-semibold text-[11px] text-[#23ace3]">HR Admin Account</div>
-                    <div className="text-[10px] text-muted-foreground truncate">Sarah (KT-0012 - HR Hub)</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmployeeIdInput('KT-0012-EMP')
-                      setPasswordInput('password123')
-                    }}
-                    className="p-2 text-left rounded-xl border border-border/70 hover:border-[#23ace3]/50 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
-                  >
                     <div className="font-semibold text-[11px] text-[#ef8d46]">Sarah's Employee Account</div>
-                    <div className="text-[10px] text-muted-foreground truncate">Sarah (KT-0012-EMP)</div>
+                    <div className="text-[10px] text-muted-foreground truncate">Sarah (KT-0012 - Self-Service)</div>
                   </button>
                 </div>
               </div>

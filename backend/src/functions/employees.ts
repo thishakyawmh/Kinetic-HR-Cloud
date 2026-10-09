@@ -170,8 +170,11 @@ export async function createEmployee(
       email: body.email,
       role: body.role || 'employee',
       department: body.department || 'Unassigned',
-      jobTitle: body.jobTitle || 'Pending Assignment',
-      employeeNumber: body.employeeNumber || `EMP-${Date.now().toString().slice(-4)}`,
+      employeeNumber: body.employeeNumber || (
+        (body.role === 'admin' ? `A-${Math.floor(1000 + Math.random() * 9000)}` :
+         body.role === 'manager' ? `M-${Math.floor(1000 + Math.random() * 9000)}` :
+         `EMP-${Math.floor(1000 + Math.random() * 9000)}`)
+      ),
       managerId: body.managerId || '',
       managerName: body.managerName || '',
       hireDate: body.hireDate || new Date().toISOString().split('T')[0],

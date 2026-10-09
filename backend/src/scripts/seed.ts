@@ -108,16 +108,20 @@ const DEPARTMENTS = [
 const USERS: any[] = [
   // Core Kinetic Execs
   { id: 'user-Alice', tenantId: 'tenant-kinetic', name: 'Alice Johnson', email: 'Alice.johnson@kinetictech.io', role: 'employee', department: 'Engineering', jobTitle: 'Senior Frontend Engineer', employeeNumber: 'KT-8842', managerId: 'user-david', managerName: 'David Wilson', hireDate: '2023-04-15', phone: '+1 (555) 234-5678', location: 'Seattle, WA (Hybrid)' },
-  { id: 'user-david', tenantId: 'tenant-kinetic', name: 'David Wilson', email: 'david.wilson@kinetictech.io', role: 'manager', department: 'Engineering', jobTitle: 'Engineering Director', employeeNumber: 'KT-1044', hireDate: '2021-08-01', phone: '+1 (555) 443-8901', location: 'Seattle, WA (Office)' },
-  { id: 'user-sarah', tenantId: 'tenant-kinetic', name: 'Sarah Miller', email: 'sarah.miller@kinetictech.io', role: 'admin', department: 'Human Resources', jobTitle: 'VP of People & Operations', employeeNumber: 'KT-0012', hireDate: '2020-01-10', phone: '+1 (555) 789-0123', location: 'San Francisco, CA (HQ)' },
+  { id: 'user-david', tenantId: 'tenant-kinetic', name: 'David Wilson', email: 'david.wilson@kinetictech.io', role: 'manager', department: 'Engineering', jobTitle: 'Engineering Director', employeeNumber: 'M-1044', hireDate: '2021-08-01', phone: '+1 (555) 443-8901', location: 'Seattle, WA (Office)' },
+  { id: 'user-sarah', tenantId: 'tenant-kinetic', name: 'Sarah Miller', email: 'sarah.miller@kinetictech.io', role: 'admin', department: 'Human Resources', jobTitle: 'VP of People & Operations', employeeNumber: 'A-0012', hireDate: '2020-01-10', phone: '+1 (555) 789-0123', location: 'San Francisco, CA (HQ)' },
+  { id: 'user-david-emp', tenantId: 'tenant-kinetic', name: 'David Wilson', email: 'david.emp@kinetictech.io', role: 'employee', department: 'Engineering', jobTitle: 'Engineering Director', employeeNumber: 'KT-1044', hireDate: '2021-08-01', phone: '+1 (555) 443-8901', location: 'Seattle, WA (Office)' },
+  { id: 'user-sarah-emp', tenantId: 'tenant-kinetic', name: 'Sarah Miller', email: 'sarah.emp@kinetictech.io', role: 'employee', department: 'Human Resources', jobTitle: 'VP of People & Operations', employeeNumber: 'KT-0012', hireDate: '2020-01-10', phone: '+1 (555) 789-0123', location: 'San Francisco, CA (HQ)' },
   { id: 'user-marcus', tenantId: 'tenant-kinetic', name: 'Marcus Chen', email: 'marcus.chen@kinetictech.io', role: 'employee', department: 'Engineering', jobTitle: 'DevOps & Cloud Engineer', employeeNumber: 'KT-3301', managerId: 'user-david', managerName: 'David Wilson', hireDate: '2022-03-11', phone: '+1 (555) 321-4567', location: 'Seattle, WA' },
   { id: 'user-priya', tenantId: 'tenant-kinetic', name: 'Priya Patel', email: 'priya.patel@kinetictech.io', role: 'employee', department: 'Engineering', jobTitle: 'Backend Lead', employeeNumber: 'KT-5510', managerId: 'user-david', managerName: 'David Wilson', hireDate: '2022-09-01', phone: '+1 (555) 654-9870', location: 'Austin, TX (Remote)' },
   { id: 'user-platform-admin', tenantId: 'tenant-kinetic', name: 'Alex Thorne', email: 'alex.thorne@kineticcloud.azure.com', role: 'platform_admin', department: 'Cloud Platform Operations', jobTitle: 'Principal Cloud Platform Director', employeeNumber: 'KC-0001', hireDate: '2020-01-01', location: 'Microsoft Azure East US' },
 
   // Core Nova Execs
   { id: 'user-brandon-nova', tenantId: 'tenant-nova', name: 'Brandon Lee', email: 'brandon.lee@novasystems.com', role: 'employee', department: 'Operations & Logistics', jobTitle: 'Systems Architect', employeeNumber: 'NV-108', hireDate: '2024-02-01', phone: '+1 (555) 881-2299', location: 'Chicago, IL' },
-  { id: 'user-claire-nova', tenantId: 'tenant-nova', name: 'Claire Underwood', email: 'claire.underwood@novasystems.com', role: 'manager', department: 'Operations & Logistics', jobTitle: 'Operations Director', employeeNumber: 'NV-024', hireDate: '2021-05-15', phone: '+1 (555) 992-3344', location: 'Chicago, IL' },
-  { id: 'user-victor-nova', tenantId: 'tenant-nova', name: 'Victor Stone', email: 'victor.stone@novasystems.com', role: 'admin', department: 'HR & Legal', jobTitle: 'HR Director', employeeNumber: 'NV-005', hireDate: '2020-03-10', phone: '+1 (555) 991-4455', location: 'Chicago, IL' },
+  { id: 'user-claire-nova', tenantId: 'tenant-nova', name: 'Claire Underwood', email: 'claire.underwood@novasystems.com', role: 'manager', department: 'Operations & Logistics', jobTitle: 'Operations Director', employeeNumber: 'M-024', hireDate: '2021-05-15', phone: '+1 (555) 992-3344', location: 'Chicago, IL' },
+  { id: 'user-victor-nova', tenantId: 'tenant-nova', name: 'Victor Stone', email: 'victor.stone@novasystems.com', role: 'admin', department: 'HR & Legal', jobTitle: 'HR Director', employeeNumber: 'A-005', hireDate: '2020-03-10', phone: '+1 (555) 991-4455', location: 'Chicago, IL' },
+  { id: 'user-claire-nova-emp', tenantId: 'tenant-nova', name: 'Claire Underwood', email: 'claire.emp@novasystems.com', role: 'employee', department: 'Operations & Logistics', jobTitle: 'Operations Director', employeeNumber: 'NV-024', hireDate: '2021-05-15', phone: '+1 (555) 992-3344', location: 'Chicago, IL' },
+  { id: 'user-victor-nova-emp', tenantId: 'tenant-nova', name: 'Victor Stone', email: 'victor.emp@novasystems.com', role: 'employee', department: 'HR & Legal', jobTitle: 'HR Director', employeeNumber: 'NV-005', hireDate: '2020-03-10', phone: '+1 (555) 991-4455', location: 'Chicago, IL' },
 ]
 
 // Generate remaining 34 Kinetic employees
@@ -127,15 +131,16 @@ const lastNames = ['Smith', 'Garcia', 'Davis', 'Rodriguez', 'Martinez', 'Hernand
 firstNames.forEach((fn, idx) => {
   const ln = lastNames[idx % lastNames.length]
   const id = `user-kin-${idx + 10}`
+  const isMgr = idx % 6 === 0
   USERS.push({
     id,
     tenantId: 'tenant-kinetic',
     name: `${fn} ${ln}`,
     email: `${fn.toLowerCase()}.${ln.toLowerCase()}@kinetictech.io`,
-    role: idx % 6 === 0 ? 'manager' : 'employee',
+    role: isMgr ? 'manager' : 'employee',
     department: DEPARTMENTS[idx % 5].name,
     jobTitle: `Specialist Level ${ (idx % 3) + 1}`,
-    employeeNumber: `KT-${2000 + idx}`,
+    employeeNumber: isMgr ? `M-${2000 + idx}` : `KT-${2000 + idx}`,
     managerId: 'user-david',
     managerName: 'David Wilson',
     hireDate: `202${(idx % 4) + 1}-0${(idx % 8) + 1}-15`,
@@ -148,15 +153,16 @@ firstNames.forEach((fn, idx) => {
 firstNames.slice(0, 27).forEach((fn, idx) => {
   const ln = lastNames[(idx + 5) % lastNames.length]
   const id = `user-nova-${idx + 10}`
+  const isMgr = idx % 5 === 0
   USERS.push({
     id,
     tenantId: 'tenant-nova',
     name: `${fn} ${ln}`,
     email: `${fn.toLowerCase()}.${ln.toLowerCase()}@novasystems.com`,
-    role: idx % 5 === 0 ? 'manager' : 'employee',
+    role: isMgr ? 'manager' : 'employee',
     department: DEPARTMENTS[5 + (idx % 5)].name,
     jobTitle: `Systems Analyst Level ${ (idx % 3) + 1}`,
-    employeeNumber: `NV-${3000 + idx}`,
+    employeeNumber: isMgr ? `M-${3000 + idx}` : `NV-${3000 + idx}`,
     managerId: 'user-claire-nova',
     managerName: 'Claire Underwood',
     hireDate: `202${(idx % 3) + 2}-0${(idx % 8) + 1}-10`,

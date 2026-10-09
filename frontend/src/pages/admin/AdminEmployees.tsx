@@ -400,8 +400,12 @@ export const AdminEmployees: React.FC = () => {
           email: item.email,
           role: item.role,
           department: item.department,
-          jobTitle: item.jobTitle,
-          employeeNumber: `KT-${Math.floor(1000 + Math.random() * 9000)}`,
+          jobTitle: item.jobTitle || 'Specialist',
+          employeeNumber: (item as any).employeeNumber || (
+            item.role === 'admin' ? `A-${Math.floor(1000 + Math.random() * 9000)}` :
+            item.role === 'manager' ? `M-${Math.floor(1000 + Math.random() * 9000)}` :
+            `KT-${Math.floor(1000 + Math.random() * 9000)}`
+          ),
           hireDate: new Date().toISOString().split('T')[0],
         })
       }
@@ -546,7 +550,11 @@ export const AdminEmployees: React.FC = () => {
         department: selectedDept ? selectedDept.name : 'Unassigned',
         jobTitle: 'Pending Assignment',
         biometricStatus: newBiometricCaptured ? `Linked (${newBiometricToken})` : 'Pending Employee Capture',
-        employeeNumber: `KT-${Math.floor(1000 + Math.random() * 9000)}`,
+        employeeNumber: (
+          newRole === 'admin' ? `A-${Math.floor(1000 + Math.random() * 9000)}` :
+          newRole === 'manager' ? `M-${Math.floor(1000 + Math.random() * 9000)}` :
+          `KT-${Math.floor(1000 + Math.random() * 9000)}`
+        ),
         hireDate: new Date().toISOString().substring(0, 10),
       })
     },

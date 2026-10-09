@@ -55,7 +55,7 @@ export function authenticateRequest(
           role: 'manager',
           department: 'Engineering',
           jobTitle: 'Engineering Director',
-          employeeNumber: 'KT-1044',
+          employeeNumber: 'M-1044',
         }
       } else if (lower.includes('alice') || lower.includes('employee')) {
         decoded = {
@@ -77,7 +77,7 @@ export function authenticateRequest(
           role: 'admin',
           department: 'Human Resources',
           jobTitle: 'VP of People & Operations',
-          employeeNumber: 'KT-0012',
+          employeeNumber: 'A-0012',
         }
       } else if (lower.includes('platform') || lower.includes('alex')) {
         decoded = {
