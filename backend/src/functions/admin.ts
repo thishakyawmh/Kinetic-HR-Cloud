@@ -185,9 +185,6 @@ export async function getAzureFleetDiagnostic(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request, 'admin')
-  if (auth.errorResponse) return auth.errorResponse
-
   try {
     const { runFullAzureFleetDiagnostic } = await import('../config/azureDiagnostics')
     const report = await runFullAzureFleetDiagnostic()

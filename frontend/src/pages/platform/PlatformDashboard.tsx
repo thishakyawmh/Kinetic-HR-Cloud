@@ -46,13 +46,13 @@ export const PlatformDashboard: React.FC = () => {
         }
       >
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
           onClick={() => navigate('/platform/system-health')}
-          className="gap-1.5 text-xs rounded-xl border-border hover:bg-muted"
+          className="gap-1.5 text-xs rounded-xl bg-[#23ace3] hover:bg-[#1b97ca] text-white font-medium shadow-xs"
         >
-          <Activity className="h-3.5 w-3.5 text-emerald-400" />
-          <span>Azure Health Fleet</span>
+          <Activity className="h-3.5 w-3.5 text-white animate-pulse" />
+          <span>Run Live Diagnostic</span>
         </Button>
         <Button
           variant="default"
@@ -197,29 +197,32 @@ export const PlatformDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Azure Managed Infrastructure Fabric Banner */}
+      {/* Azure Cloud Infrastructure Operations Banner */}
       <Card className="border-border/60 bg-gradient-to-r from-card via-[#23ace3]/10 to-card rounded-2xl shadow-sm">
         <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-1.5 max-w-2xl">
             <div className="flex items-center gap-2">
               <Server className="h-4 w-4 text-[#23ace3]" />
               <h4 className="text-sm font-bold text-foreground">
-                Azure Managed SaaS Cloud Infrastructure Fleet
+                Azure Cloud Infrastructure Operations & Health
               </h4>
+              <Badge variant="outline" className="text-[10px] font-mono border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+                100% OPERATIONAL
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Kinetic HR Cloud operates across Microsoft Azure Functions (Serverless Node.js 20), Cosmos DB for NoSQL (/tenantId partition sharding), Azure Blob Storage (90-day cool tiering), and Azure Key Vault HSM keys with automated multi-zone ZRS redundancy.
+              Monitored resources in South India (<span className="font-mono text-foreground">kinetic_hr</span>): Azure Functions v4, Cosmos DB NoSQL (<span className="font-mono text-foreground">/tenantId</span> partition sharding), Azure Blob Storage lifecycle tiering, and Key Vault HSM.
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() => navigate('/platform/system-health')}
-              className="text-xs border-[#23ace3]/40 text-[#23ace3] hover:bg-[#23ace3]/10 rounded-xl"
+              className="text-xs bg-[#23ace3] hover:bg-[#1b97ca] text-white rounded-xl gap-1.5 font-medium shadow-xs"
             >
-              <Activity className="h-3.5 w-3.5 mr-1.5" />
-              <span>Inspect Health Fleet</span>
+              <Activity className="h-3.5 w-3.5 text-white animate-pulse" />
+              <span>Run Live Diagnostic</span>
             </Button>
             <Button
               variant="outline"
