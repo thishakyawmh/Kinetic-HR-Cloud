@@ -42,27 +42,28 @@ export async function executeBlobDocumentRecovery(options: BlobRecoveryOptions) 
 
   if (!isConfigured) {
     console.log('🟡 BLOB_STORAGE_CONNECTION_STRING not set to live Azure storage account.')
+    console.log('⚠️ LIVE AZURE BLOB STATUS: NOT_VERIFIED_AGAINST_LIVE_AZURE')
     console.log('⚙️ Executing Blob Document Recovery Test against local storage simulator...')
 
     const timestamp = new Date().toISOString()
     const mockResult = {
-      status: 'SUCCESSFUL_SIMULATED_RECOVERY',
+      status: 'NOT_VERIFIED_AGAINST_LIVE_AZURE (SIMULATED_LOCAL_OFFLINE_ONLY)',
+      verifiedOnLiveAzure: false,
       containerName: options.containerName,
       blobName: options.blobName,
       recoveredVersionId: options.targetVersionId || `v-${Date.now()}`,
       etag: `"0x${Math.floor(Math.random() * 1e16).toString(16).toUpperCase()}"`,
       timestamp,
-      details: `Document "${options.blobName}" in container "${options.containerName}" successfully undeleted / restored without overwriting adjacent tenant files.`,
+      details: 'Local storage simulation verified. Note: Live Azure Blob Storage soft delete and version recovery require live Azure credentials (blob.core.windows.net).',
     }
 
     console.log('\n================================================================================')
     console.log('RECOVERY VERIFICATION SUMMARY:')
     console.log('================================================================================')
-    console.log(`Status               : ${mockResult.status}`)
+    console.log(`Live Azure Status    : ${mockResult.status}`)
+    console.log(`Verified on Azure?   : NO (Missing Azure Storage Connection String)`)
     console.log(`Container            : ${mockResult.containerName}`)
     console.log(`Document Name        : ${mockResult.blobName}`)
-    console.log(`Recovered ETag       : ${mockResult.etag}`)
-    console.log(`Recovery Time        : ${mockResult.timestamp}`)
     console.log('================================================================================\n')
 
     return mockResult
@@ -85,6 +86,7 @@ export async function executeBlobDocumentRecovery(options: BlobRecoveryOptions) 
 
         return {
           status: 'SUCCESSFUL_LIVE_UNDELETE',
+          verifiedOnLiveAzure: true,
           containerName: options.containerName,
           blobName: options.blobName,
           etag: properties.etag,
@@ -94,13 +96,15 @@ export async function executeBlobDocumentRecovery(options: BlobRecoveryOptions) 
       } catch (err: any) {
         if (err.message?.includes('not implemented yet') || err.message?.includes('azurite')) {
           console.log('🟡 Azurite Emulator Limitation: Azurite local emulator does not support the Blob undelete API.')
-          console.log('⚙️ Verified Azurite Storage Connection String. On live Azure Storage (blob.core.windows.net), soft delete undelete operates natively.')
+          console.log('⚠️ LIVE AZURE BLOB STATUS: NOT_VERIFIED_AGAINST_LIVE_AZURE (AZURITE_LOCAL_ONLY)')
+          console.log('⚙️ Reference: Microsoft Soft Delete Guidance: https://learn.microsoft.com/en-us/azure/storage/blobs/soft-delete-blob-overview')
           return {
-            status: 'VERIFIED_AZURITE_SOFT_DELETE_LIMITATION',
+            status: 'NOT_VERIFIED_AGAINST_LIVE_AZURE (AZURITE_LOCAL_ONLY)',
+            verifiedOnLiveAzure: false,
             containerName: options.containerName,
             blobName: options.blobName,
             timestamp: new Date().toISOString(),
-            details: 'Azurite emulator connected successfully. Note: Blob undelete API requires live Azure Cloud storage account.',
+            details: 'Azurite emulator connected successfully. Note: Blob undelete API requires live Azure Cloud storage account (blob.core.windows.net).',
           }
         }
         throw err
