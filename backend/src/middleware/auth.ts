@@ -77,13 +77,13 @@ export function authenticateRequest(
         lower.includes('david')
       ) {
         decoded = {
-          id: 'user-sb-mgr-1',
+          id: 'user-dinuka',
           tenantId: 'tenant-sampath',
-          name: 'Dinesh Weerasinghe',
-          email: 'dinesh.weerasinghe@sampath.lk',
+          name: 'Dinuka Perera',
+          email: 'dinuka.perera@sampath.lk',
           role: 'manager',
           department: 'Retail Banking & Branches',
-          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          jobTitle: 'Senior Credit Officer',
           employeeNumber: 'M-1001',
         }
       } else if (lower.includes('keells') || lower.includes('priyantha') || lower.includes('user-ks-mgr-1')) {
@@ -118,19 +118,19 @@ export function authenticateRequest(
           department: 'Retail Banking & Branches',
           jobTitle: 'Senior Personal Banking Officer',
           employeeNumber: 'SB-1007',
-          managerId: 'user-sb-mgr-1',
-          managerName: 'Dinesh Weerasinghe',
+          managerId: 'user-dinuka',
+          managerName: 'Dinuka Perera',
         }
       } else {
-        // Fallback default in dev mode: Dinesh Weerasinghe (Senior Branch Manager)
+        // Fallback default in dev mode: Dinuka Perera (Senior Credit Officer)
         decoded = {
-          id: 'user-sb-mgr-1',
+          id: 'user-dinuka',
           tenantId: 'tenant-sampath',
-          name: 'Dinesh Weerasinghe',
-          email: 'dinesh.weerasinghe@sampath.lk',
+          name: 'Dinuka Perera',
+          email: 'dinuka.perera@sampath.lk',
           role: 'manager',
           department: 'Retail Banking & Branches',
-          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          jobTitle: 'Senior Credit Officer',
           employeeNumber: 'M-1001',
         }
       }

@@ -363,38 +363,8 @@ export const EmployeeLeavePlans: React.FC = () => {
               </div>
             </div>
 
-            {/* Figma-Style SVG Connecting Lines Canvas Overlay */}
+            {/* Calendar Container */}
             <div className="relative" ref={calendarRef}>
-              <svg className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-visible">
-                <defs>
-                  <linearGradient id="wireGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#0284c7" stopOpacity="0.9" />
-                    <stop offset="50%" stopColor="#38bdf8" stopOpacity="1" />
-                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.9" />
-                  </linearGradient>
-                  <marker
-                    id="arrowhead"
-                    markerWidth="8"
-                    markerHeight="8"
-                    refX="6"
-                    refY="4"
-                    orient="auto"
-                  >
-                    <polygon points="0 0, 8 4, 0 8" fill="#38bdf8" />
-                  </marker>
-                </defs>
-
-                {/* Example Active Responsibility Wiring Path */}
-                <path
-                  d="M 220 180 C 260 120, 380 120, 420 180"
-                  fill="none"
-                  stroke="url(#wireGrad)"
-                  strokeWidth="2.5"
-                  strokeDasharray="6 3"
-                  markerEnd="url(#arrowhead)"
-                  className="animate-pulse"
-                />
-              </svg>
 
               {/* Day Headers */}
               <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-muted-foreground">

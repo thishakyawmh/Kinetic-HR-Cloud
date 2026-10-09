@@ -145,15 +145,15 @@ export async function loginEmployee(
           branchId: 'br-sb-1',
           branchName: 'Colombo Fort Head Office Branch',
         }
-      } else if (cleanEmp.includes('m-1001') || (cleanEmp.includes('dinesh') && !cleanEmp.includes('sb'))) {
+      } else if (cleanEmp.includes('m-1001') || (cleanEmp.includes('dinuka') && !cleanEmp.includes('sb'))) {
         devUser = {
-          id: 'user-sb-mgr-1',
+          id: 'user-dinuka',
           tenantId: 'tenant-sampath',
-          name: 'Dinesh Weerasinghe',
-          email: 'dinesh.weerasinghe@sampath.lk',
+          name: 'Dinuka Perera',
+          email: 'dinuka.perera@sampath.lk',
           role: 'manager' as const,
           department: 'Retail Banking & Branches',
-          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          jobTitle: 'Senior Credit Officer',
           employeeNumber: 'M-1001',
           branchId: 'br-sb-1',
           branchName: 'Colombo Fort Head Office Branch',
@@ -166,20 +166,20 @@ export async function loginEmployee(
           email: 'kasun.emp@sampath.lk',
           role: 'employee' as const,
           department: 'People Operations & HR',
-          jobTitle: 'Head of Human Resources & Statutory Governance',
+          jobTitle: 'Senior Credit Officer',
           employeeNumber: 'SB-1001',
           branchId: 'br-sb-1',
           branchName: 'Colombo Fort Head Office Branch',
         }
       } else if (cleanEmp.includes('sb-1002')) {
         devUser = {
-          id: 'user-sb-mgr-1-emp',
+          id: 'user-dinuka-emp',
           tenantId: 'tenant-sampath',
-          name: 'Dinesh Weerasinghe',
-          email: 'dinesh.weerasinghe.emp@sampath.lk',
+          name: 'Dinuka Perera',
+          email: 'dinuka.perera.emp@sampath.lk',
           role: 'employee' as const,
           department: 'Retail Banking & Branches',
-          jobTitle: 'Senior Branch Manager (Colombo Fort)',
+          jobTitle: 'Senior Credit Officer',
           employeeNumber: 'SB-1002',
           branchId: 'br-sb-1',
           branchName: 'Colombo Fort Head Office Branch',

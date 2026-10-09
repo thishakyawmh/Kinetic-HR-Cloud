@@ -188,12 +188,12 @@ export const EmployeeLeaveApply: React.FC = () => {
       {/* Interactive Active Duty Handover Conflict Modal */}
       {conflictModalData && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="max-w-lg w-full bg-card border border-amber-500/50 rounded-[28px] shadow-2xl p-6 space-y-5 relative">
+          <Card className="max-w-xl w-full bg-card border border-amber-500/50 rounded-[28px] shadow-2xl p-6 space-y-5 relative overflow-hidden">
             <div className="flex items-start gap-4">
               <div className="h-12 w-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <div className="space-y-1 pr-6">
+              <div className="space-y-1 pr-4">
                 <h3 className="text-lg font-bold text-foreground">You Have an Active Duty Handover</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   You're scheduled to cover <span className="font-semibold text-foreground">{conflictModalData.coveringForName}</span> during these dates ({conflictModalData.startDate} to {conflictModalData.endDate}). Taking leave may leave this responsibility uncovered. Is your leave urgent and necessary?
@@ -202,45 +202,47 @@ export const EmployeeLeaveApply: React.FC = () => {
             </div>
 
             <div className="p-4 bg-muted/40 rounded-2xl border border-border/60 text-xs space-y-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-muted-foreground">Assigned Coverage Target:</span>
-                <span className="font-semibold text-foreground">{conflictModalData.coveringForName}</span>
+                <span className="font-semibold text-foreground truncate">{conflictModalData.coveringForName}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-muted-foreground">Responsibility:</span>
-                <span className="font-semibold text-sky-400">{conflictModalData.responsibility}</span>
+                <span className="font-semibold text-sky-400 truncate">{conflictModalData.responsibility}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-muted-foreground">Scheduled Duty Dates:</span>
                 <span className="font-semibold text-foreground">{conflictModalData.startDate} — {conflictModalData.endDate}</span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+            <div className="flex flex-col gap-2.5 pt-2">
               <Button
                 type="button"
                 onClick={() => handleConfirmUrgentLeave()}
                 disabled={applyMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs h-10 rounded-xl flex-1 shadow-sm cursor-pointer"
+                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-10 rounded-xl shadow-sm cursor-pointer"
               >
                 {applyMutation.isPending ? 'Submitting Urgent Request...' : 'Yes — Request Urgent Leave'}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setConflictModalData(null)}
-                className="text-xs h-10 rounded-xl flex-1 border-border cursor-pointer"
-              >
-                No — Keep My Current Schedule
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate('/employee/leave-plans')}
-                className="text-xs h-10 rounded-xl shrink-0 cursor-pointer"
-              >
-                Review My Responsibilities
-              </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setConflictModalData(null)}
+                  className="w-full text-xs h-10 rounded-xl border-border cursor-pointer"
+                >
+                  No — Keep Current Schedule
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => navigate('/employee/leave-plans')}
+                  className="w-full text-xs h-10 rounded-xl cursor-pointer"
+                >
+                  Review My Responsibilities
+                </Button>
+              </div>
             </div>
           </Card>
         </div>
