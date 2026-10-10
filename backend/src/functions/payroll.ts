@@ -289,7 +289,7 @@ export async function updatePaymentSettings(
   const body = (await request.json()) as any
 
   try {
-    const container = await getTenantContainer('payment_settings', tenantId)
+    const container = getTenantContainer('payment_settings')
     const settingsObj = {
       ...body,
       id: body.id || `pay-sett-${tenantId}`,
