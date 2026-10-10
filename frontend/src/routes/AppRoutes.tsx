@@ -38,6 +38,7 @@ import { AdminCreateWorkspace } from '@/pages/admin/AdminCreateWorkspace'
 import { AdminLeaveTypes } from '@/pages/admin/AdminLeaveTypes'
 import { AdminPolicies } from '@/pages/admin/AdminPolicies'
 import { AdminHolidays } from '@/pages/admin/AdminHolidays'
+import { AdminPaymentSettings } from '@/pages/admin/AdminPaymentSettings'
 import { AdminApprovals } from '@/pages/admin/AdminApprovals'
 import { AdminAuditLogs } from '@/pages/admin/AdminAuditLogs'
 import { AdminAIUsage } from '@/pages/admin/AdminAIUsage'
@@ -126,6 +127,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/admin/ai-usage" element={<AdminAIUsage />} />
         <Route path="/admin/integrations" element={<AdminIntegrations />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/payment-settings" element={<AdminPaymentSettings />} />
 
         {/* Kinetic Platform Administrator Experience (§6 & §49) */}
         <Route path="/platform/dashboard" element={<PlatformDashboard />} />

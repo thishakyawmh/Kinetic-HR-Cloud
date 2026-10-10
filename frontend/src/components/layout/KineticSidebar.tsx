@@ -24,6 +24,7 @@ import {
   Activity,
   Layers,
   Sliders,
+  SlidersHorizontal,
   Briefcase,
   LogOut,
   X,
@@ -88,6 +89,7 @@ export const KineticSidebar: React.FC<KineticSidebarProps> = ({
     { label: 'Audit Logs', to: '/admin/audit-logs', icon: History },
     { label: 'System Analytics', to: '/admin/ai-usage', icon: Activity },
     { label: 'Integrations', to: '/admin/integrations', icon: Layers },
+    { label: 'Payment Settings', to: '/admin/payment-settings', icon: SlidersHorizontal },
     { label: 'Settings', to: '/admin/settings', icon: Sliders },
   ]
 

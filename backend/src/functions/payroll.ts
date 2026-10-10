@@ -206,3 +206,102 @@ export async function calculateBiometricPayroll(
   }
 }
 
+/**
+ * GET /api/payroll/settings
+ */
+export async function getPaymentSettings(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+
+  try {
+    const items = await queryTenantItems<any>(
+      'payment_settings',
+      tenantId,
+      'SELECT * FROM c WHERE c.tenantId = @tenantId',
+      [{ name: '@tenantId', value: tenantId }]
+    )
+
+    if (items.length > 0) {
+      return { status: 200, jsonBody: items[0] }
+    }
+
+    const defaultSettings = {
+      id: `pay-sett-${tenantId}`,
+      tenantId,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'System Baseline',
+      otEnabled: true,
+      otBasis: '1.5x',
+      otCustomMultiplier: 1.5,
+      otMaxHours: 40,
+      otEligibleGroups: ['All Employees', 'Engineering', 'Operations'],
+      otRequireApproval: true,
+      otEffectiveFrom: '2026-01-01',
+
+      targetCoverageEnabled: true,
+      targetCoverageBase: 'net',
+      targetCoverageMethod: 'progressive',
+      targetTiers: [
+        { id: 'tier-1', rangeLabel: 'First 20 target units', lowerThreshold: 0, upperThreshold: 20, unit: 'units', ratePercent: 0.50 },
+        { id: 'tier-2', rangeLabel: 'Next 20 units', lowerThreshold: 20, upperThreshold: 40, unit: 'units', ratePercent: 0.75 },
+        { id: 'tier-3', rangeLabel: 'Above 40 units', lowerThreshold: 40, upperThreshold: 9999, unit: 'units', ratePercent: 1.00 },
+      ],
+
+      bonusEnabled: false,
+      bonusMethod: 'kpi',
+      bonusPercentage: 10,
+      bonusFixedAmount: 500,
+      bonusMinThreshold: 70,
+      bonusMaxPayout: 2500,
+
+      epfEmployeeEnabled: true,
+      epfEmployeeRate: 8,
+      epfEmployeeBase: 'legal',
+
+      epfEmployerEnabled: true,
+      epfEmployerRate: 12,
+      etfEmployerRate: 3,
+      epfEmployerBase: 'legal',
+    }
+
+    return { status: 200, jsonBody: defaultSettings }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+/**
+ * POST /api/payroll/settings
+ */
+export async function updatePaymentSettings(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+  const body = (await request.json()) as any
+
+  try {
+    const container = await getTenantContainer('payment_settings', tenantId)
+    const settingsObj = {
+      ...body,
+      id: body.id || `pay-sett-${tenantId}`,
+      tenantId,
+      updatedAt: new Date().toISOString(),
+      updatedBy: auth.user!.name || auth.user!.email,
+    }
+
+    await container.items.upsert(settingsObj)
+    return { status: 200, jsonBody: settingsObj }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+

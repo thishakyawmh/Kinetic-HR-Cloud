@@ -87,11 +87,11 @@ export const EmployeePayslipDetail: React.FC = () => {
           <Button
             variant="default"
             size="sm"
-            onClick={() => setIsOptimizerOpen(true)}
+            onClick={() => navigate('/admin/payment-settings')}
             className="text-xs gap-1.5 rounded-xl bg-[#23ace3] text-slate-950 hover:bg-[#1b96c8] font-bold cursor-pointer"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>Payment Optimization</span>
+            <span>Payment Configuration</span>
           </Button>
           <Button
             variant="outline"
@@ -116,13 +116,6 @@ export const EmployeePayslipDetail: React.FC = () => {
 
       {/* EXCLUSIVE 4-SECTION ITEMIZED STATEMENT DOCUMENT */}
       <PayslipStatementView payslip={payslip} user={user} tenant={tenant} />
-
-      {/* Payment Optimization Modal */}
-      <PaymentOptimizationModal
-        isOpen={isOptimizerOpen}
-        onClose={() => setIsOptimizerOpen(false)}
-        baseSalary={payslip.grossSalary || 3000.0}
-      />
     </div>
   )
 }

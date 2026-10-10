@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { PaymentOptimizationModal } from '@/components/payroll/PaymentOptimizationModal'
 import {
   Search,
   UserPlus,
@@ -47,6 +48,7 @@ import {
   Briefcase,
   Heart,
   CalendarDays,
+  SlidersHorizontal,
 } from 'lucide-react'
 
 // Helper to retrieve simple dependent info if available for an employee
@@ -296,6 +298,10 @@ export const AdminEmployees: React.FC = () => {
   const [editDeptDesc, setEditDeptDesc] = useState('')
   const [editDeptHead, setEditDeptHead] = useState('')
   const [editDeptSla, setEditDeptSla] = useState('75% min staffing')
+
+  // Payment Optimization Modal State
+  const [isPaymentOptimizationOpen, setIsPaymentOptimizationOpen] = useState(false)
+  const [selectedOptEmployee, setSelectedOptEmployee] = useState<User | null>(null)
 
   // Add Employee Modal Mode & CSV Bulk Upload State
   const [addEmployeeMode, setAddEmployeeMode] = useState<'manual' | 'csv'>('manual')
@@ -1197,21 +1203,33 @@ export const AdminEmployees: React.FC = () => {
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditDeptName(selectedDept.name)
-                    setEditDeptDesc(deptDescInput || selectedDept.description || '')
-                    setEditDeptHead(deptLeadInput || selectedDept.head || '')
-                    setEditDeptSla(deptSlaInput || selectedDept.threshold || '75% min staffing')
-                    setIsEditDeptModalOpen(true)
-                  }}
-                  className="border-border/70 hover:border-[#23ace3]/50 bg-card/80 hover:bg-[#23ace3]/10 text-foreground text-xs font-bold px-3.5 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer shrink-0 transition-all self-start md:self-center"
-                >
-                  <Edit2 className="h-3.5 w-3.5 text-[#23ace3]" />
-                  <span>Edit Settings</span>
-                </Button>
+                <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => navigate('/admin/payment-settings')}
+                    className="bg-[#23ace3] hover:bg-[#1b97ca] text-slate-950 font-bold text-xs px-3.5 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer transition-all"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span>Payment Configuration</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditDeptName(selectedDept.name)
+                      setEditDeptDesc(deptDescInput || selectedDept.description || '')
+                      setEditDeptHead(deptLeadInput || selectedDept.head || '')
+                      setEditDeptSla(deptSlaInput || selectedDept.threshold || '75% min staffing')
+                      setIsEditDeptModalOpen(true)
+                    }}
+                    className="border-border/70 hover:border-[#23ace3]/50 bg-card/80 hover:bg-[#23ace3]/10 text-foreground text-xs font-bold px-3.5 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer shrink-0 transition-all"
+                  >
+                    <Edit2 className="h-3.5 w-3.5 text-[#23ace3]" />
+                    <span>Edit Settings</span>
+                  </Button>
+                </div>
               </div>
 
               {/* Navigation Tabs Inside Department: Staff Members, Rules */}
@@ -1270,20 +1288,32 @@ export const AdminEmployees: React.FC = () => {
                       />
                     </div>
 
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedAssignUserId('')
-                        setAssignSearchTerm('')
-                        setAssignSuccessMsg(null)
-                        setIsAssignModalOpen(true)
-                      }}
-                      className="bg-[#23ace3] hover:bg-[#1b97ca] text-white text-xs font-bold px-4 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer shrink-0"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      <span>Assign Staff Member</span>
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => navigate('/admin/payment-settings')}
+                        className="bg-[#23ace3] hover:bg-[#1b97ca] text-slate-950 text-xs font-bold px-4 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        <span>Payment Configuration</span>
+                      </Button>
+
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedAssignUserId('')
+                          setAssignSearchTerm('')
+                          setAssignSuccessMsg(null)
+                          setIsAssignModalOpen(true)
+                        }}
+                        className="bg-[#23ace3] hover:bg-[#1b97ca] text-white text-xs font-bold px-4 h-9 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        <span>Assign Staff Member</span>
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Staff Table */}
@@ -1375,15 +1405,27 @@ export const AdminEmployees: React.FC = () => {
                               </TableCell>
                               <TableCell className="text-xs text-muted-foreground font-mono">{emp.hireDate}</TableCell>
                               <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setEditingUser(emp)}
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
-                                  title="Edit Staff Member"
-                                >
-                                  <Edit2 className="h-3.5 w-3.5" />
-                                </Button>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => navigate('/admin/payment-settings')}
+                                    className="h-8 px-2.5 text-[11px] font-bold text-[#23ace3] border-[#23ace3]/30 hover:bg-[#23ace3]/10 rounded-lg cursor-pointer flex items-center gap-1.5"
+                                    title="Payment Configuration"
+                                  >
+                                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                                    <span>Payment Configuration</span>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingUser(emp)}
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
+                                    title="Edit Staff Member"
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))

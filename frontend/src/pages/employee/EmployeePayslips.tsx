@@ -41,11 +41,11 @@ export const EmployeePayslips: React.FC = () => {
         subtitle="Access your authorized monthly earnings statements, tax withholdings, and benefits deductions."
       >
         <Button
-          onClick={() => setIsOptimizerOpen(true)}
+          onClick={() => navigate('/admin/payment-settings')}
           className="bg-[#23ace3] hover:bg-[#1b96c8] text-slate-950 font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-2 px-4 py-2"
         >
           <SlidersHorizontal className="h-4 w-4" />
-          <span>Payment Optimization</span>
+          <span>Payment Configuration</span>
         </Button>
       </PageHeader>
 
@@ -123,13 +123,6 @@ export const EmployeePayslips: React.FC = () => {
           </Table>
         </div>
       </div>
-
-      {/* Payment Optimization Modal */}
-      <PaymentOptimizationModal
-        isOpen={isOptimizerOpen}
-        onClose={() => setIsOptimizerOpen(false)}
-        baseSalary={latestPayslip?.grossSalary || 3000.0}
-      />
     </div>
   )
 }

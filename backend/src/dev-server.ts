@@ -37,6 +37,8 @@ import {
   getPayslipById,
   getPayslipDownloadUrl,
   calculateBiometricPayroll,
+  getPaymentSettings,
+  updatePaymentSettings,
 } from './functions/payroll'
 import {
   getAttendanceRecords,
@@ -173,6 +175,8 @@ addRoute('GET', '/api/payroll/payslips', getPayslips)
 addRoute('GET', '/api/payroll/payslips/{id}/download-url', getPayslipDownloadUrl)
 addRoute('GET', '/api/payroll/payslips/{id}', getPayslipById)
 addRoute('POST', '/api/payroll/calculate-biometric', calculateBiometricPayroll)
+addRoute('GET', '/api/payroll/settings', getPaymentSettings)
+addRoute('POST', '/api/payroll/settings', updatePaymentSettings)
 
 // Attendance & Biometrics
 addRoute('GET', '/api/attendance', getAttendanceRecords)

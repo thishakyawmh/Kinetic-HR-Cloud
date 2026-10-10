@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Lock, Sparkles, RefreshCw, Clock, ShieldCheck, Calculator, SlidersHorizontal } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import { PaymentOptimizationModal } from './PaymentOptimizationModal'
 
 interface PaycheckFlowProps {
   baseHourlyRate?: number
@@ -22,6 +22,7 @@ export const PaycheckFlowDiagram: React.FC<PaycheckFlowProps> = ({
   defaultHealthDental = 115,
   defaultFedStateTaxRate = 0.1467, // ~14.67% ($440 on $3000)
 }) => {
+  const navigate = useNavigate()
   // State for adjustable parameters (Defaults initialized to AI Predicted values)
   const [regHours, setRegHours] = useState<number>(defaultRegHours)
   const [otHours, setOtHours] = useState<number>(defaultOtHours)
@@ -78,11 +79,11 @@ export const PaycheckFlowDiagram: React.FC<PaycheckFlowProps> = ({
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
           <button
             type="button"
-            onClick={() => setIsOptimizerOpen(true)}
+            onClick={() => navigate('/admin/payment-settings')}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#23ace3] hover:bg-[#1b96c8] text-slate-950 font-bold text-xs transition-colors cursor-pointer shadow-xs"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>Payment Optimization</span>
+            <span>Payment Configuration</span>
           </button>
 
           <button
@@ -324,13 +325,6 @@ export const PaycheckFlowDiagram: React.FC<PaycheckFlowProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Payment Optimization Modal */}
-      <PaymentOptimizationModal
-        isOpen={isOptimizerOpen}
-        onClose={() => setIsOptimizerOpen(false)}
-        baseSalary={grossSalary}
-      />
     </div>
   )
 }
