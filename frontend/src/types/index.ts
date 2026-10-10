@@ -83,6 +83,10 @@ export interface AIAnalysisSummary {
   teamCoverageWarning?: string
   recommendationText: string
   requiresHumanApproval: boolean
+  whyRejected?: string
+  whoWasPrioritized?: string
+  prioritizationRationale?: string
+  prioritizedList?: Array<{ name: string; reason: string; score: number }>
 }
 
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'appealed' | 'altered' | 'complained' | string

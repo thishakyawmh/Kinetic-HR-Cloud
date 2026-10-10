@@ -262,12 +262,14 @@ export const ManagerAssistant: React.FC = () => {
       await approvalService.rejectRequest(
         targetReq.id,
         user.name || 'David Wilson',
-        'Declined due to department staffing threshold constraint'
+        'Declined due to department staffing threshold constraint',
+        targetReq
       )
       refreshUser()
-      resultMsgContent = `### ❌ Decision Executed: Leave Request #${targetReq.id} Declined
+      resultMsgContent = `### OK, rejected. Leave Request #${targetReq.id} Declined
 • **Employee:** ${targetReq.employeeName}
-• **Decision:** Rejected citing department presence and coverage threshold limits.
+• **Status:** Simultaneously updated to **Rejected** in employee's rejected list.
+• **Decision Rationale:** Declined citing department presence and coverage threshold limits.
 • **Quota:** No quota deducted.
 • **Notification:** Notice of decline with HR policy appeal guidelines dispatched to employee.`
     } else {

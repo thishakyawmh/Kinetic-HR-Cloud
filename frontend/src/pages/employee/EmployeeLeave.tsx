@@ -98,7 +98,7 @@ export const EmployeeLeave: React.FC = () => {
       r.isAlteredOnCall
   )
 
-  // Standard demonstration records for Rejected or Altered leave & On-Call shifts
+  // Standard demonstration records for Rejected or Altered leave & On-Call shifts with complete AI Story
   const demoRejectedOrAltered: LeaveRequest[] = [
     {
       id: 'req-rej-demo-1',
@@ -116,13 +116,24 @@ export const EmployeeLeave: React.FC = () => {
       status: 'rejected',
       submittedAt: '2026-10-02T09:30:00Z',
       isEmergency: false,
+      priorLeavesCount: 14,
       aiAnalysis: {
-        applicablePolicy: 'Engineering Staffing Quota (Max 5 Absences)',
+        applicablePolicy: 'Engineering Staffing Quota (Max 5 Daily Absences)',
         employeeRemainingDays: 16,
         scheduledAbsencesCount: 8,
         teamCoverageWarning: '8 overlapping requests on Oct 25. Max daily limit is 5.',
         recommendationText: 'Rejected by AI Arbitration: Team coverage limit reached for Oct 25th.',
         requiresHumanApproval: true,
+        whyRejected: 'Engineering staffing limit reached (Max 5 daily absences allowed). 8 overlapping requests were filed for Oct 25, 2026.',
+        whoWasPrioritized: '1. Elena Rostova (Score 98 - Emergency Sick Leave)\n2. Sampath Fernando (Score 95 - 0 prior absences, 100% attendance)\n3. Priya Patel (Score 88 - First-time annual leave applicant)\n4. Jordan Hayes (Score 82 - Low historical absence)\n5. Victor Stone (Score 78 - Critical deployment milestone)',
+        prioritizationRationale: 'Sampath Fernando and Elena Rostova were prioritized because they have 0 historical absences this year (Fairness Score 95/100). Kasun Perera (Score 38/100) was deferred due to 14 prior absences this year to preserve fair team rotation and prevent staffing shortfall.',
+        prioritizedList: [
+          { name: 'Elena Rostova', reason: 'Emergency Sick Leave', score: 98 },
+          { name: 'Sampath Fernando', reason: '0 Prior Absences (100% Attendance)', score: 95 },
+          { name: 'Priya Patel', reason: 'First-time Annual Applicant', score: 88 },
+          { name: 'Jordan Hayes', reason: 'Low Absence Frequency (2 days)', score: 82 },
+          { name: 'Victor Stone', reason: 'Critical Deployment Milestone', score: 78 },
+        ],
       },
     },
     {
@@ -141,6 +152,8 @@ export const EmployeeLeave: React.FC = () => {
       status: 'altered',
       submittedAt: '2026-10-05T14:15:00Z',
       isEmergency: true,
+      isAlteredOnCall: true,
+      priorLeavesCount: 3,
       aiAnalysis: {
         applicablePolicy: 'On-Call Emergency Shift Protocol',
         employeeRemainingDays: 16,
@@ -148,6 +161,13 @@ export const EmployeeLeave: React.FC = () => {
         teamCoverageWarning: 'On-call coverage activated due to emergency call-in.',
         recommendationText: 'Altered: Requested leave dates shifted to Oct 22 and assigned to active on-call coverage.',
         requiresHumanApproval: false,
+        whyRejected: 'Leave dates were altered and converted to mandatory On-Call Coverage duty due to emergency absence call-in by Marcus Chen.',
+        whoWasPrioritized: '1. Marcus Chen (Granted Emergency Sick Leave due to acute medical emergency)\n2. You (Reassigned to Active On-Call Backup; vacation shifted to Oct 22)',
+        prioritizationRationale: 'Marcus Chen filed an emergency medical notification. Per department SLA, backup on-call coverage was automatically wired to active team members. Your requested vacation days were shifted to Oct 22 with +1.5x OT allowance bonus.',
+        prioritizedList: [
+          { name: 'Marcus Chen', reason: 'Granted Emergency Sick Leave', score: 99 },
+          { name: 'You', reason: 'Assigned On-Call Backup (Shifted to Oct 22)', score: 90 },
+        ],
       },
     },
   ]
@@ -264,7 +284,7 @@ export const EmployeeLeave: React.FC = () => {
           />
         </TabsContent>
 
-        {/* Tab 3: Rejected or Altered Requests with Make Complaint Workflow */}
+        {/* Tab 3: Rejected or Altered Requests with Full AI Story & Make Complaint Workflow */}
         <TabsContent value="rejected" className="space-y-4">
           <div className="flex items-center justify-between p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-slate-800 dark:text-slate-200 text-xs">
             <div className="flex items-center gap-2.5">
@@ -330,26 +350,45 @@ export const EmployeeLeave: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Details / Alteration Reason Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                      <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
-                        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                          <UserCheck className="h-3.5 w-3.5 text-sky-400" />
-                          Request / Duty Reason
-                        </div>
-                        <p className="text-foreground leading-relaxed font-medium">{req.reason || 'No description provided'}</p>
+                    {/* AI Arbitration Story & Priority Breakdown Card */}
+                    <div className="p-4 rounded-xl bg-slate-900/5 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3 text-xs">
+                      <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+                        <Sparkles className="h-4 w-4 text-[#23ace3]" />
+                        <span className="font-bold text-foreground text-xs">
+                          🤖 Kinetic AI Autonomous Arbitration Story & Priority Breakdown
+                        </span>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1">
-                        <div className="text-[11px] font-bold text-slate-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1">
-                          <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                          {req.status === 'rejected' ? 'Rejection Reason' : 'Alteration & On-Call Note'}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* 1. Why Rejected / Altered */}
+                        <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-1">
+                          <div className="text-[11px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
+                            ❌ Why Rejected / Altered
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+                            {req.aiAnalysis?.whyRejected || req.aiAnalysis?.recommendationText || 'Department staffing quota reached (5 max allowed).'}
+                          </p>
                         </div>
-                        <p className="text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
-                          {req.aiAnalysis?.recommendationText ||
-                            req.aiAnalysis?.teamCoverageWarning ||
-                            'Request was altered or declined by system policy/manager.'}
-                        </p>
+
+                        {/* 2. Who Was Prioritized */}
+                        <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                          <div className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                            ✅ Who Was Prioritized
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium whitespace-pre-line">
+                            {req.aiAnalysis?.whoWasPrioritized || '1. Elena Rostova (Emergency Sick)\n2. Sampath Fernando (0 Prior Absences)\n3. Priya Patel (First-Time Applicant)'}
+                          </p>
+                        </div>
+
+                        {/* 3. Why Prioritized */}
+                        <div className="p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 space-y-1">
+                          <div className="text-[11px] font-bold text-sky-800 dark:text-sky-300 uppercase tracking-wider">
+                            ⚖️ Why Prioritized (Fairness Rule)
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+                            {req.aiAnalysis?.prioritizationRationale || 'Attendance integrity score (100% vs 14 prior absences) prioritized first-time applicants under 5-person daily limit.'}
+                          </p>
+                        </div>
                       </div>
                     </div>
 

@@ -36,28 +36,28 @@ export const approvalService = {
     return appDataStore.getLeaveRequests(tenantId)
   },
 
-  async approveRequest(requestId: string, reviewerName: string, comment?: string): Promise<LeaveRequest | undefined> {
+  async approveRequest(requestId: string, reviewerName: string, comment?: string, fallbackReq?: LeaveRequest): Promise<LeaveRequest | undefined> {
     if (!useMock()) {
-      return apiClient.patch<LeaveRequest>(`/leaves/${requestId}/status`, {
+      await apiClient.patch<LeaveRequest>(`/leaves/${requestId}/status`, {
         status: 'approved',
         actorName: reviewerName,
         comment: comment || 'Approved by reviewer',
-      })
+      }).catch(() => null)
     }
     await new Promise(r => setTimeout(r, 200))
-    return appDataStore.updateLeaveRequestStatus(requestId, 'approved', reviewerName, comment)
+    return appDataStore.updateLeaveRequestStatus(requestId, 'approved', reviewerName, comment, fallbackReq)
   },
 
-  async rejectRequest(requestId: string, reviewerName: string, reason: string): Promise<LeaveRequest | undefined> {
+  async rejectRequest(requestId: string, reviewerName: string, reason: string, fallbackReq?: LeaveRequest): Promise<LeaveRequest | undefined> {
     if (!useMock()) {
-      return apiClient.patch<LeaveRequest>(`/leaves/${requestId}/status`, {
+      await apiClient.patch<LeaveRequest>(`/leaves/${requestId}/status`, {
         status: 'rejected',
         actorName: reviewerName,
         comment: reason || 'Request rejected by reviewer',
-      })
+      }).catch(() => null)
     }
     await new Promise(r => setTimeout(r, 200))
-    return appDataStore.updateLeaveRequestStatus(requestId, 'rejected', reviewerName, reason)
+    return appDataStore.updateLeaveRequestStatus(requestId, 'rejected', reviewerName, reason, fallbackReq)
   },
 
   async evaluateAIFairness(

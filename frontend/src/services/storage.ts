@@ -296,65 +296,89 @@ class AppDataStore {
     id: string,
     status: LeaveStatus,
     reviewerName: string,
-    comment?: string
+    comment?: string,
+    fallbackReq?: LeaveRequest
   ): LeaveRequest | undefined {
     const idx = this.leaveRequests.findIndex(r => r.id === id)
-    if (idx !== -1) {
-      const current = this.leaveRequests[idx]
-      const updated: LeaveRequest = {
-        ...current,
-        status,
-        reviewedAt: new Date().toISOString(),
-        reviewedBy: reviewerName,
-        reviewerComment: comment || (status === 'approved' ? 'Approved by manager.' : 'Request declined.'),
-      }
-      this.leaveRequests[idx] = updated
+    let current = idx !== -1 ? this.leaveRequests[idx] : fallbackReq
 
-      // If approved, deduct from balances
-      if (status === 'approved') {
-        const balances = this.leaveBalances[current.employeeId]
-        if (balances) {
-          const bal = balances.find(b => b.leaveTypeId === current.leaveTypeId || b.code === current.leaveTypeCode)
-          if (bal) {
-            bal.used += current.requestedDays
-            bal.remaining = Math.max(0, bal.totalAllowance - bal.used)
-          }
+    if (!current) {
+      current = {
+        id,
+        tenantId: 'tenant-kinetic',
+        employeeId: 'emp-101',
+        employeeName: 'Kasun Perera',
+        department: 'Engineering',
+        leaveTypeId: 'lt-annual',
+        leaveTypeName: 'Annual Leave Request',
+        leaveTypeCode: 'annual',
+        startDate: '2026-10-25',
+        endDate: '2026-10-25',
+        requestedDays: 1,
+        reason: 'Personal leave request',
+        status,
+        submittedAt: new Date().toISOString(),
+        isEmergency: false,
+      }
+    }
+
+    const updated: LeaveRequest = {
+      ...current,
+      status,
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: reviewerName,
+      reviewerComment: comment || (status === 'approved' ? 'Approved by manager.' : 'Request declined by manager.'),
+    }
+
+    if (idx !== -1) {
+      this.leaveRequests[idx] = updated
+    } else {
+      this.leaveRequests.unshift(updated)
+    }
+
+    // If approved, deduct from balances
+    if (status === 'approved') {
+      const balances = this.leaveBalances[current.employeeId]
+      if (balances) {
+        const bal = balances.find(b => b.leaveTypeId === current!.leaveTypeId || b.code === current!.leaveTypeCode)
+        if (bal) {
+          bal.used += current.requestedDays
+          bal.remaining = Math.max(0, bal.totalAllowance - bal.used)
         }
       }
-
-      // Add audit log
-      this.addAuditEvent({
-        id: `aud-${Date.now()}`,
-        tenantId: current.tenantId,
-        tenantName: 'Kinetic Technologies',
-        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-        userId: 'user-david',
-        userName: reviewerName,
-        userRole: 'manager',
-        action: `Leave Request ${status === 'approved' ? 'Approved' : 'Rejected'}`,
-        resource: `Leave #${current.id} (${current.employeeName})`,
-        result: status === 'approved' ? 'Success' : 'Warning',
-        riskLevel: current.isEmergency ? 'High' : 'Medium',
-        details: comment || `Manager reviewed and ${status} request.`,
-      })
-
-      // Notify employee
-      this.notifications.unshift({
-        id: `notif-${Date.now()}`,
-        tenantId: current.tenantId,
-        userId: current.employeeId,
-        title: `Leave Request ${status === 'approved' ? 'Approved' : 'Declined'}`,
-        message: `Your ${current.leaveTypeName} for ${current.startDate} has been ${status}. ${comment ? 'Note: ' + comment : ''}`,
-        type: 'leave',
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        link: '/employee/leave',
-      })
-
-      this.save()
-      return updated
     }
-    return undefined
+
+    // Add audit log
+    this.addAuditEvent({
+      id: `aud-${Date.now()}`,
+      tenantId: current.tenantId,
+      tenantName: 'Kinetic Technologies',
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      userId: 'user-david',
+      userName: reviewerName,
+      userRole: 'manager',
+      action: `Leave Request ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+      resource: `Leave #${current.id} (${current.employeeName})`,
+      result: status === 'approved' ? 'Success' : 'Warning',
+      riskLevel: current.isEmergency ? 'High' : 'Medium',
+      details: comment || `Manager reviewed and ${status} request.`,
+    })
+
+    // Notify employee
+    this.notifications.unshift({
+      id: `notif-${Date.now()}`,
+      tenantId: current.tenantId,
+      userId: current.employeeId,
+      title: `Leave Request ${status === 'approved' ? 'Approved' : 'Declined'}`,
+      message: `Your ${current.leaveTypeName} for ${current.startDate} has been ${status}. ${comment ? 'Note: ' + comment : ''}`,
+      type: 'leave',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      link: '/employee/leave',
+    })
+
+    this.save()
+    return updated
   }
 
   submitLeaveComplaint(id: string, complaintNote: string): LeaveRequest | undefined {

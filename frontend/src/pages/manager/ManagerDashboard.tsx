@@ -297,15 +297,40 @@ export const ManagerDashboard: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Employee Reason / Complaint Note */}
-                        <td className="py-3.5 px-4 max-w-xs">
-                          <p className="text-xs text-foreground/90 font-medium line-clamp-2">
+                        {/* Employee Reason / Complaint Note & AI Story */}
+                        <td className="py-3.5 px-4 max-w-sm">
+                          <p className="text-xs text-foreground/90 font-medium">
                             "{req.reason}"
                           </p>
                           {req.complaintNote && (
-                            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-1">
-                              Complaint: {req.complaintNote}
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1 bg-amber-500/10 p-1.5 rounded-md border border-amber-500/20">
+                              🚨 Employee Complaint: {req.complaintNote}
                             </p>
+                          )}
+
+                          {/* AI Arbitration Story */}
+                          {req.aiAnalysis && (
+                            <div className="mt-2 text-[10.5px] p-2 rounded-lg bg-muted/60 border border-border/50 space-y-1">
+                              <div className="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                                <span>🤖 AI Arbitration Story:</span>
+                              </div>
+                              <div className="text-muted-foreground">
+                                <span className="font-bold text-rose-600 dark:text-rose-400">Why Rejected: </span>
+                                {req.aiAnalysis.whyRejected || req.aiAnalysis.recommendationText}
+                              </div>
+                              {req.aiAnalysis.whoWasPrioritized && (
+                                <div className="text-muted-foreground">
+                                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Prioritized: </span>
+                                  {req.aiAnalysis.whoWasPrioritized.split('\n')[0]}...
+                                </div>
+                              )}
+                              {req.aiAnalysis.prioritizationRationale && (
+                                <div className="text-muted-foreground">
+                                  <span className="font-bold text-sky-600 dark:text-sky-400">Fairness Rule: </span>
+                                  {req.aiAnalysis.prioritizationRationale}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </td>
 
