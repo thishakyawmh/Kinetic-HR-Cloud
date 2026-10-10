@@ -85,7 +85,7 @@ export interface AIAnalysisSummary {
   requiresHumanApproval: boolean
 }
 
-export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'appealed'
+export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'appealed' | 'altered' | 'complained' | string
 
 export interface LeaveRequest {
   id: string
@@ -95,7 +95,7 @@ export interface LeaveRequest {
   department: string
   leaveTypeId: string
   leaveTypeName: string
-  leaveTypeCode: 'annual' | 'sick' | 'medical' | 'casual' | 'emergency' | 'other'
+  leaveTypeCode: 'annual' | 'sick' | 'medical' | 'casual' | 'emergency' | 'other' | 'oncall' | string
   startDate: string
   endDate: string
   requestedDays: number
@@ -112,6 +112,7 @@ export interface LeaveRequest {
   complaintStatus?: 'pending_human_review' | 'resolved_override' | 'sustained'
   complaintSubmittedAt?: string
   autoApproved?: boolean
+  isAlteredOnCall?: boolean
   aiAnalysis?: AIAnalysisSummary
 }
 

@@ -27,6 +27,24 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     )
   }
 
+  if (s === 'complained') {
+    return (
+      <Badge className="gap-1 font-medium text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+        <CheckCircle2 className="h-3 w-3" />
+        Complained
+      </Badge>
+    )
+  }
+
+  if (s === 'altered') {
+    return (
+      <Badge className="gap-1 font-medium text-xs bg-sky-500/20 text-sky-400 border border-sky-500/40">
+        <Clock className="h-3 w-3" />
+        Altered / Shifted
+      </Badge>
+    )
+  }
+
   if (s === 'pending' || s === 'processing' || s === 'syncing') {
     return (
       <Badge variant="warning" className="gap-1 font-medium text-xs">

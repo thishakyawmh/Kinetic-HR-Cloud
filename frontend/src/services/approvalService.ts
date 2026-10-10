@@ -8,10 +8,24 @@ export const approvalService = {
   async getPendingApprovals(tenantId: string): Promise<LeaveRequest[]> {
     if (!useMock()) {
       const all = await apiClient.get<LeaveRequest[]>('/leaves', { params: { tenantId } })
-      return (all || []).filter(r => r.status === 'pending')
+      return (all || []).filter(
+        r =>
+          r.status === 'pending' ||
+          r.status === 'appealed' ||
+          r.status === 'complained' ||
+          r.complaintStatus === 'pending_human_review'
+      )
     }
     await new Promise(r => setTimeout(r, 100))
-    return appDataStore.getLeaveRequests(tenantId).filter(r => r.status === 'pending')
+    return appDataStore
+      .getLeaveRequests(tenantId)
+      .filter(
+        r =>
+          r.status === 'pending' ||
+          r.status === 'appealed' ||
+          r.status === 'complained' ||
+          r.complaintStatus === 'pending_human_review'
+      )
   },
 
   async getAllApprovals(tenantId: string): Promise<LeaveRequest[]> {
