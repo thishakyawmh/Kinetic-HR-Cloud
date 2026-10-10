@@ -36,12 +36,11 @@ export const LeaveHistoryTable: React.FC<LeaveHistoryTableProps> = ({
   const [isSubmittingComplaint, setIsSubmittingComplaint] = useState(false)
 
   const displayRequests = React.useMemo(() => {
-    const active = requests.filter(r => r.status !== 'cancelled')
+    // Preserve all distinct leave requests by unique record ID, excluding cancelled if not explicitly requested
     const map = new Map<string, LeaveRequest>()
-    active.forEach(r => {
-      const key = `${r.startDate}_${r.endDate}_${r.leaveTypeCode || r.leaveTypeName}`
-      if (!map.has(key)) {
-        map.set(key, r)
+    requests.forEach(r => {
+      if (r && r.id && !map.has(r.id)) {
+        map.set(r.id, r)
       }
     })
     return Array.from(map.values())

@@ -60,7 +60,7 @@ export const leaveService = {
       return apiClient.get<any[]>('/leaves/plans')
     }
     await new Promise(r => setTimeout(r, 100))
-    return []
+    return appDataStore.getLeavePlans()
   },
 
   async createLeavePlan(data: { startDate: string; endDate: string; notes?: string; type?: string; leaveTypeCode?: string }): Promise<any> {
@@ -68,15 +68,15 @@ export const leaveService = {
       return apiClient.post<any>('/leaves/plans', data)
     }
     await new Promise(r => setTimeout(r, 150))
-    return { id: `plan-${Date.now()}`, ...data, status: 'confirmed' }
+    return appDataStore.createLeavePlan(data)
   },
 
   async cancelLeavePlan(planId: string): Promise<any> {
     if (!useMock()) {
-      return apiClient.delete(`/leaves/plans/${planId}`)
+      await apiClient.delete(`/leaves/plans/${planId}`)
     }
     await new Promise(r => setTimeout(r, 150))
-    return true
+    return appDataStore.cancelLeavePlan(planId)
   },
 
   async triggerAutoCasualLeave(date?: string): Promise<any> {

@@ -7,6 +7,7 @@ import {
   getLeaveRequests,
   createLeaveRequest,
   updateLeaveStatus,
+  deleteLeaveRequest,
   getLeaveTypes,
   evaluateAIFairnessLeaves,
   getLeavePlans,
@@ -145,6 +146,7 @@ addRoute('GET', '/api/leaves/types', getLeaveTypes)
 addRoute('GET', '/api/leaves', getLeaveRequests)
 addRoute('POST', '/api/leaves', createLeaveRequest)
 addRoute('PATCH', '/api/leaves/{id}/status', updateLeaveStatus)
+addRoute('DELETE', '/api/leaves/{id}', deleteLeaveRequest)
 addRoute('POST', '/api/leaves/ai-evaluate', evaluateAIFairnessLeaves)
 addRoute('GET', '/api/leaves/plans', getLeavePlans)
 addRoute('POST', '/api/leaves/plans', createLeavePlan)

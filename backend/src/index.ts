@@ -5,6 +5,7 @@ import {
   getLeaveRequests,
   createLeaveRequest,
   updateLeaveStatus,
+  deleteLeaveRequest,
   evaluateAIFairnessLeaves,
   getLeaveTypes,
 } from './functions/leaves'
@@ -108,6 +109,13 @@ app.http('updateLeaveStatus', {
   authLevel: 'anonymous',
   route: 'leaves/{id}/status',
   handler: updateLeaveStatus,
+})
+
+app.http('deleteLeaveRequest', {
+  methods: ['DELETE'],
+  authLevel: 'anonymous',
+  route: 'leaves/{id}',
+  handler: deleteLeaveRequest,
 })
 
 app.http('getLeaveTypes', {

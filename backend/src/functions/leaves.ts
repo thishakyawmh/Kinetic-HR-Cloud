@@ -13,7 +13,7 @@ function datesOverlap(start1: string, end1: string, start2: string, end2: string
 /**
  * Helper: Calculate working days between start and end date (inclusive)
  */
-function calculateWorkingDays(startDateStr: string, endDateStr: string): number {
+export function calculateWorkingDays(startDateStr: string, endDateStr: string): number {
   if (!startDateStr || !endDateStr) return 1
   const start = new Date(startDateStr)
   const end = new Date(endDateStr)
@@ -724,6 +724,72 @@ export async function updateLeaveStatus(
     }
 
     return { status: 200, jsonBody: updated }
+  } catch (err: any) {
+    return { status: 500, jsonBody: { error: err.message } }
+  }
+}
+
+/**
+ * DELETE /api/leaves/{id}
+ * Deletes a leave request and restores authoritative leave balances
+ */
+export async function deleteLeaveRequest(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request)
+  if (auth.errorResponse) return auth.errorResponse
+
+  const tenantId = auth.user!.tenantId
+  const leaveId = request.params.id
+
+  if (!leaveId) {
+    return { status: 400, jsonBody: { error: 'Leave ID is required' } }
+  }
+
+  try {
+    const container = getTenantContainer('leaves')
+    const { resource: currentLeave } = await container.item(leaveId, tenantId).read().catch(() => ({ resource: null }))
+
+    if (currentLeave) {
+      const prevStatus = currentLeave.status
+      const requestedDays = currentLeave.requestedDays || 1
+      const empId = currentLeave.employeeId
+      const code = currentLeave.leaveTypeCode || 'annual'
+
+      await container.item(leaveId, tenantId).delete().catch(() => {})
+
+      // Restore balances if deleted
+      try {
+        const balContainer = getTenantContainer('leave_balances')
+        const balances = await queryTenantItems<any>(
+          'leave_balances',
+          tenantId,
+          'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId AND (c.code = @code OR c.leaveType = @code)',
+          [
+            { name: '@tenantId', value: tenantId },
+            { name: '@userId', value: empId },
+            { name: '@code', value: code },
+          ]
+        )
+
+        if (balances.length > 0) {
+          const bal = balances[0]
+          if (prevStatus === 'pending') {
+            bal.pending = Math.max(0, (bal.pending || 0) - requestedDays)
+          } else if (prevStatus === 'approved') {
+            bal.used = Math.max(0, (bal.used || 0) - requestedDays)
+          }
+          bal.remaining = Math.max(0, (bal.totalAllowance || 20) - (bal.used || 0) - (bal.pending || 0))
+          bal.updatedAt = new Date().toISOString()
+          await balContainer.items.upsert(bal)
+        }
+      } catch (balErr) {
+        console.warn('Could not update balance on deletion:', balErr)
+      }
+    }
+
+    return { status: 200, jsonBody: { success: true, message: 'Leave request deleted successfully' } }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
   }

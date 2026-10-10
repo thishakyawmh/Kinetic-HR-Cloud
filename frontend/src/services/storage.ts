@@ -30,6 +30,45 @@ import {
   MOCK_BRANCHES
 } from '@/mock/data'
 
+const MOCK_LEAVE_PLANS: any[] = [
+  {
+    id: 'plan-dinuka-oct14',
+    tenantId: 'tenant-sampath',
+    employeeId: 'user-dinuka',
+    employeeName: 'Dinuka Jayakody',
+    employeeRole: 'Senior Credit Officer',
+    department: 'Retail Banking & Branches',
+    startDate: '2026-10-14',
+    endDate: '2026-10-14',
+    days: 1,
+    notes: 'Annual Leave scheduled',
+    status: 'confirmed',
+    type: 'Annual Leave',
+    leaveTypeCode: 'annual',
+    assignedBackupId: 'user-kasun',
+    assignedBackupName: 'Kasun Perera',
+    assignedBackupRole: 'Senior Credit Officer',
+  },
+  {
+    id: 'plan-kasun-oct22',
+    tenantId: 'tenant-sampath',
+    employeeId: 'user-kasun',
+    employeeName: 'Kasun Perera',
+    employeeRole: 'Senior Credit Officer',
+    department: 'Retail Banking & Branches',
+    startDate: '2026-10-22',
+    endDate: '2026-10-23',
+    days: 2,
+    notes: 'Annual Leave scheduled',
+    status: 'confirmed',
+    type: 'Annual Leave',
+    leaveTypeCode: 'annual',
+    assignedBackupId: 'user-dinuka',
+    assignedBackupName: 'Dinuka Jayakody',
+    assignedBackupRole: 'Senior Credit Officer',
+  },
+]
+
 class AppDataStore {
   private tenants: Tenant[] = []
   private users: User[] = []
@@ -37,6 +76,9 @@ class AppDataStore {
   private leaveTypes: LeaveType[] = []
   private leaveBalances: Record<string, LeaveBalance[]> = {}
   private leaveRequests: LeaveRequest[] = []
+  private deletedLeaveIds: string[] = []
+  private leavePlans: any[] = []
+  private deletedLeavePlanIds: string[] = []
   private payslips: Payslip[] = []
   private policies: PolicyDocument[] = []
   private auditLogs: AuditEvent[] = []
@@ -54,6 +96,8 @@ class AppDataStore {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
+        this.deletedLeaveIds = parsed.deletedLeaveIds || []
+        this.deletedLeavePlanIds = parsed.deletedLeavePlanIds || []
         // Purge obsolete legacy tenants and enforce active enterprise organizations
         if (!parsed.tenants || !parsed.tenants.some((t: any) => t.id === 'tenant-sampath')) {
           this.tenants = [...MOCK_TENANTS]
@@ -75,7 +119,12 @@ class AppDataStore {
         })
         this.leaveTypes = parsed.leaveTypes || MOCK_LEAVE_TYPES
         this.leaveBalances = parsed.leaveBalances || MOCK_LEAVE_BALANCES
-        this.leaveRequests = parsed.leaveRequests || MOCK_LEAVE_REQUESTS
+        this.leaveRequests = (parsed.leaveRequests || MOCK_LEAVE_REQUESTS).filter(
+          (l: LeaveRequest) => !this.deletedLeaveIds.includes(l.id)
+        )
+        this.leavePlans = (parsed.leavePlans || MOCK_LEAVE_PLANS).filter(
+          (p: any) => p.status !== 'cancelled' && !this.deletedLeavePlanIds.includes(p.id)
+        )
         this.payslips = parsed.payslips || MOCK_PAYSLIPS
         this.policies = parsed.policies || MOCK_POLICIES
         this.auditLogs = parsed.auditLogs || MOCK_AUDIT_LOGS
@@ -84,6 +133,13 @@ class AppDataStore {
         this.documentRequests = (parsed.documentRequests && parsed.documentRequests.length > 0) ? parsed.documentRequests : MOCK_DOCUMENT_REQUESTS
         this.branches = (parsed.branches && parsed.branches.length > 0) ? parsed.branches : MOCK_BRANCHES
         this.aiUsage = parsed.aiUsage || MOCK_AI_USAGE
+
+        // Merge missing leave plans safely (excluding deleted plan IDs)
+        MOCK_LEAVE_PLANS.forEach(mp => {
+          if (!this.deletedLeavePlanIds.includes(mp.id) && !this.leavePlans.some(p => p.id === mp.id)) {
+            this.leavePlans.push(mp)
+          }
+        })
 
         // Merge any new default mock users (e.g. separate employee accounts)
         MOCK_USERS.forEach(mu => {
@@ -115,9 +171,9 @@ class AppDataStore {
             this.documentRequests.push(md)
           }
         })
-        // Merge missing leave requests (e.g. newly added approved schedule matrix leaves)
+        // Merge missing leave requests safely (excluding deleted IDs)
         MOCK_LEAVE_REQUESTS.forEach(ml => {
-          if (!this.leaveRequests.some(l => l.id === ml.id)) {
+          if (!this.deletedLeaveIds.includes(ml.id) && !this.leaveRequests.some(l => l.id === ml.id)) {
             this.leaveRequests.push(ml)
           }
         })
@@ -135,6 +191,9 @@ class AppDataStore {
     this.leaveTypes = [...MOCK_LEAVE_TYPES]
     this.leaveBalances = JSON.parse(JSON.stringify(MOCK_LEAVE_BALANCES))
     this.leaveRequests = [...MOCK_LEAVE_REQUESTS]
+    this.leavePlans = JSON.parse(JSON.stringify(MOCK_LEAVE_PLANS))
+    this.deletedLeaveIds = []
+    this.deletedLeavePlanIds = []
     this.payslips = [...MOCK_PAYSLIPS]
     this.policies = [...MOCK_POLICIES]
     this.auditLogs = [...MOCK_AUDIT_LOGS]
@@ -154,6 +213,9 @@ class AppDataStore {
         leaveTypes: this.leaveTypes,
         leaveBalances: this.leaveBalances,
         leaveRequests: this.leaveRequests,
+        deletedLeaveIds: this.deletedLeaveIds,
+        leavePlans: this.leavePlans,
+        deletedLeavePlanIds: this.deletedLeavePlanIds,
         payslips: this.payslips,
         policies: this.policies,
         auditLogs: this.auditLogs,
@@ -428,14 +490,128 @@ class AppDataStore {
     return undefined
   }
 
+  recalculateLeaveBalances(employeeId: string): void {
+    const balances = this.leaveBalances[employeeId]
+    if (!balances) return
+
+    // Get active (non-deleted) requests for this employee
+    const empRequests = this.leaveRequests.filter(
+      r => r.employeeId === employeeId && !this.deletedLeaveIds.includes(r.id)
+    )
+    const empPlans = this.leavePlans.filter(
+      p =>
+        (p.employeeId === employeeId || p.employeeName?.toLowerCase().includes('dinuka') || p.employeeName?.toLowerCase().includes('kasun')) &&
+        p.status !== 'cancelled' &&
+        !this.deletedLeavePlanIds.includes(p.id)
+    )
+
+    balances.forEach(bal => {
+      const typeCode = (bal.code || (bal as any).leaveType || 'annual').toLowerCase()
+
+      // Consumed (used): Approved requests + active non-cancelled plans
+      const approvedReqDays = empRequests
+        .filter(r => r.status === 'approved' && (r.leaveTypeCode === typeCode || r.leaveTypeId === bal.leaveTypeId))
+        .reduce((sum, r) => sum + (r.requestedDays || 1), 0)
+
+      const activePlanDays = empPlans
+        .filter(p => (p.leaveTypeCode || p.type || 'annual').toLowerCase().includes(typeCode))
+        .reduce((sum, p) => sum + (p.days || 1), 0)
+
+      const approvedDays = approvedReqDays + activePlanDays
+
+      // Reserved (pending): Pending requests only
+      const pendingDays = empRequests
+        .filter(r => r.status === 'pending' && (r.leaveTypeCode === typeCode || r.leaveTypeId === bal.leaveTypeId))
+        .reduce((sum, r) => sum + (r.requestedDays || 1), 0)
+
+      bal.used = approvedDays
+      bal.pending = pendingDays
+      bal.remaining = Math.max(0, (bal.totalAllowance || 20) - bal.used - bal.pending)
+      ;(bal as any).updatedAt = new Date().toISOString()
+    })
+
+    this.save()
+  }
+
   deleteLeaveRequest(id: string): boolean {
-    const idx = this.leaveRequests.findIndex(r => r.id === id)
-    if (idx !== -1) {
-      this.leaveRequests.splice(idx, 1)
-      this.save()
-      return true
+    if (!this.deletedLeaveIds.includes(id)) {
+      this.deletedLeaveIds.push(id)
     }
-    return false
+
+    const idx = this.leaveRequests.findIndex(r => r.id === id)
+    let empId = ''
+    if (idx !== -1) {
+      empId = this.leaveRequests[idx].employeeId
+      this.leaveRequests.splice(idx, 1)
+    }
+
+    if (empId) {
+      this.recalculateLeaveBalances(empId)
+    }
+
+    this.save()
+    return true
+  }
+
+  // Leave Plans
+  getLeavePlans(tenantId?: string): any[] {
+    let list = this.leavePlans.filter(p => p.status !== 'cancelled' && !this.deletedLeavePlanIds.includes(p.id))
+    if (tenantId) {
+      list = list.filter(p => p.tenantId === tenantId)
+    }
+    return list
+  }
+
+  createLeavePlan(planData: any): any {
+    const id = `plan-${Date.now()}`
+    const newPlan = {
+      id,
+      tenantId: planData.tenantId || 'tenant-sampath',
+      status: 'confirmed',
+      ...planData,
+    }
+    this.leavePlans.unshift(newPlan)
+    if (planData.employeeId) {
+      this.recalculateLeaveBalances(planData.employeeId)
+    }
+    this.save()
+    return newPlan
+  }
+
+  cancelLeavePlan(planId: string): boolean {
+    if (!this.deletedLeavePlanIds.includes(planId)) {
+      this.deletedLeavePlanIds.push(planId)
+    }
+
+    const idx = this.leavePlans.findIndex(p => p.id === planId || p.id.includes(planId) || planId.includes(p.id))
+    let empId = ''
+    if (idx !== -1) {
+      empId = this.leavePlans[idx].employeeId
+      this.leavePlans[idx].status = 'cancelled'
+      this.leavePlans.splice(idx, 1)
+    } else {
+      this.leavePlans = this.leavePlans.filter(p => {
+        if (p.id === planId || p.id.includes(planId) || planId.includes(p.id)) {
+          p.status = 'cancelled'
+          return false
+        }
+        return true
+      })
+    }
+
+    const reqIdx = this.leaveRequests.findIndex(r => r.id === planId || (r as any).planId === planId)
+    if (reqIdx !== -1) {
+      if (!empId) empId = this.leaveRequests[reqIdx].employeeId
+      this.deletedLeaveIds.push(this.leaveRequests[reqIdx].id)
+      this.leaveRequests.splice(reqIdx, 1)
+    }
+
+    ['user-dinuka', 'user-kasun', 'emp-101', empId].forEach(e => {
+      if (e) this.recalculateLeaveBalances(e)
+    })
+
+    this.save()
+    return true
   }
 
   // Payslips
