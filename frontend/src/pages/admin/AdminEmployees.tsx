@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { PaymentOptimizationModal } from '@/components/payroll/PaymentOptimizationModal'
+import { BulkImportWizardModal } from '@/components/admin/BulkImportWizardModal'
 import {
   Search,
   UserPlus,
@@ -462,6 +463,7 @@ export const AdminEmployees: React.FC = () => {
   const [leaveNoticeDays, setLeaveNoticeDays] = useState('3 Days Notice')
   const [coreHours, setCoreHours] = useState('08:30 - 17:00')
   const [rulesSavedMsg, setRulesSavedMsg] = useState(false)
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false)
 
   // Per-department Leave Rules mapping
   const [deptLeaveRulesMap, setDeptLeaveRulesMap] = useState<Record<string, typeof departmentLeaveConfigs>>({})
@@ -643,6 +645,16 @@ export const AdminEmployees: React.FC = () => {
               </div>
 
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsBulkImportOpen(true)}
+                className="bg-card hover:bg-muted text-foreground text-xs font-bold px-3.5 h-9 rounded-xl border-border/80 shadow-xs gap-1.5 cursor-pointer"
+              >
+                <UploadCloud className="h-4 w-4 text-[#23ace3]" />
+                <span>Import Staff (CSV)</span>
+              </Button>
+
+              <Button
                 variant="default"
                 size="sm"
                 onClick={() => setIsAddModalOpen(true)}
@@ -659,6 +671,16 @@ export const AdminEmployees: React.FC = () => {
                 <span className="text-muted-foreground font-medium">Departments:</span>
                 <span className="font-extrabold text-foreground font-mono text-sm">{allDeptNames.length}</span>
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsBulkImportOpen(true)}
+                className="bg-card hover:bg-muted text-foreground text-xs font-bold px-3.5 h-9 rounded-xl border-border/80 shadow-xs gap-1.5 cursor-pointer"
+              >
+                <UploadCloud className="h-4 w-4 text-[#23ace3]" />
+                <span>Import Staff (CSV)</span>
+              </Button>
 
               <Button
                 variant="default"
@@ -3340,6 +3362,17 @@ export const AdminEmployees: React.FC = () => {
           </Button>
         </DialogFooter>
       </Dialog>
+
+      {/* Bulk Staff Ingestion & Migration Wizard Modal */}
+      <BulkImportWizardModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onSuccess={() => {
+          refetchEmployees()
+          refetchDepts()
+        }}
+        existingDepartments={allDeptNames}
+      />
     </div>
   )
 }

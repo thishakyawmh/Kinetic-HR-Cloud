@@ -213,12 +213,29 @@ export async function bulkImportEmployees(
 
   try {
     const body = (await request.json()) as {
-      dataset: Array<Record<string, any>>
+      mode?: 'auto_split' | 'fixed_department'
+      targetDepartment?: string
       departmentColumn?: string
+      columnMapping?: {
+        name?: string
+        employeeNumber?: string
+        email?: string
+        department?: string
+        jobTitle?: string
+        role?: string
+        managerNumber?: string
+        phone?: string
+        hireDate?: string
+        location?: string
+      }
+      dataset: Array<Record<string, any>>
     }
 
     const dataset = body?.dataset || []
-    const deptCol = (body?.departmentColumn || 'Department').trim()
+    const mode = body?.mode || 'auto_split'
+    const targetDept = (body?.targetDepartment || '').trim()
+    const mapping = body?.columnMapping || {}
+    const deptCol = mapping.department || body?.departmentColumn || 'Department'
 
     if (!Array.isArray(dataset) || dataset.length === 0) {
       return { status: 400, jsonBody: { error: 'Invalid or empty employee dataset' } }
@@ -226,30 +243,59 @@ export async function bulkImportEmployees(
 
     const usersContainer = getTenantContainer('users')
     const deptsContainer = getTenantContainer('departments')
+    const balContainer = getTenantContainer('leave_balances')
+    const auditContainer = getTenantContainer('audit_logs')
 
     // Fetch existing departments for tenant
-    const existingDepts = await queryTenantItems<any>('departments', tenantId, 'SELECT c.name FROM c WHERE c.tenantId = @tenantId', [{ name: '@tenantId', value: tenantId }])
+    const existingDepts = await queryTenantItems<any>(
+      'departments',
+      tenantId,
+      'SELECT c.name FROM c WHERE c.tenantId = @tenantId',
+      [{ name: '@tenantId', value: tenantId }]
+    )
     const existingDeptNames = new Set(existingDepts.map((d: any) => d.name.toLowerCase()))
+
+    // If fixed department mode and target department doesn't exist, create it
+    if (mode === 'fixed_department' && targetDept && !existingDeptNames.has(targetDept.toLowerCase())) {
+      existingDeptNames.add(targetDept.toLowerCase())
+      await deptsContainer.items.create({
+        id: `dept-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+        tenantId,
+        name: targetDept,
+        head: auth.user!.name || 'Department Lead',
+        threshold: '75% min staffing',
+        status: 'Active',
+        description: 'Auto-provisioned department from specific file import.',
+        createdAt: new Date().toISOString(),
+      })
+    }
 
     const createdDeptNames: string[] = []
     const importedEmployees: any[] = []
+    const deptBreakdown: Record<string, number> = {}
+    const managerLinkRequests: Array<{ empId: string; managerIdentifier: string }> = []
 
+    // PASS 1: Create/Upsert Employee Accounts & Departments & Leave Balances
     for (let i = 0; i < dataset.length; i++) {
       const row = dataset[i]
-      
-      // Determine department from specified column name or fallback key
-      const rawDept =
-        row[deptCol] ||
-        row['Department'] ||
-        row['department'] ||
-        row['Division'] ||
-        row['dept_name'] ||
-        row['Dept'] ||
-        'Operations'
 
-      const deptName = String(rawDept).trim()
+      // Determine Department
+      let deptName = 'Operations'
+      if (mode === 'fixed_department' && targetDept) {
+        deptName = targetDept
+      } else {
+        const rawDept =
+          row[deptCol] ||
+          row['Department'] ||
+          row['department'] ||
+          row['Division'] ||
+          row['dept_name'] ||
+          row['Dept'] ||
+          'Operations'
+        deptName = String(rawDept).trim() || 'Operations'
+      }
 
-      // Auto-create department if it doesn't exist yet
+      // Auto-create department if not existing
       if (deptName && !existingDeptNames.has(deptName.toLowerCase())) {
         existingDeptNames.add(deptName.toLowerCase())
         createdDeptNames.push(deptName)
@@ -260,39 +306,163 @@ export async function bulkImportEmployees(
           head: auth.user!.name || 'Department Lead',
           threshold: '75% min staffing',
           status: 'Active',
-          description: `Auto-generated department workspace from dataset import (${deptCol}).`,
+          description: `Auto-generated department workspace from bulk import (${deptCol}).`,
           createdAt: new Date().toISOString(),
         }
         await deptsContainer.items.create(newDeptObj)
       }
 
-      // Extract employee details with biometric & legacy field support
-      const name = row['Name'] || row['name'] || row['EmployeeName'] || row['Full Name'] || `Imported Staff #${i + 1}`
-      const empNum = row['EmployeeNumber'] || row['employeeNumber'] || row['EmpID'] || row['BiometricID'] || `EMP-${1000 + i}`
-      const email = row['Email'] || row['email'] || `${name.toLowerCase().replace(/\s+/g, '.')}@kinetictech.io`
-      const role = (row['Role'] || row['role'] || 'employee').toLowerCase()
-      const jobTitle = row['JobTitle'] || row['jobTitle'] || row['Designation'] || row['Title'] || 'Staff Member'
-      const phone = row['Phone'] || row['phone'] || row['Mobile'] || ''
+      deptBreakdown[deptName] = (deptBreakdown[deptName] || 0) + 1
+
+      // Extract Mapped Fields
+      const name = String(
+        row[mapping.name || 'Name'] ||
+        row['Name'] ||
+        row['name'] ||
+        row['EmployeeName'] ||
+        row['Full Name'] ||
+        row['Staff Name'] ||
+        `Staff #${i + 1}`
+      ).trim()
+
+      const empNum = String(
+        row[mapping.employeeNumber || 'EmployeeNumber'] ||
+        row['EmployeeNumber'] ||
+        row['employeeNumber'] ||
+        row['EmpID'] ||
+        row['Staff ID'] ||
+        row['BiometricID'] ||
+        `EMP-${1000 + i}`
+      ).trim()
+
+      const email = String(
+        row[mapping.email || 'Email'] ||
+        row['Email'] ||
+        row['email'] ||
+        row['Work Email'] ||
+        `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@kinetictech.io`
+      ).trim()
+
+      const rawRole = String(row[mapping.role || 'Role'] || row['Role'] || row['role'] || 'employee').toLowerCase().trim()
+      const role = ['admin', 'manager', 'employee', 'platform_admin'].includes(rawRole) ? rawRole : 'employee'
+
+      const jobTitle = String(
+        row[mapping.jobTitle || 'JobTitle'] ||
+        row['JobTitle'] ||
+        row['jobTitle'] ||
+        row['Designation'] ||
+        row['Title'] ||
+        'Staff Member'
+      ).trim()
+
+      const phone = String(row[mapping.phone || 'Phone'] || row['Phone'] || row['phone'] || row['Mobile'] || '').trim()
+      const location = String(row[mapping.location || 'Location'] || row['Location'] || row['Branch'] || 'Colombo HQ').trim()
+      const hireDate = String(row[mapping.hireDate || 'HireDate'] || row['HireDate'] || row['Joined'] || new Date().toISOString().substring(0, 10)).trim()
+
+      const empId = `user-${Date.now().toString(36)}-${i}`
 
       const empObj = {
-        id: `user-${Date.now().toString(36)}-${i}`,
+        id: empId,
         tenantId,
         name,
         email,
-        role: ['admin', 'manager', 'employee', 'platform_admin'].includes(role) ? role : 'employee',
+        role,
         department: deptName,
         jobTitle,
         employeeNumber: empNum,
         phone,
-        location: row['Location'] || row['Branch'] || 'Colombo HQ',
-        hireDate: row['HireDate'] || row['Joined'] || new Date().toISOString().substring(0, 10),
+        location,
+        hireDate,
         biometricStatus: 'Linked (Fingerprint Active)',
         createdAt: new Date().toISOString(),
       }
 
       await usersContainer.items.upsert(empObj)
       importedEmployees.push(empObj)
+
+      // Collect Manager Link Info
+      const managerIdCol = mapping.managerNumber || 'ManagerEmployeeNumber'
+      const mgrRef = row[managerIdCol] || row['ManagerID'] || row['ReportsTo'] || row['Reports To'] || row['Manager']
+      if (mgrRef) {
+        managerLinkRequests.push({ empId, managerIdentifier: String(mgrRef).trim() })
+      }
+
+      // Initialize default leave balances for this employee
+      try {
+        const initialTypes = ['annual', 'casual', 'sick', 'emergency']
+        const defaultAllowances: Record<string, number> = { annual: 20, casual: 7, sick: 12, emergency: 3 }
+        const typeNames: Record<string, string> = { annual: 'Annual Leave', casual: 'Casual Leave', sick: 'Sick Leave', emergency: 'Emergency Leave' }
+
+        for (const tCode of initialTypes) {
+          const balItem = {
+            id: `bal-${empId}-${tCode}`,
+            tenantId,
+            userId: empId,
+            leaveTypeId: `lt-${tCode}`,
+            leaveTypeName: typeNames[tCode],
+            code: tCode,
+            leaveType: tCode,
+            totalAllowance: defaultAllowances[tCode] || 15,
+            used: 0,
+            pending: 0,
+            remaining: defaultAllowances[tCode] || 15,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+          await balContainer.items.upsert(balItem)
+        }
+      } catch (balErr) {
+        console.warn('Could not seed initial leave balance for employee:', balErr)
+      }
     }
+
+    // PASS 2: Link Reporting Manager Hierarchy
+    let linkedManagersCount = 0
+    if (managerLinkRequests.length > 0) {
+      // Query all users for this tenant to resolve manager identifiers
+      const allTenantUsers = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id, c.name, c.email, c.employeeNumber FROM c WHERE c.tenantId = @tenantId',
+        [{ name: '@tenantId', value: tenantId }]
+      )
+
+      for (const reqItem of managerLinkRequests) {
+        const mgr = allTenantUsers.find(
+          u =>
+            u.employeeNumber?.toLowerCase() === reqItem.managerIdentifier.toLowerCase() ||
+            u.email?.toLowerCase() === reqItem.managerIdentifier.toLowerCase() ||
+            u.id === reqItem.managerIdentifier ||
+            u.name?.toLowerCase().includes(reqItem.managerIdentifier.toLowerCase())
+        )
+
+        if (mgr) {
+          try {
+            const { resource: empRecord } = await usersContainer.item(reqItem.empId, tenantId).read()
+            if (empRecord) {
+              empRecord.managerId = mgr.id
+              empRecord.managerName = mgr.name
+              await usersContainer.items.upsert(empRecord)
+              linkedManagersCount++
+            }
+          } catch (_) {}
+        }
+      }
+    }
+
+    // PASS 3: Create Audit Log Entry
+    try {
+      await auditContainer.items.create({
+        id: `aud-import-${Date.now()}`,
+        tenantId,
+        action: 'Bulk Staff Dataset Imported',
+        actor: auth.user!.name || 'HR Admin',
+        actorRole: 'admin',
+        timestamp: new Date().toISOString(),
+        details: `Imported ${importedEmployees.length} staff records (${mode} mode). ${createdDeptNames.length} new departments provisioned. ${linkedManagersCount} manager reporting lines linked.`,
+        status: 'Success',
+      })
+    } catch (_) {}
 
     return {
       status: 200,
@@ -301,6 +471,8 @@ export async function bulkImportEmployees(
         message: `Successfully imported ${importedEmployees.length} employee records.`,
         importedCount: importedEmployees.length,
         createdDepartments: createdDeptNames,
+        linkedManagersCount,
+        departmentBreakdown: deptBreakdown,
         employees: importedEmployees,
       },
     }

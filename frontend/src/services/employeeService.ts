@@ -79,36 +79,92 @@ export const employeeService = {
     return { id: `dept-${Date.now()}`, ...dept, count: 0, status: 'Active' }
   },
 
-  async bulkImportEmployees(data: { dataset: Array<Record<string, any>>; departmentColumn?: string }): Promise<{
+  async bulkImportEmployees(data: {
+    mode?: 'auto_split' | 'fixed_department'
+    targetDepartment?: string
+    departmentColumn?: string
+    columnMapping?: {
+      name?: string
+      employeeNumber?: string
+      email?: string
+      department?: string
+      jobTitle?: string
+      role?: string
+      managerNumber?: string
+      phone?: string
+      hireDate?: string
+      location?: string
+    }
+    dataset: Array<Record<string, any>>
+  }): Promise<{
     success: boolean
+    message: string
     importedCount: number
     createdDepartments: string[]
+    linkedManagersCount: number
+    departmentBreakdown?: Record<string, number>
     employees: User[]
   }> {
     if (!useMock()) {
       return apiClient.post('/employees/import', data)
     }
-    await new Promise(r => setTimeout(r, 300))
+    await new Promise(r => setTimeout(r, 400))
     const imported: User[] = []
     const createdDepts: string[] = []
-    const deptCol = data.departmentColumn || 'Department'
+    const mapping = data.columnMapping || {}
+    const deptCol = mapping.department || data.departmentColumn || 'Department'
+    const deptBreakdown: Record<string, number> = {}
 
     data.dataset.forEach((row, i) => {
-      const deptName = row[deptCol] || row['Department'] || row['department'] || 'Operations'
+      let deptName = 'Operations'
+      if (data.mode === 'fixed_department' && data.targetDepartment) {
+        deptName = data.targetDepartment
+      } else {
+        const rawDept =
+          row[deptCol] ||
+          row['Department'] ||
+          row['department'] ||
+          row['Division'] ||
+          'Operations'
+        deptName = String(rawDept).trim() || 'Operations'
+      }
+
+      deptBreakdown[deptName] = (deptBreakdown[deptName] || 0) + 1
+
+      const name = String(row[mapping.name || 'Name'] || row['Name'] || row['name'] || `Staff #${i + 1}`).trim()
+      const empNum = String(row[mapping.employeeNumber || 'EmployeeNumber'] || row['EmployeeNumber'] || row['EmpID'] || `EMP-${1000 + i}`).trim()
+      const email = String(row[mapping.email || 'Email'] || row['Email'] || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@kinetictech.io`).trim()
+      const rawRole = String(row[mapping.role || 'Role'] || 'employee').toLowerCase().trim()
+      const role = ['admin', 'manager', 'employee', 'platform_admin'].includes(rawRole) ? (rawRole as any) : 'employee'
+      const jobTitle = String(row[mapping.jobTitle || 'JobTitle'] || row['JobTitle'] || 'Staff Member').trim()
+      const phone = String(row[mapping.phone || 'Phone'] || row['Mobile'] || '').trim()
+      const location = String(row[mapping.location || 'Location'] || row['Branch'] || 'Colombo HQ').trim()
+      const hireDate = String(row[mapping.hireDate || 'HireDate'] || new Date().toISOString().substring(0, 10)).trim()
+
       const newUser: User = {
-        id: `user-imp-${Date.now()}-${i}`,
-        tenantId: 'tenant-kinetic',
-        name: row['Name'] || row['name'] || `Employee ${i + 1}`,
-        email: row['Email'] || row['email'] || `user${i + 1}@kinetictech.io`,
-        role: 'employee',
+        id: `user-imp-${Date.now().toString(36)}-${i}`,
+        tenantId: 'tenant-sampath',
+        name,
+        email,
+        role,
         department: deptName,
-        jobTitle: row['JobTitle'] || row['Title'] || 'Staff Member',
-        employeeNumber: row['EmployeeNumber'] || row['EmpID'] || `EMP-${2000 + i}`,
-        hireDate: new Date().toISOString().substring(0, 10),
+        jobTitle,
+        employeeNumber: empNum,
+        phone,
+        location,
+        hireDate,
       }
       appDataStore.addUser(newUser)
       imported.push(newUser)
     })
-    return { success: true, importedCount: imported.length, createdDepartments: createdDepts, employees: imported }
+    return {
+      success: true,
+      message: `Successfully imported ${imported.length} employee records.`,
+      importedCount: imported.length,
+      createdDepartments: createdDepts,
+      linkedManagersCount: 0,
+      departmentBreakdown: deptBreakdown,
+      employees: imported,
+    }
   },
 }
