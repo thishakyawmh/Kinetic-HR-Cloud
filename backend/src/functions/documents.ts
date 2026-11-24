@@ -289,9 +289,12 @@ export async function sendDocumentSoftcopy(
  * Returns live Azure AI Document Intelligence health report
  */
 export async function handleDocIntelHealth(
-  _request: HttpRequest,
+  request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
   const { checkDocumentIntelligenceHealth } = await import('../config/documentIntelligence')
   const health = await checkDocumentIntelligenceHealth()
   return {
