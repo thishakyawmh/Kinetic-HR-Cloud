@@ -674,7 +674,7 @@ export async function updateLeaveStatus(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'manager')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
@@ -693,6 +693,28 @@ export async function updateLeaveStatus(
       return { status: 404, jsonBody: { error: `Leave request "${leaveId}" not found` } }
     }
 
+    if (!['approved', 'rejected', 'pending'].includes(body.status)) {
+      return { status: 400, jsonBody: { error: 'Invalid leave status' } }
+    }
+
+    const isTenantAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (auth.user!.role === 'manager') {
+      const employee = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id, c.managerId FROM c WHERE c.tenantId = @tenantId AND c.id = @employeeId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@employeeId', value: currentLeave.employeeId },
+        ]
+      )
+      if (currentLeave.employeeId === auth.user!.id || employee[0]?.managerId !== auth.user!.id) {
+        return { status: 403, jsonBody: { error: 'You can only review leave requests from your direct reports' } }
+      }
+    } else if (!isTenantAdmin) {
+      return { status: 403, jsonBody: { error: 'Administrator or manager privileges are required' } }
+    }
+
     const prevStatus = currentLeave.status
     const newStatus = body.status
     const requestedDays = currentLeave.requestedDays || 1
@@ -706,7 +728,7 @@ export async function updateLeaveStatus(
     currentLeave.timeline.push({
       id: `tl-${Date.now()}`,
       action: newStatus,
-      actorName: body.actorName || auth.user!.name,
+      actorName: auth.user!.name,
       timestamp: new Date().toISOString(),
       comment: body.comment || `Status updated to ${newStatus}`,
     })
@@ -778,7 +800,33 @@ export async function deleteLeaveRequest(
     const container = getTenantContainer('leaves')
     const { resource: currentLeave } = await container.item(leaveId, tenantId).read().catch(() => ({ resource: null }))
 
-    if (currentLeave) {
+    if (!currentLeave) {
+      return { status: 404, jsonBody: { error: 'Leave request not found' } }
+    }
+
+    const isTenantAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (auth.user!.role === 'employee') {
+      if (currentLeave.employeeId !== auth.user!.id || currentLeave.status !== 'pending') {
+        return { status: 403, jsonBody: { error: 'You can only delete your own pending leave requests' } }
+      }
+    } else if (auth.user!.role === 'manager') {
+      const employee = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id, c.managerId FROM c WHERE c.tenantId = @tenantId AND c.id = @employeeId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@employeeId', value: currentLeave.employeeId },
+        ]
+      )
+      if (employee[0]?.managerId !== auth.user!.id) {
+        return { status: 403, jsonBody: { error: 'You can only delete requests from your direct reports' } }
+      }
+    } else if (!isTenantAdmin) {
+      return { status: 403, jsonBody: { error: 'Insufficient privileges to delete this leave request' } }
+    }
+
+    {
       const prevStatus = currentLeave.status
       const requestedDays = currentLeave.requestedDays || 1
       const empId = currentLeave.employeeId
@@ -919,7 +967,7 @@ export async function evaluateAIFairnessLeaves(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
