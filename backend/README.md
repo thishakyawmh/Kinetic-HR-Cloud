@@ -117,3 +117,20 @@ Employee-facing leave and payslip reads are restricted to the authenticated empl
 - Document signing is restricted to the assigned manager or an administrator. The current OTP implementation is a demo flow, so it is disabled in production until a real OTP verification provider is integrated (`ENABLE_MOCK_2FA` is local-only).
 
 Do not set mock-auth or mock-2FA flags in any deployed environment.
+
+
+## Existing-user password migration
+
+Existing employee records that contain legacy plaintext `password` values must be migrated before production login is enabled.
+
+1. Take and verify a Cosmos DB backup.
+2. Run the migration separately for each tenant using the exact tenant ID:
+
+   ```bash
+   TENANT_ID=your-tenant-id npm run migrate:passwords
+   ```
+
+3. Verify affected users can sign in and confirm no plaintext `password` properties remain.
+4. Keep `ENABLE_MOCK_AUTH=false` in production.
+
+The migration is tenant-scoped and removes the legacy plaintext field after writing a bcrypt hash. Do not run it without a verified backup.
