@@ -1,6 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { signToken } from '../middleware/auth'
+import bcrypt from 'bcryptjs'
 
 /**
  * POST /api/auth/organization
@@ -130,7 +131,10 @@ export async function loginEmployee(
     }
 
     if (users.length === 0) {
-      // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
+      if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_AUTH !== 'true') {
+        return { status: 401, jsonBody: { error: 'Invalid employee ID or password' } }
+      }
+      // Explicitly enabled local-only demo identities; never available in production
       let devUser: any = null
       if (cleanEmp.includes('a-1001') || (cleanEmp.includes('kasun') && !cleanEmp.includes('sb'))) {
         devUser = {
@@ -405,27 +409,24 @@ export async function loginEmployee(
 
     const user = users[0]
 
-    // Verify password with Bcrypt Hashing
-    const expectedPassword = user.password || user.idNumber || 'password123'
-    if (password && password.trim() !== '') {
-      const cleanInput = password.trim()
-      const cleanExpected = expectedPassword.trim()
-      const isDevFallback = cleanInput === 'password123' || cleanInput === 'demo123'
+    // Production accounts must use a bcrypt password hash. Plaintext legacy values
+    // are accepted only in explicitly enabled, non-production demo environments.
+    if (typeof password !== 'string' || password.trim().length === 0) {
+      return { status: 400, jsonBody: { error: 'Password is required' } }
+    }
 
-      const isMatch =
-        cleanInput === cleanExpected ||
-        cleanInput.toLowerCase() === cleanExpected.toLowerCase() ||
-        isDevFallback ||
-        (user.passwordHash && user.passwordHash === cleanInput)
+    const storedPassword = user.passwordHash || user.password
+    const isBcryptHash = typeof storedPassword === 'string' && /^\$2[aby]\$/.test(storedPassword)
+    let isPasswordValid = false
 
-      if (!isMatch) {
-        return {
-          status: 401,
-          jsonBody: {
-            error: 'Invalid password. Secure bcrypt authentication failed.',
-          },
-        }
-      }
+    if (isBcryptHash) {
+      isPasswordValid = await bcrypt.compare(password, storedPassword)
+    } else if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEMO_AUTH === 'true') {
+      isPasswordValid = password.trim() === String(storedPassword || user.idNumber || '')
+    }
+
+    if (!isPasswordValid) {
+      return { status: 401, jsonBody: { error: 'Invalid employee ID or password' } }
     }
 
     const tokenPayload = {
@@ -467,6 +468,10 @@ export async function loginPlatformAdmin(
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
+    if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_AUTH !== 'true') {
+      return { status: 403, jsonBody: { error: 'Platform demo login is disabled. Provision a verified platform administrator account.' } }
+    }
+
     const body = (await request.json()) as { adminId?: string; password?: string }
     const adminId = (body?.adminId || '').trim().toLowerCase()
     if (!adminId) {
