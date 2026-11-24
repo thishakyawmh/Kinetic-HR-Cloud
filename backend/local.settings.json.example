@@ -9,7 +9,9 @@
     "BLOB_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=<account>;AccountKey=<key>;EndpointSuffix=core.windows.net",
     "BLOB_CONTAINER_TENANTS": "tenants",
     "JWT_SECRET": "your-super-secret-enterprise-jwt-key-256bit-min",
-    "JWT_EXPIRATION": "7d"
+    "JWT_EXPIRATION": "7d",
+    "JWT_ISSUER": "kinetic-hr-cloud",
+    "ENABLE_MOCK_AUTH": "false"
   },
   "Host": {
     "CORS": "*",
