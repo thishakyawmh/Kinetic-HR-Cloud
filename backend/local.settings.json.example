@@ -8,8 +8,12 @@
     "COSMOS_DB_DATABASE": "KineticHR",
     "BLOB_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=<account>;AccountKey=<key>;EndpointSuffix=core.windows.net",
     "BLOB_CONTAINER_TENANTS": "tenants",
-    "JWT_SECRET": "your-super-secret-enterprise-jwt-key-256bit-min",
-    "JWT_EXPIRATION": "7d"
+    "JWT_SECRET": "",
+    "JWT_EXPIRATION": "7d",
+    "JWT_ISSUER": "kinetic-hr-cloud",
+    "ENABLE_MOCK_AUTH": "false",
+    "MOCK_AUTH_PASSWORD": "",
+    "ENABLE_MOCK_2FA": "false"
   },
   "Host": {
     "CORS": "*",

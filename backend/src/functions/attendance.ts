@@ -14,14 +14,19 @@ export async function getAttendanceRecords(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
-  const userId = request.query.get('userId') || auth.user!.id
+  const requestedUserId = request.query.get('userId')
+  const canViewTenantAttendance = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+  if (!canViewTenantAttendance && requestedUserId && requestedUserId !== auth.user!.id) {
+    return { status: 403, jsonBody: { error: 'You can only view your own attendance records' } }
+  }
+  const userId = canViewTenantAttendance ? requestedUserId : auth.user!.id
   const filterDate = request.query.get('date')
 
   try {
     let query = 'SELECT * FROM c WHERE c.tenantId = @tenantId'
     const params: Array<{ name: string; value: any }> = [{ name: '@tenantId', value: tenantId }]
 
-    if (userId && auth.user!.role !== 'admin') {
+    if (userId) {
       query += ' AND c.userId = @userId'
       params.push({ name: '@userId', value: userId })
     }
@@ -114,7 +119,7 @@ export async function syncFingerprintLogs(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   try {

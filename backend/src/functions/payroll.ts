@@ -14,7 +14,12 @@ export async function getPayslips(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
-  const employeeId = request.query.get('employeeId') || (auth.user!.role === 'employee' ? auth.user!.id : undefined)
+  const requestedEmployeeId = request.query.get('employeeId')
+  const canViewTenantPayroll = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+  if (!canViewTenantPayroll && requestedEmployeeId && requestedEmployeeId !== auth.user!.id) {
+    return { status: 403, jsonBody: { error: 'You can only view your own payslips' } }
+  }
+  const employeeId = canViewTenantPayroll ? requestedEmployeeId : auth.user!.id
 
   try {
     let query = 'SELECT * FROM c WHERE c.tenantId = @tenantId'
@@ -62,6 +67,11 @@ export async function getPayslipById(
       return { status: 404, jsonBody: { error: 'Payslip not found' } }
     }
 
+    const canViewTenantPayroll = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (!canViewTenantPayroll && payslips[0].employeeId !== auth.user!.id) {
+      return { status: 403, jsonBody: { error: 'You can only access your own payslips' } }
+    }
+
     return { status: 200, jsonBody: payslips[0] }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
@@ -83,7 +93,25 @@ export async function getPayslipDownloadUrl(
   const payslipId = request.params.id
 
   try {
-    // Generate 15-minute expiring read SAS URL directly to the blob
+    const payslips = await queryTenantItems<any>(
+      'payslips',
+      tenantId,
+      'SELECT c.id, c.employeeId FROM c WHERE c.tenantId = @tenantId AND c.id = @id',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@id', value: payslipId },
+      ]
+    )
+    if (payslips.length === 0) {
+      return { status: 404, jsonBody: { error: 'Payslip not found' } }
+    }
+
+    const canViewTenantPayroll = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (!canViewTenantPayroll && payslips[0].employeeId !== auth.user!.id) {
+      return { status: 403, jsonBody: { error: 'You can only download your own payslips' } }
+    }
+
+    // Generate 15-minute expiring read SAS URL only after checking payslip ownership.
     const fileName = `${payslipId}.pdf`
     const downloadUrl = await generateTenantBlobSasUrl(tenantId, 'payslips', fileName, 'r', 15)
 
@@ -104,7 +132,7 @@ export async function calculateBiometricPayroll(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
@@ -213,7 +241,7 @@ export async function getPaymentSettings(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
@@ -282,7 +310,7 @@ export async function updatePaymentSettings(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId

@@ -154,7 +154,7 @@ export async function verify2faAndSignDocument(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'manager')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
@@ -183,6 +183,13 @@ export async function verify2faAndSignDocument(
     }
 
     const doc = docs[0]
+    const isAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (!isAdmin && doc.managerId !== auth.user!.id) {
+      return { status: 403, jsonBody: { error: 'Only the assigned manager can sign this document' } }
+    }
+    if (process.env.NODE_ENV === 'production' || process.env.ENABLE_MOCK_2FA !== 'true') {
+      return { status: 503, jsonBody: { error: 'A production OTP verification provider is not configured' } }
+    }
     const nowIso = new Date().toISOString()
     const signatureHash = `SIG-2FA-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`
 
@@ -247,6 +254,10 @@ export async function sendDocumentSoftcopy(
     }
 
     const doc = docs[0]
+    const isAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (!isAdmin && doc.employeeId !== auth.user!.id && doc.managerId !== auth.user!.id) {
+      return { status: 403, jsonBody: { error: 'You cannot dispatch another employee document' } }
+    }
 
     // Trigger ACS SMS & Email Dispatch
     await sendMobileSms(
@@ -278,9 +289,12 @@ export async function sendDocumentSoftcopy(
  * Returns live Azure AI Document Intelligence health report
  */
 export async function handleDocIntelHealth(
-  _request: HttpRequest,
+  request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
   const { checkDocumentIntelligenceHealth } = await import('../config/documentIntelligence')
   const health = await checkDocumentIntelligenceHealth()
   return {

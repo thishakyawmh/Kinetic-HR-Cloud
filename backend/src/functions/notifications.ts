@@ -51,6 +51,22 @@ export async function markNotificationRead(
   }
 
   try {
+    const matches = await queryTenantItems<any>(
+      'notifications',
+      tenantId,
+      'SELECT c.id, c.recipientId FROM c WHERE c.tenantId = @tenantId AND c.id = @id',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@id', value: notifId },
+      ]
+    )
+    if (matches.length === 0) {
+      return { status: 404, jsonBody: { error: 'Notification not found' } }
+    }
+    if (matches[0].recipientId !== auth.user!.id) {
+      return { status: 403, jsonBody: { error: 'You can only update your own notifications' } }
+    }
+
     const updated = await updateTenantItem<any>('notifications', notifId, tenantId, (item: any) => {
       item.read = true
       item.readAt = new Date().toISOString()

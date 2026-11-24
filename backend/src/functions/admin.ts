@@ -185,6 +185,9 @@ export async function getAzureFleetDiagnostic(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
   try {
     const { runFullAzureFleetDiagnostic } = await import('../config/azureDiagnostics')
     const report = await runFullAzureFleetDiagnostic()
@@ -205,9 +208,12 @@ export async function getAzureFleetDiagnostic(
  * Returns real-time Disaster Recovery replication metrics across Primary, Secondary, and Air-Gapped Vault
  */
 export async function getDRStatusHandler(
-  _request: HttpRequest,
+  request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
   try {
     const { getDRStatus } = await import('../config/cosmos')
     const status = getDRStatus()
@@ -231,6 +237,9 @@ export async function simulateDRFailoverHandler(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
   try {
     const body = (await request.json()) as { simulateOutage?: boolean }
     const { setSimulatedDROutage, getDRStatus } = await import('../config/cosmos')

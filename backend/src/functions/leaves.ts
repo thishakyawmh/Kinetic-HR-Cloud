@@ -44,6 +44,10 @@ export async function getLeaveBalances(
 
   const targetUserId = request.query.get('userId') || auth.user!.id
   const tenantId = auth.user!.tenantId
+  const canViewOtherUsers = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+  if (targetUserId !== auth.user!.id && !canViewOtherUsers) {
+    return { status: 403, jsonBody: { error: 'You can only view your own leave balances' } }
+  }
 
   try {
     const balances = await queryTenantItems<any>(
@@ -380,18 +384,38 @@ export async function getLeaveRequests(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
-  const employeeId = request.query.get('employeeId')
+  const requestedEmployeeId = request.query.get('employeeId')
+  const role = auth.user!.role
 
   try {
-    // Automatically process pending requests with AI Arbitration engine
-    await processPendingAIApprovals(tenantId)
-
     let query = 'SELECT * FROM c WHERE c.tenantId = @tenantId'
     const params: Array<{ name: string; value: any }> = [{ name: '@tenantId', value: tenantId }]
 
-    if (employeeId) {
+    if (role === 'employee') {
+      if (requestedEmployeeId && requestedEmployeeId !== auth.user!.id) {
+        return { status: 403, jsonBody: { error: 'You can only view your own leave requests' } }
+      }
       query += ' AND c.employeeId = @employeeId'
-      params.push({ name: '@employeeId', value: employeeId })
+      params.push({ name: '@employeeId', value: auth.user!.id })
+    } else if (role === 'manager') {
+      const teamMembers = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@managerId', value: auth.user!.id },
+        ]
+      )
+      const allowedEmployeeIds = [auth.user!.id, ...teamMembers.map(member => member.id)]
+      if (requestedEmployeeId && !allowedEmployeeIds.includes(requestedEmployeeId)) {
+        return { status: 403, jsonBody: { error: 'You can only view leave requests for your direct reports' } }
+      }
+      query += ' AND ARRAY_CONTAINS(@employeeIds, c.employeeId)'
+      params.push({ name: '@employeeIds', value: requestedEmployeeId ? [requestedEmployeeId] : allowedEmployeeIds })
+    } else if (requestedEmployeeId) {
+      query += ' AND c.employeeId = @employeeId'
+      params.push({ name: '@employeeId', value: requestedEmployeeId })
     }
 
     query += ' ORDER BY c.createdAt DESC'
@@ -647,7 +671,7 @@ export async function updateLeaveStatus(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'manager')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
@@ -666,6 +690,28 @@ export async function updateLeaveStatus(
       return { status: 404, jsonBody: { error: `Leave request "${leaveId}" not found` } }
     }
 
+    if (!['approved', 'rejected', 'pending'].includes(body.status)) {
+      return { status: 400, jsonBody: { error: 'Invalid leave status' } }
+    }
+
+    const isTenantAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (auth.user!.role === 'manager') {
+      const employee = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id, c.managerId FROM c WHERE c.tenantId = @tenantId AND c.id = @employeeId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@employeeId', value: currentLeave.employeeId },
+        ]
+      )
+      if (currentLeave.employeeId === auth.user!.id || employee[0]?.managerId !== auth.user!.id) {
+        return { status: 403, jsonBody: { error: 'You can only review leave requests from your direct reports' } }
+      }
+    } else if (!isTenantAdmin) {
+      return { status: 403, jsonBody: { error: 'Administrator or manager privileges are required' } }
+    }
+
     const prevStatus = currentLeave.status
     const newStatus = body.status
     const requestedDays = currentLeave.requestedDays || 1
@@ -679,7 +725,7 @@ export async function updateLeaveStatus(
     currentLeave.timeline.push({
       id: `tl-${Date.now()}`,
       action: newStatus,
-      actorName: body.actorName || auth.user!.name,
+      actorName: auth.user!.name,
       timestamp: new Date().toISOString(),
       comment: body.comment || `Status updated to ${newStatus}`,
     })
@@ -751,7 +797,33 @@ export async function deleteLeaveRequest(
     const container = getTenantContainer('leaves')
     const { resource: currentLeave } = await container.item(leaveId, tenantId).read().catch(() => ({ resource: null }))
 
-    if (currentLeave) {
+    if (!currentLeave) {
+      return { status: 404, jsonBody: { error: 'Leave request not found' } }
+    }
+
+    const isTenantAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (auth.user!.role === 'employee') {
+      if (currentLeave.employeeId !== auth.user!.id || currentLeave.status !== 'pending') {
+        return { status: 403, jsonBody: { error: 'You can only delete your own pending leave requests' } }
+      }
+    } else if (auth.user!.role === 'manager') {
+      const employee = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id, c.managerId FROM c WHERE c.tenantId = @tenantId AND c.id = @employeeId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@employeeId', value: currentLeave.employeeId },
+        ]
+      )
+      if (employee[0]?.managerId !== auth.user!.id) {
+        return { status: 403, jsonBody: { error: 'You can only delete requests from your direct reports' } }
+      }
+    } else if (!isTenantAdmin) {
+      return { status: 403, jsonBody: { error: 'Insufficient privileges to delete this leave request' } }
+    }
+
+    {
       const prevStatus = currentLeave.status
       const requestedDays = currentLeave.requestedDays || 1
       const empId = currentLeave.employeeId
@@ -892,7 +964,7 @@ export async function evaluateAIFairnessLeaves(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
@@ -955,10 +1027,27 @@ export async function getLeavePlans(
 
   const tenantId = auth.user!.tenantId
   try {
-    const plans = await queryTenantItems<any>('leave_plans', tenantId, 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.status != "cancelled"', [
-      { name: '@tenantId', value: tenantId },
-    ])
+    let query = 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.status != "cancelled"'
+    const params: Array<{ name: string; value: any }> = [{ name: '@tenantId', value: tenantId }]
 
+    if (auth.user!.role === 'employee') {
+      query += ' AND c.employeeId = @employeeId'
+      params.push({ name: '@employeeId', value: auth.user!.id })
+    } else if (auth.user!.role === 'manager') {
+      const teamMembers = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@managerId', value: auth.user!.id },
+        ]
+      )
+      query += ' AND ARRAY_CONTAINS(@employeeIds, c.employeeId)'
+      params.push({ name: '@employeeIds', value: [auth.user!.id, ...teamMembers.map(member => member.id)] })
+    }
+
+    const plans = await queryTenantItems<any>('leave_plans', tenantId, query, params)
     return { status: 200, jsonBody: plans || [] }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
@@ -1278,6 +1367,27 @@ export async function deleteLeavePlan(
 
     if (!currentPlan) {
       return { status: 404, jsonBody: { error: `Leave plan "${planId}" not found` } }
+    }
+
+    const isTenantAdmin = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+    if (auth.user!.role === 'employee' && currentPlan.employeeId !== auth.user!.id) {
+      return { status: 403, jsonBody: { error: 'You can only cancel your own leave plans' } }
+    }
+    if (auth.user!.role === 'manager' && currentPlan.employeeId !== auth.user!.id) {
+      const employee = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id, c.managerId FROM c WHERE c.tenantId = @tenantId AND c.id = @employeeId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@employeeId', value: currentPlan.employeeId },
+        ]
+      )
+      if (employee[0]?.managerId !== auth.user!.id) {
+        return { status: 403, jsonBody: { error: 'You can only cancel plans for your direct reports' } }
+      }
+    } else if (!['employee', 'manager'].includes(auth.user!.role) && !isTenantAdmin) {
+      return { status: 403, jsonBody: { error: 'Insufficient privileges to cancel this leave plan' } }
     }
 
     // Mark plan as cancelled

@@ -1,6 +1,7 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { authenticateRequest } from '../middleware/auth'
+import bcrypt from 'bcryptjs'
 
 /**
  * GET /api/employees
@@ -17,8 +18,16 @@ export async function getEmployees(
   const department = request.query.get('department')
 
   try {
-    let query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.idNumber, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId'
+    let query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId'
     const params: Array<{ name: string; value: any }> = [{ name: '@tenantId', value: tenantId }]
+
+    if (auth.user!.role === 'employee') {
+      query += ' AND c.id = @userId'
+      params.push({ name: '@userId', value: auth.user!.id })
+    } else if (auth.user!.role === 'manager') {
+      query += ' AND (c.id = @managerId OR c.managerId = @managerId)'
+      params.push({ name: '@managerId', value: auth.user!.id })
+    }
 
     if (department && department !== 'all') {
       query += ' AND LOWER(c.department) = @department'
@@ -45,6 +54,26 @@ export async function getEmployeeById(
   const tenantId = auth.user!.tenantId
   const employeeId = request.params.id
 
+  if (auth.user!.role === 'employee' && employeeId !== auth.user!.id) {
+    return { status: 403, jsonBody: { error: 'You can only view your own employee profile' } }
+  }
+
+  if (auth.user!.role === 'manager' && employeeId !== auth.user!.id) {
+    const teamMember = await queryTenantItems<any>(
+      'users',
+      tenantId,
+      'SELECT c.id FROM c WHERE c.tenantId = @tenantId AND c.id = @employeeId AND c.managerId = @managerId',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@employeeId', value: employeeId },
+        { name: '@managerId', value: auth.user!.id },
+      ]
+    )
+    if (teamMember.length === 0) {
+      return { status: 403, jsonBody: { error: 'You can only view profiles for your direct reports' } }
+    }
+  }
+
   try {
     const container = getTenantContainer('users')
     const { resource } = await container.item(employeeId, tenantId).read()
@@ -52,6 +81,8 @@ export async function getEmployeeById(
       return { status: 404, jsonBody: { error: 'Employee not found' } }
     }
     delete resource.passwordHash
+    delete resource.password
+    delete resource.idNumber
     return { status: 200, jsonBody: resource }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
@@ -70,10 +101,15 @@ export async function getTeamMembers(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
-  const managerId = request.query.get('managerId') || auth.user!.id
+  if (!['manager', 'admin', 'platform_admin'].includes(auth.user!.role)) {
+    return { status: 403, jsonBody: { error: 'Manager or administrator privileges are required' } }
+  }
+  const managerId = auth.user!.role === 'manager'
+    ? auth.user!.id
+    : (request.query.get('managerId') || auth.user!.id)
 
   try {
-    const query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.idNumber, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId'
+    const query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId'
     const params = [
       { name: '@tenantId', value: tenantId },
       { name: '@managerId', value: managerId },
@@ -116,11 +152,23 @@ export async function updateEmployee(
       return { status: 403, jsonBody: { error: 'Unauthorized to modify this employee profile' } }
     }
 
+    if (body.role !== undefined) {
+      const allowedRoles = ['employee', 'manager', 'admin', 'platform_admin']
+      if (!allowedRoles.includes(body.role)) {
+        return { status: 400, jsonBody: { error: 'Invalid employee role' } }
+      }
+      if (
+        (body.role === 'platform_admin' || resource.role === 'platform_admin') &&
+        auth.user!.role !== 'platform_admin'
+      ) {
+        return { status: 403, jsonBody: { error: 'Only a platform administrator can manage platform administrator accounts' } }
+      }
+    }
+
     const updated = {
       ...resource,
       // Any authenticated user can update their own avatar and password in their Profile section
       ...(body.avatarUrl !== undefined && { avatarUrl: body.avatarUrl }),
-      ...(body.password !== undefined && { password: body.password }),
       // Non-admins cannot alter locked organizational parameters
       ...(isAdmin && body.phone !== undefined && { phone: body.phone }),
       ...(isAdmin && body.location !== undefined && { location: body.location }),
@@ -136,9 +184,19 @@ export async function updateEmployee(
       updatedAt: new Date().toISOString(),
     }
 
+    if (typeof body.password === 'string' && body.password.length > 0) {
+      if (body.password.length < 12) {
+        return { status: 400, jsonBody: { error: 'Password must be at least 12 characters long' } }
+      }
+      updated.passwordHash = await bcrypt.hash(body.password, 12)
+      delete updated.password
+    }
+
     const { resource: saved } = await container.items.upsert(updated)
     if (saved) {
       delete (saved as any).passwordHash
+      delete (saved as any).password
+      delete (saved as any).idNumber
     }
     return { status: 200, jsonBody: saved }
   } catch (err: any) {
@@ -161,6 +219,17 @@ export async function createEmployee(
 
   try {
     const body = (await request.json()) as any
+    if (typeof body.password !== 'string' || body.password.length < 12) {
+      return { status: 400, jsonBody: { error: 'A password of at least 12 characters is required for a new employee' } }
+    }
+    const requestedRole = body.role || 'employee'
+    const allowedRoles = ['employee', 'manager', 'admin', 'platform_admin']
+    if (!allowedRoles.includes(requestedRole)) {
+      return { status: 400, jsonBody: { error: 'Invalid employee role' } }
+    }
+    if (requestedRole === 'platform_admin' && auth.user!.role !== 'platform_admin') {
+      return { status: 403, jsonBody: { error: 'Only a platform administrator can create platform administrator accounts' } }
+    }
     const newId = body.id || `user-${Date.now().toString(36)}`
 
     const newEmp = {
@@ -168,7 +237,7 @@ export async function createEmployee(
       tenantId,
       name: body.name,
       email: body.email,
-      role: body.role || 'employee',
+      role: requestedRole,
       department: body.department || 'Unassigned',
       employeeNumber: body.employeeNumber || (
         (body.role === 'admin' ? `A-${Math.floor(1000 + Math.random() * 9000)}` :
@@ -182,7 +251,7 @@ export async function createEmployee(
       location: body.location || '',
       address: body.address || '',
       idNumber: body.idNumber || '',
-      password: body.password || body.idNumber || 'password123',
+      passwordHash: await bcrypt.hash(body.password, 12),
       avatarUrl: body.avatarUrl || '',
       biometricStatus: body.biometricStatus || 'Pending Employee Capture',
       createdAt: new Date().toISOString(),
@@ -190,6 +259,9 @@ export async function createEmployee(
 
     const container = getTenantContainer('users')
     const { resource } = await container.items.create(newEmp)
+    delete (resource as any).passwordHash
+    delete (resource as any).password
+    delete (resource as any).idNumber
     return { status: 201, jsonBody: resource }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
@@ -344,7 +416,11 @@ export async function bulkImportEmployees(
       ).trim()
 
       const rawRole = String(row[mapping.role || 'Role'] || row['Role'] || row['role'] || 'employee').toLowerCase().trim()
-      const role = ['admin', 'manager', 'employee', 'platform_admin'].includes(rawRole) ? rawRole : 'employee'
+      const role = ['admin', 'manager', 'employee'].includes(rawRole)
+        ? rawRole
+        : rawRole === 'platform_admin' && auth.user!.role === 'platform_admin'
+          ? 'platform_admin'
+          : 'employee'
 
       const jobTitle = String(
         row[mapping.jobTitle || 'JobTitle'] ||

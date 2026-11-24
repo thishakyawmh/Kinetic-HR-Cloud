@@ -1,32 +1,74 @@
-# React + TypeScript + Vite
+# Kinetic HR Cloud
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Kinetic HR Cloud is a multi-tenant human-resources application prototype. This repository contains a React frontend and an Azure Functions backend.
 
-Currently, two official plugins are available:
+## Repository structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `frontend/` — React, TypeScript, Vite, React Router, React Query, and Tailwind CSS.
+- `backend/` — TypeScript Azure Functions API with Azure Cosmos DB, Blob Storage, and supporting Azure services.
+- `.github/workflows/` — CI validation for backend and frontend.
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js 22 or newer
+- npm
+- Azure Functions Core Tools 4 for running the Functions host locally
+- An Azure Cosmos DB account or the configured local development data adapter
+- Azure Storage/Azurite when using local storage integrations
 
-## Expanding the Oxlint configuration
+## Run the frontend
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+cd frontend
+npm ci
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Run the backend
+
+```bash
+cd backend
+npm ci
+cp local.settings.json.example local.settings.json
+```
+
+Fill in the required local settings with development-only values, then run:
+
+```bash
+npm test
+npm run dev
+```
+
+To run through the Azure Functions host, use `npm run start:func` after building and configuring Azure Functions Core Tools.
+
+## Quality checks
+
+Frontend:
+
+```bash
+cd frontend
+npm ci
+npm run lint
+npm run build
+```
+
+Backend:
+
+```bash
+cd backend
+npm ci
+npm test
+```
+
+The repository CI workflow runs the backend build/tests and frontend production build on pull requests.
+
+## Security and data handling
+
+- Never commit real Azure credentials, JWT signing secrets, API keys, or local settings. Keep them in deployment secrets or ignored local configuration.
+- Local Azure Storage Emulator state and the local development database are runtime data, not source code. The root `.gitignore` now prevents new local state from being added; existing tracked development data files must be reviewed and removed from Git history separately if they contain sensitive or unnecessary records.
+- Validate tenant ownership and role permissions on every backend request. A client-provided tenant or user ID must never be treated as proof of authorization.
+- Use HTTPS and managed identities or scoped credentials for deployed Azure services wherever supported.
+
+## Project status
+
+This is an actively developed application prototype. Review the deployment configuration, tenant isolation, authentication, and authorization against the target production environment before using it with real employee records.
