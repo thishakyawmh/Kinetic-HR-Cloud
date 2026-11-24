@@ -1,6 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { signToken } from '../middleware/auth'
+import bcrypt from 'bcryptjs'
 
 /**
  * POST /api/auth/organization
@@ -98,8 +99,8 @@ export async function loginEmployee(
 
     const { tenantId, employeeId, password } = body
 
-    if (!tenantId || !employeeId) {
-      return { status: 400, jsonBody: { error: 'tenantId and employeeId are required' } }
+    if (!tenantId || !employeeId || typeof password !== 'string' || password.length === 0) {
+      return { status: 400, jsonBody: { error: 'tenantId, employeeId, and password are required' } }
     }
 
     const cleanEmp = employeeId.trim().toLowerCase()
@@ -108,29 +109,31 @@ export async function loginEmployee(
     let users = await queryTenantItems<any>(
       'users',
       tenantId,
-      'SELECT * FROM c WHERE c.tenantId = @tenantId AND (LOWER(c.employeeNumber) = @empId OR (IS_DEFINED(c.idNumber) AND LOWER(c.idNumber) = @empId) OR LOWER(c.email) = @empId OR LOWER(c.id) = @empId OR LOWER(c.role) = @empId OR CONTAINS(LOWER(c.name), @empId))',
+      'SELECT * FROM c WHERE c.tenantId = @tenantId AND (LOWER(c.employeeNumber) = @empId OR (IS_DEFINED(c.idNumber) AND LOWER(c.idNumber) = @empId) OR LOWER(c.email) = @empId OR LOWER(c.id) = @empId)',
       [
         { name: '@tenantId', value: tenantId },
         { name: '@empId', value: cleanEmp },
       ]
     )
 
-    // Secondary safety: ensure the first user actually matches the requested employeeId/role
-    if (users.length > 0) {
-      const exactMatch = users.find(u =>
-        (u.employeeNumber && u.employeeNumber.toLowerCase() === cleanEmp) ||
-        (u.idNumber && u.idNumber.toLowerCase() === cleanEmp) ||
-        (u.email && u.email.toLowerCase() === cleanEmp) ||
-        (u.id && u.id.toLowerCase() === cleanEmp) ||
-        (cleanEmp === 'manager' && u.role === 'manager') ||
-        (cleanEmp === 'admin' && u.role === 'admin') ||
-        (cleanEmp === 'platform' && u.role === 'platform_admin')
-      )
-      users = exactMatch ? [exactMatch] : [users[0]]
-    }
+    // Require an exact identifier match; never fall back to an arbitrary first result.
+    users = users.filter(u =>
+      (u.employeeNumber && u.employeeNumber.toLowerCase() === cleanEmp) ||
+      (u.idNumber && u.idNumber.toLowerCase() === cleanEmp) ||
+      (u.email && u.email.toLowerCase() === cleanEmp) ||
+      (u.id && u.id.toLowerCase() === cleanEmp)
+    )
 
     if (users.length === 0) {
-      // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
+      // Demo identities are disabled unless explicitly enabled outside production.
+      if (process.env.NODE_ENV === 'production' || process.env.ENABLE_MOCK_AUTH !== 'true') {
+        return { status: 401, jsonBody: { error: 'Invalid employee credentials' } }
+      }
+      const mockPassword = process.env.MOCK_AUTH_PASSWORD
+      if (!mockPassword || password !== mockPassword) {
+        return { status: 401, jsonBody: { error: 'Invalid demo credentials' } }
+      }
+
       let devUser: any = null
       if (cleanEmp.includes('a-1001') || (cleanEmp.includes('kasun') && !cleanEmp.includes('sb'))) {
         devUser = {
@@ -405,27 +408,9 @@ export async function loginEmployee(
 
     const user = users[0]
 
-    // Verify password with Bcrypt Hashing
-    const expectedPassword = user.password || user.idNumber || 'password123'
-    if (password && password.trim() !== '') {
-      const cleanInput = password.trim()
-      const cleanExpected = expectedPassword.trim()
-      const isDevFallback = cleanInput === 'password123' || cleanInput === 'demo123'
-
-      const isMatch =
-        cleanInput === cleanExpected ||
-        cleanInput.toLowerCase() === cleanExpected.toLowerCase() ||
-        isDevFallback ||
-        (user.passwordHash && user.passwordHash === cleanInput)
-
-      if (!isMatch) {
-        return {
-          status: 401,
-          jsonBody: {
-            error: 'Invalid password. Secure bcrypt authentication failed.',
-          },
-        }
-      }
+    // Passwords must be stored as bcrypt hashes; never compare plaintext or accept demo defaults.
+    if (typeof user.passwordHash !== 'string' || !(await bcrypt.compare(password, user.passwordHash))) {
+      return { status: 401, jsonBody: { error: 'Invalid employee credentials' } }
     }
 
     const tokenPayload = {
@@ -469,8 +454,16 @@ export async function loginPlatformAdmin(
   try {
     const body = (await request.json()) as { adminId?: string; password?: string }
     const adminId = (body?.adminId || '').trim().toLowerCase()
-    if (!adminId) {
-      return { status: 400, jsonBody: { error: 'Platform Administrator ID is required' } }
+    if (!adminId || typeof body?.password !== 'string' || !body.password) {
+      return { status: 400, jsonBody: { error: 'Platform Administrator ID and password are required' } }
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.ENABLE_MOCK_AUTH !== 'true') {
+      return { status: 503, jsonBody: { error: 'Platform administrator identity provider is not configured' } }
+    }
+    const mockPassword = process.env.MOCK_AUTH_PASSWORD
+    if (!mockPassword || body.password !== mockPassword) {
+      return { status: 401, jsonBody: { error: 'Invalid platform administrator credentials' } }
     }
 
     if (adminId !== 'kc-0001' && adminId !== 'alex' && adminId !== 'platform_admin' && !adminId.includes('kc-0001')) {
