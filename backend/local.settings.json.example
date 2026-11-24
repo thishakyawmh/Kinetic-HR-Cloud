@@ -11,7 +11,9 @@
     "JWT_SECRET": "",
     "JWT_EXPIRATION": "7d",
     "JWT_ISSUER": "kinetic-hr-cloud",
-    "ENABLE_MOCK_AUTH": "false"
+    "ENABLE_MOCK_AUTH": "false",
+    "MOCK_AUTH_PASSWORD": "",
+    "ENABLE_MOCK_2FA": "false"
   },
   "Host": {
     "CORS": "*",
