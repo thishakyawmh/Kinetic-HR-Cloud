@@ -42,7 +42,9 @@ This is the multi-tenant Azure Functions backend for Kinetic HR Cloud, designed 
        "COSMOS_DB_DATABASE": "KineticHR",
        "BLOB_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=<storage>;AccountKey=<key>;EndpointSuffix=core.windows.net",
        "BLOB_CONTAINER_TENANTS": "tenants",
-       "JWT_SECRET": "your-256bit-secret-key-here"
+       "JWT_SECRET": "<generate-a-random-secret-of-at-least-32-characters>",
+       "JWT_ISSUER": "kinetic-hr-cloud",
+       "ENABLE_MOCK_AUTH": "false"
      },
      "Host": {
        "CORS": "*"
@@ -94,3 +96,12 @@ VITE_API_BASE_URL="http://localhost:7071/api"
 VITE_USE_MOCK_SERVICES="false"
 ```
 Once flipped to `false`, the frontend immediately talks to your live Azure backend.
+
+
+## Authentication security
+
+The API uses signed HS256 JWTs. Configure `JWT_SECRET` with a unique random value of at least 32 characters and keep it in Azure Function App settings or a local-only `local.settings.json`. Never commit the real value. Configure `JWT_ISSUER` consistently for the environment.
+
+Mock identity fallback is disabled by default. It can only be enabled with `ENABLE_MOCK_AUTH=true` outside production, and must remain disabled in all deployed environments. Invalid JWTs are rejected; token text is never interpreted as an identity in production.
+
+Employee-facing leave and payslip reads are restricted to the authenticated employee. Managers can review their direct reports' leave requests, while payroll generation and payment-setting changes require an administrator role.
