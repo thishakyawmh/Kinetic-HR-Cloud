@@ -119,6 +119,19 @@ export async function updateEmployee(
       return { status: 403, jsonBody: { error: 'Unauthorized to modify this employee profile' } }
     }
 
+    if (body.role !== undefined) {
+      const allowedRoles = ['employee', 'manager', 'admin', 'platform_admin']
+      if (!allowedRoles.includes(body.role)) {
+        return { status: 400, jsonBody: { error: 'Invalid employee role' } }
+      }
+      if (
+        (body.role === 'platform_admin' || resource.role === 'platform_admin') &&
+        auth.user!.role !== 'platform_admin'
+      ) {
+        return { status: 403, jsonBody: { error: 'Only a platform administrator can manage platform administrator accounts' } }
+      }
+    }
+
     if (body.password !== undefined) {
       if (typeof body.password !== 'string' || body.password.trim().length < 8) {
         return { status: 400, jsonBody: { error: 'Password must contain at least 8 characters' } }
@@ -174,6 +187,15 @@ export async function createEmployee(
 
   try {
     const body = (await request.json()) as any
+    const requestedRole = body.role || 'employee'
+    const allowedRoles = ['employee', 'manager', 'admin', 'platform_admin']
+    if (!allowedRoles.includes(requestedRole)) {
+      return { status: 400, jsonBody: { error: 'Invalid employee role' } }
+    }
+    if (requestedRole === 'platform_admin' && auth.user!.role !== 'platform_admin') {
+      return { status: 403, jsonBody: { error: 'Only a platform administrator can create platform administrator accounts' } }
+    }
+
     const newId = body.id || `user-${Date.now().toString(36)}`
 
     const initialPassword = typeof body.password === 'string' ? body.password.trim() : String(body.idNumber || '')
@@ -186,7 +208,7 @@ export async function createEmployee(
       tenantId,
       name: body.name,
       email: body.email,
-      role: body.role || 'employee',
+      role: requestedRole,
       department: body.department || 'Unassigned',
       employeeNumber: body.employeeNumber || (
         (body.role === 'admin' ? `A-${Math.floor(1000 + Math.random() * 9000)}` :
