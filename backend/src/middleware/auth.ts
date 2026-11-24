@@ -17,9 +17,13 @@ export interface AuthenticatedUser {
 }
 
 export function signToken(user: AuthenticatedUser): string {
-  const secret = process.env.JWT_SECRET || 'kinetic-default-dev-secret-key-change-in-prod'
+  const secret = process.env.JWT_SECRET
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must be configured with at least 32 characters')
+  }
   const expiresIn = process.env.JWT_EXPIRATION || '7d'
-  return jwt.sign(user, secret, { expiresIn: expiresIn as any })
+  const issuer = process.env.JWT_ISSUER || 'kinetic-hr-cloud'
+  return jwt.sign(user, secret, { expiresIn: expiresIn as any, issuer, algorithm: 'HS256' })
 }
 
 export function authenticateRequest(
@@ -37,14 +41,33 @@ export function authenticateRequest(
   }
 
   const token = authHeader.substring(7)
-  const secret = process.env.JWT_SECRET || 'kinetic-default-dev-secret-key-change-in-prod'
+  const secret = process.env.JWT_SECRET
+  if (!secret || secret.length < 32) {
+    return {
+      errorResponse: {
+        status: 500,
+        jsonBody: { error: 'Authentication is not configured correctly' },
+      },
+    }
+  }
 
   try {
     let decoded: AuthenticatedUser
     try {
-      decoded = jwt.verify(token, secret) as AuthenticatedUser
+      decoded = jwt.verify(token, secret, {
+        algorithms: ['HS256'],
+        issuer: process.env.JWT_ISSUER || 'kinetic-hr-cloud',
+      }) as AuthenticatedUser
     } catch {
-      // Dev / Mock fallback token resolution
+      // Mock identities are only available when explicitly enabled outside production.
+      if (process.env.NODE_ENV === 'production' || process.env.ENABLE_MOCK_AUTH !== 'true') {
+        return {
+          errorResponse: {
+            status: 401,
+            jsonBody: { error: 'Invalid or expired authentication token' },
+          },
+        }
+      }
       const lower = token.toLowerCase()
       if (lower.includes('platform') || lower.includes('alex') || lower.includes('kc-0001')) {
         decoded = {
@@ -133,6 +156,24 @@ export function authenticateRequest(
           jobTitle: 'Senior Credit Officer',
           employeeNumber: 'M-1001',
         }
+      }
+    }
+
+    const allowedRoles = ['employee', 'manager', 'admin', 'platform_admin']
+    if (
+      !decoded ||
+      typeof decoded.id !== 'string' ||
+      !decoded.id ||
+      typeof decoded.tenantId !== 'string' ||
+      !decoded.tenantId ||
+      typeof decoded.email !== 'string' ||
+      !allowedRoles.includes(decoded.role)
+    ) {
+      return {
+        errorResponse: {
+          status: 401,
+          jsonBody: { error: 'Invalid authentication claims' },
+        },
       }
     }
 
