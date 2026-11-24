@@ -236,9 +236,12 @@ Guidelines:
  * Returns live Azure OpenAI service connection diagnostic
  */
 export async function getAIHealth(
-  _request: HttpRequest,
+  request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
   const config = getOpenAIConfig()
   const health = await checkAzureOpenAIHealth()
 
