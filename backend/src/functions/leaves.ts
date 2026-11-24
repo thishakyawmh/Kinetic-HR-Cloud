@@ -44,6 +44,10 @@ export async function getLeaveBalances(
 
   const targetUserId = request.query.get('userId') || auth.user!.id
   const tenantId = auth.user!.tenantId
+  const canViewOtherUsers = auth.user!.role === 'admin' || auth.user!.role === 'platform_admin'
+  if (targetUserId !== auth.user!.id && !canViewOtherUsers) {
+    return { status: 403, jsonBody: { error: 'You can only view your own leave balances' } }
+  }
 
   try {
     const balances = await queryTenantItems<any>(
@@ -380,7 +384,8 @@ export async function getLeaveRequests(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
-  const employeeId = request.query.get('employeeId')
+  const requestedEmployeeId = request.query.get('employeeId')
+  const role = auth.user!.role
 
   try {
     // Automatically process pending requests with AI Arbitration engine
@@ -389,9 +394,31 @@ export async function getLeaveRequests(
     let query = 'SELECT * FROM c WHERE c.tenantId = @tenantId'
     const params: Array<{ name: string; value: any }> = [{ name: '@tenantId', value: tenantId }]
 
-    if (employeeId) {
+    if (role === 'employee') {
+      if (requestedEmployeeId && requestedEmployeeId !== auth.user!.id) {
+        return { status: 403, jsonBody: { error: 'You can only view your own leave requests' } }
+      }
       query += ' AND c.employeeId = @employeeId'
-      params.push({ name: '@employeeId', value: employeeId })
+      params.push({ name: '@employeeId', value: auth.user!.id })
+    } else if (role === 'manager') {
+      const teamMembers = await queryTenantItems<any>(
+        'users',
+        tenantId,
+        'SELECT c.id FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId',
+        [
+          { name: '@tenantId', value: tenantId },
+          { name: '@managerId', value: auth.user!.id },
+        ]
+      )
+      const allowedEmployeeIds = [auth.user!.id, ...teamMembers.map(member => member.id)]
+      if (requestedEmployeeId && !allowedEmployeeIds.includes(requestedEmployeeId)) {
+        return { status: 403, jsonBody: { error: 'You can only view leave requests for your direct reports' } }
+      }
+      query += ' AND ARRAY_CONTAINS(@employeeIds, c.employeeId)'
+      params.push({ name: '@employeeIds', value: requestedEmployeeId ? [requestedEmployeeId] : allowedEmployeeIds })
+    } else if (requestedEmployeeId) {
+      query += ' AND c.employeeId = @employeeId'
+      params.push({ name: '@employeeId', value: requestedEmployeeId })
     }
 
     query += ' ORDER BY c.createdAt DESC'
