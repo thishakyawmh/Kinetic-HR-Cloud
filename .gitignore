@@ -27,3 +27,17 @@ local.settings.json
 *.njsproj
 *.sln
 *.sw?
+
+# Local Azure Storage Emulator state and development databases
+backend/__azurite_db_*.json
+backend/__azurite_db_*
+backend/__blobstorage__/
+backend/__queuestorage__/
+backend/__tablestorage__/
+backend/data/local-db.json
+
+# Local environment files and credentials
+.env
+.env.*
+!.env.example
+backend/local.settings.json
