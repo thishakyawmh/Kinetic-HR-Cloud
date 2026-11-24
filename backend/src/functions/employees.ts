@@ -154,7 +154,6 @@ export async function updateEmployee(
       ...resource,
       // Any authenticated user can update their own avatar and password in their Profile section
       ...(body.avatarUrl !== undefined && { avatarUrl: body.avatarUrl }),
-      ...(body.password !== undefined && { passwordHash: undefined }),
       // Non-admins cannot alter locked organizational parameters
       ...(isAdmin && body.phone !== undefined && { phone: body.phone }),
       ...(isAdmin && body.location !== undefined && { location: body.location }),
