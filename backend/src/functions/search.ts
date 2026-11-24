@@ -14,7 +14,13 @@ export async function handleSearchPolicies(
   if (auth.errorResponse) return auth.errorResponse
 
   const q = request.query.get('q') || request.query.get('search') || '*'
-  const tenantId = request.query.get('tenantId') || auth.user!.tenantId
+  const requestedTenantId = request.query.get('tenantId')
+  if (requestedTenantId && auth.user!.role !== 'platform_admin' && requestedTenantId !== auth.user!.tenantId) {
+    return { status: 403, jsonBody: { error: 'Cross-tenant search is not permitted' } }
+  }
+  const tenantId = auth.user!.role === 'platform_admin'
+    ? (requestedTenantId || auth.user!.tenantId)
+    : auth.user!.tenantId
   const topStr = request.query.get('top') || '5'
   const top = parseInt(topStr, 10) || 5
 
@@ -40,7 +46,7 @@ export async function handleSeedSearch(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   try {
@@ -62,9 +68,12 @@ export async function handleSeedSearch(
  * Returns live Azure AI Search connectivity diagnostics
  */
 export async function handleSearchHealth(
-  _request: HttpRequest,
+  request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const auth = authenticateRequest(request, 'admin')
+  if (auth.errorResponse) return auth.errorResponse
+
   const config = getSearchConfig()
   const health = await checkAzureSearchHealth()
 
