@@ -1,6 +1,7 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { authenticateRequest } from '../middleware/auth'
+import bcrypt from 'bcryptjs'
 
 /**
  * GET /api/employees
@@ -19,6 +20,14 @@ export async function getEmployees(
   try {
     let query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.idNumber, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId'
     const params: Array<{ name: string; value: any }> = [{ name: '@tenantId', value: tenantId }]
+
+    if (auth.user!.role === 'employee') {
+      query += ' AND c.id = @userId'
+      params.push({ name: '@userId', value: auth.user!.id })
+    } else if (auth.user!.role === 'manager') {
+      query += ' AND (c.id = @managerId OR c.managerId = @managerId)'
+      params.push({ name: '@managerId', value: auth.user!.id })
+    }
 
     if (department && department !== 'all') {
       query += ' AND LOWER(c.department) = @department'
@@ -45,6 +54,26 @@ export async function getEmployeeById(
   const tenantId = auth.user!.tenantId
   const employeeId = request.params.id
 
+  if (auth.user!.role === 'employee' && employeeId !== auth.user!.id) {
+    return { status: 403, jsonBody: { error: 'You can only view your own employee profile' } }
+  }
+
+  if (auth.user!.role === 'manager' && employeeId !== auth.user!.id) {
+    const teamMember = await queryTenantItems<any>(
+      'users',
+      tenantId,
+      'SELECT c.id FROM c WHERE c.tenantId = @tenantId AND c.id = @employeeId AND c.managerId = @managerId',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@employeeId', value: employeeId },
+        { name: '@managerId', value: auth.user!.id },
+      ]
+    )
+    if (teamMember.length === 0) {
+      return { status: 403, jsonBody: { error: 'You can only view profiles for your direct reports' } }
+    }
+  }
+
   try {
     const container = getTenantContainer('users')
     const { resource } = await container.item(employeeId, tenantId).read()
@@ -70,7 +99,12 @@ export async function getTeamMembers(
   if (auth.errorResponse) return auth.errorResponse
 
   const tenantId = auth.user!.tenantId
-  const managerId = request.query.get('managerId') || auth.user!.id
+  if (!['manager', 'admin', 'platform_admin'].includes(auth.user!.role)) {
+    return { status: 403, jsonBody: { error: 'Manager or administrator privileges are required' } }
+  }
+  const managerId = auth.user!.role === 'manager'
+    ? auth.user!.id
+    : (request.query.get('managerId') || auth.user!.id)
 
   try {
     const query = 'SELECT c.id, c.tenantId, c.name, c.email, c.role, c.department, c.jobTitle, c.employeeNumber, c.location, c.address, c.idNumber, c.phone, c.biometricStatus, c.avatarUrl, c.hireDate, c.managerId, c.managerName FROM c WHERE c.tenantId = @tenantId AND c.managerId = @managerId'
@@ -120,7 +154,7 @@ export async function updateEmployee(
       ...resource,
       // Any authenticated user can update their own avatar and password in their Profile section
       ...(body.avatarUrl !== undefined && { avatarUrl: body.avatarUrl }),
-      ...(body.password !== undefined && { password: body.password }),
+      ...(body.password !== undefined && { passwordHash: undefined }),
       // Non-admins cannot alter locked organizational parameters
       ...(isAdmin && body.phone !== undefined && { phone: body.phone }),
       ...(isAdmin && body.location !== undefined && { location: body.location }),
@@ -134,6 +168,14 @@ export async function updateEmployee(
       ...(isAdmin && body.managerName !== undefined && { managerName: body.managerName }),
       ...(isAdmin && body.biometricStatus !== undefined && { biometricStatus: body.biometricStatus }),
       updatedAt: new Date().toISOString(),
+    }
+
+    if (typeof body.password === 'string' && body.password.length > 0) {
+      if (body.password.length < 12) {
+        return { status: 400, jsonBody: { error: 'Password must be at least 12 characters long' } }
+      }
+      updated.passwordHash = await bcrypt.hash(body.password, 12)
+      delete updated.password
     }
 
     const { resource: saved } = await container.items.upsert(updated)
