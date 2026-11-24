@@ -8,8 +8,9 @@
     "COSMOS_DB_DATABASE": "KineticHR",
     "BLOB_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=<account>;AccountKey=<key>;EndpointSuffix=core.windows.net",
     "BLOB_CONTAINER_TENANTS": "tenants",
-    "JWT_SECRET": "your-super-secret-enterprise-jwt-key-256bit-min",
-    "JWT_EXPIRATION": "7d"
+    "JWT_SECRET": "<generate-a-unique-secret-of-at-least-32-characters>",
+    "JWT_EXPIRATION": "7d",
+    "ALLOW_DEMO_AUTH": "false"
   },
   "Host": {
     "CORS": "*",
