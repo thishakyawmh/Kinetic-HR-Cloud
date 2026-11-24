@@ -202,6 +202,9 @@ export async function createEmployee(
 
   try {
     const body = (await request.json()) as any
+    if (typeof body.password !== 'string' || body.password.length < 12) {
+      return { status: 400, jsonBody: { error: 'A password of at least 12 characters is required for a new employee' } }
+    }
     const newId = body.id || `user-${Date.now().toString(36)}`
 
     const newEmp = {
@@ -223,7 +226,7 @@ export async function createEmployee(
       location: body.location || '',
       address: body.address || '',
       idNumber: body.idNumber || '',
-      password: body.password || body.idNumber || 'password123',
+      passwordHash: await bcrypt.hash(body.password, 12),
       avatarUrl: body.avatarUrl || '',
       biometricStatus: body.biometricStatus || 'Pending Employee Capture',
       createdAt: new Date().toISOString(),
@@ -231,6 +234,7 @@ export async function createEmployee(
 
     const container = getTenantContainer('users')
     const { resource } = await container.items.create(newEmp)
+    delete (resource as any).passwordHash
     return { status: 201, jsonBody: resource }
   } catch (err: any) {
     return { status: 500, jsonBody: { error: err.message } }
