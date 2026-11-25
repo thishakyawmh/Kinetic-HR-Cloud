@@ -1,20 +1,9 @@
-import { verifyCosmosDb, verifyBlobStorage, verifyAzureFunctions } from '../config/azureDiagnostics'
+import { verifyCosmosDb, verifyBlobStorage, verifyAzureFunctions, maskCredential } from '../config/azureDiagnostics'
+import { loadLocalSettings } from '../config/env'
 import fs from 'fs'
 import path from 'path'
 
-// Load local.settings.json
-try {
-  const settingsPath = path.resolve(__dirname, '../../local.settings.json')
-  if (fs.existsSync(settingsPath)) {
-    const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const parsed = JSON.parse(raw)
-    if (parsed.Values) {
-      for (const [k, v] of Object.entries(parsed.Values)) {
-        process.env[k] = String(v)
-      }
-    }
-  }
-} catch (e) {}
+loadLocalSettings({ overwrite: true })
 
 async function runDrAudit() {
   console.log('================================================================================')
@@ -24,7 +13,7 @@ async function runDrAudit() {
   const isLiveMode = process.env.AZURE_MODE === 'live'
   console.log(`📌 AZURE_MODE setting: ${process.env.AZURE_MODE || 'not set (default mock)'}`)
   console.log(`📌 COSMOS_DB_ENDPOINT: ${process.env.COSMOS_DB_ENDPOINT ? 'Configured' : 'Not Provided'}`)
-  console.log(`📌 BLOB_STORAGE_CONNECTION_STRING: ${process.env.BLOB_STORAGE_CONNECTION_STRING || 'Not Provided'}\n`)
+  console.log(`📌 BLOB_STORAGE_CONNECTION_STRING: ${maskCredential(process.env.BLOB_STORAGE_CONNECTION_STRING)}\n`)
 
   console.log('--- 1. COSMOS DB DATA TIER AUDIT ---')
   const cosmosDiag = await verifyCosmosDb(isLiveMode)

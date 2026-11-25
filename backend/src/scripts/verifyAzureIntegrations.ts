@@ -1,24 +1,8 @@
 import { runFullAzureFleetDiagnostic } from '../config/azureDiagnostics'
+import { loadLocalSettings } from '../config/env'
 import { BlobServiceClient } from '@azure/storage-blob'
-import fs from 'fs'
-import path from 'path'
 
-// Load environment variables from local.settings.json
-try {
-  let settingsPath = path.resolve(process.cwd(), 'local.settings.json')
-  if (!fs.existsSync(settingsPath)) {
-    settingsPath = path.resolve(__dirname, '../../../local.settings.json')
-  }
-  if (fs.existsSync(settingsPath)) {
-    const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const parsed = JSON.parse(raw)
-    if (parsed.Values) {
-      for (const [k, v] of Object.entries(parsed.Values)) {
-        process.env[k] = String(v)
-      }
-    }
-  }
-} catch (e) {}
+loadLocalSettings({ overwrite: true })
 
 async function runEndToEndVerification() {
 

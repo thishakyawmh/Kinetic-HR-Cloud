@@ -45,18 +45,22 @@ export async function createPolicy(
 
   try {
     const body = (await request.json()) as any
+    if (!body?.title || !String(body.title).trim() || !body?.summary || !String(body.summary).trim()) {
+      return { status: 400, jsonBody: { error: 'Policy title and summary are required.' } }
+    }
+
     const policyId = `pol-${Date.now()}`
 
     const newPolicy = {
       id: policyId,
       tenantId,
-      title: body.title,
+      title: String(body.title).trim(),
       category: body.category || 'General',
       version: body.version || '1.0',
       fileSize: body.fileSize || '1.2 MB',
-      summary: body.summary,
-      keyTerms: body.keyTerms || [],
-      contentExcerpt: body.contentExcerpt,
+      summary: String(body.summary).trim(),
+      keyTerms: Array.isArray(body.keyTerms) ? body.keyTerms : [],
+      contentExcerpt: body.contentExcerpt || '',
       uploadedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -118,6 +122,19 @@ export async function getPolicyDownloadUrl(
   const policyId = request.params.id
 
   try {
+    const policies = await queryTenantItems<any>(
+      'policies',
+      tenantId,
+      'SELECT c.id FROM c WHERE c.tenantId = @tenantId AND c.id = @id',
+      [
+        { name: '@tenantId', value: tenantId },
+        { name: '@id', value: policyId },
+      ]
+    )
+    if (policies.length === 0) {
+      return { status: 404, jsonBody: { error: 'Policy not found' } }
+    }
+
     const fileName = `${policyId}.pdf`
     const { generateTenantBlobSasUrl } = await import('../config/blob')
     const downloadUrl = await generateTenantBlobSasUrl(tenantId, 'policies', fileName, 'r', 30)

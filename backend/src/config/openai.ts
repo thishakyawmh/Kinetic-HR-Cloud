@@ -93,6 +93,7 @@ export async function callAzureOpenAIChat(
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(15000),
   })
 
   if (!res.ok) {

@@ -3,7 +3,7 @@ import { BlobServiceClient } from '@azure/storage-blob'
 import https from 'https'
 import http from 'http'
 import { URL } from 'url'
-import { checkAzureOpenAIHealth, getOpenAIConfig } from './openai'
+import { checkAzureOpenAIHealth } from './openai'
 
 export interface ServiceDiagnosticEvidence {
   requestId?: string
@@ -325,7 +325,6 @@ export async function verifyBlobStorage(isLiveMode: boolean): Promise<AzureServi
 export async function verifyAzureFunctions(): Promise<AzureServiceDiagnosticReport> {
   const port = process.env.PORT || '7071'
   const endpoint = `http://localhost:${port}/api/auth/organization`
-  const startMs = Date.now()
 
   try {
     const res = await makeHttpsRequest(endpoint, {
@@ -376,12 +375,12 @@ export async function verifyCommunicationServices(isLiveMode: boolean): Promise<
   const connStr = process.env.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING || process.env.AZURE_ACS_CONNECTION_STRING
   const isConfigured = !!connStr
 
-  if (!isConfigured) {
+  if (!isLiveMode || !isConfigured) {
     return {
       serviceId: 'communication-services',
       serviceName: 'Azure Communication Services (ACS)',
       category: 'AI & Cognitive',
-      configured: false,
+      configured: isConfigured,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
@@ -462,12 +461,12 @@ export async function verifyServiceBus(isLiveMode: boolean): Promise<AzureServic
   const connStr = process.env.AZURE_SERVICE_BUS_CONNECTION_STRING
   const isConfigured = !!connStr
 
-  if (!isConfigured) {
+  if (!isLiveMode || !isConfigured) {
     return {
       serviceId: 'service-bus',
       serviceName: 'Azure Service Bus',
       category: 'Ingestion',
-      configured: false,
+      configured: isConfigured,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
@@ -615,12 +614,12 @@ export async function verifyAzureAISearch(isLiveMode: boolean): Promise<AzureSer
   const key = process.env.AZURE_SEARCH_KEY
   const isConfigured = !!(endpoint && key)
 
-  if (!isConfigured) {
+  if (!isLiveMode || !isConfigured) {
     return {
       serviceId: 'ai-search',
       serviceName: 'Azure AI Search (Hybrid Vector)',
       category: 'AI & Cognitive',
-      configured: false,
+      configured: isConfigured,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
@@ -683,12 +682,12 @@ export async function verifyDocumentIntelligence(isLiveMode: boolean): Promise<A
   const key = process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY
   const isConfigured = !!(endpoint && key)
 
-  if (!isConfigured) {
+  if (!isLiveMode || !isConfigured) {
     return {
       serviceId: 'doc-intelligence',
       serviceName: 'Azure AI Document Intelligence',
       category: 'AI & Cognitive',
-      configured: false,
+      configured: isConfigured,
       azureMode: 'mock',
       status: 'MOCK_MODE',
       authenticated: false,
@@ -837,7 +836,10 @@ export async function verifyAzureFrontDoor(): Promise<AzureServiceDiagnosticRepo
 
   try {
     const start = Date.now()
-    const res = await fetch(frontDoorEndpoint, { method: 'HEAD' }).catch(() => null)
+    const res = await fetch(frontDoorEndpoint, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000),
+    }).catch(() => null)
     if (res) {
       latencyMs = Math.max(5, Date.now() - start)
       httpStatus = res.status
@@ -866,7 +868,7 @@ export async function verifyAzureFrontDoor(): Promise<AzureServiceDiagnosticRepo
  * 12. Microsoft Entra ID (Azure AD SSO, RBAC & OIDC) Diagnostic
  */
 export async function verifyMicrosoftEntraId(): Promise<AzureServiceDiagnosticReport> {
-  const tenantId = process.env.AZURE_TENANT_ID || '3b429074-b9db-484d-9ef8-16e78864700d'
+  const tenantId = process.env.AZURE_TENANT_ID || '00000000-0000-0000-0000-000000000000'
   const authority = process.env.AZURE_ENTRA_AUTHORITY || `https://login.microsoftonline.com/${tenantId}`
   const oidcDiscoveryUrl = 'https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration'
 

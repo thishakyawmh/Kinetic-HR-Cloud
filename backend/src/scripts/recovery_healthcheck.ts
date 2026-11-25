@@ -1,20 +1,7 @@
 import { verifyCosmosDb, verifyBlobStorage, verifyAzureFunctions } from '../config/azureDiagnostics'
-import fs from 'fs'
-import path from 'path'
+import { loadLocalSettings } from '../config/env'
 
-// Load environment settings
-try {
-  const settingsPath = path.resolve(__dirname, '../../local.settings.json')
-  if (fs.existsSync(settingsPath)) {
-    const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const parsed = JSON.parse(raw)
-    if (parsed.Values) {
-      for (const [k, v] of Object.entries(parsed.Values)) {
-        process.env[k] = String(v)
-      }
-    }
-  }
-} catch (e) {}
+loadLocalSettings({ overwrite: true })
 
 export async function runRecoveryHealthCheck() {
   console.log('================================================================================')

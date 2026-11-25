@@ -8,6 +8,11 @@ import {
   deleteLeaveRequest,
   evaluateAIFairnessLeaves,
   getLeaveTypes,
+  getLeavePlans,
+  createLeavePlan,
+  deleteLeavePlan,
+  triggerAutoCasualLeave,
+  processPendingLeaves,
 } from './functions/leaves'
 import {
   getEmployees,
@@ -17,24 +22,17 @@ import {
   createEmployee,
   bulkImportEmployees,
 } from './functions/employees'
-import { getPayslips, getPayslipById, getPayslipDownloadUrl } from './functions/payroll'
+import { getPayslips, getPayslipById, getPayslipDownloadUrl, calculateBiometricPayroll, getPaymentSettings, updatePaymentSettings } from './functions/payroll'
 import { getPolicies, getPolicyById, createPolicy, getPolicyDownloadUrl } from './functions/policies'
 import {
   createDocumentRequest,
   getDocumentRequests,
   verify2faAndSignDocument,
   sendDocumentSoftcopy,
+  handleDocIntelHealth,
 } from './functions/documents'
-import {
-  getDepartments,
-  createDepartment,
-} from './functions/departments'
-import {
-  getBranches,
-  createBranch,
-  updateBranch,
-  deleteBranch,
-} from './functions/branches'
+import { getDepartments, createDepartment } from './functions/departments'
+import { getBranches, createBranch, updateBranch, deleteBranch } from './functions/branches'
 import {
   getAdminDashboardStats,
   getAdminAuditLogs,
@@ -50,15 +48,13 @@ import {
   getPlatformMetrics,
   getSubscriptionPlans,
 } from './functions/platform'
-import {
-  getAttendanceRecords,
-  recordAttendanceClock,
-} from './functions/attendance'
-import {
-  getNotifications,
-  markNotificationRead,
-} from './functions/notifications'
-
+import { getAttendanceRecords, recordAttendanceClock, syncFingerprintLogs } from './functions/attendance'
+import { getNotifications, markNotificationRead } from './functions/notifications'
+import { handleAIChat, getAIHealth } from './functions/ai'
+import { handleSearchPolicies, handleSeedSearch, handleSearchHealth } from './functions/search'
+import { checkServiceBusHealth } from './config/serviceBus'
+import { checkAcsHealth } from './config/acs'
+import { verifyAzureFrontDoor, verifyMicrosoftEntraId } from './config/azureDiagnostics'
 
 // Auth Routes
 app.http('validateOrganization', {
@@ -90,6 +86,55 @@ app.http('getLeaveBalances', {
   handler: getLeaveBalances,
 })
 
+app.http('getLeaveTypes', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'leaves/types',
+  handler: getLeaveTypes,
+})
+
+app.http('getLeavePlans', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'leaves/plans',
+  handler: getLeavePlans,
+})
+
+app.http('createLeavePlan', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'leaves/plans',
+  handler: createLeavePlan,
+})
+
+app.http('deleteLeavePlan', {
+  methods: ['DELETE'],
+  authLevel: 'anonymous',
+  route: 'leaves/plans/{id}',
+  handler: deleteLeavePlan,
+})
+
+app.http('triggerAutoCasualLeave', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'leaves/auto-casual-leave',
+  handler: triggerAutoCasualLeave,
+})
+
+app.http('processPendingLeaves', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'leaves/process-pending',
+  handler: processPendingLeaves,
+})
+
+app.http('evaluateAIFairnessLeaves', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'leaves/ai-evaluate',
+  handler: evaluateAIFairnessLeaves,
+})
+
 app.http('getLeaveRequests', {
   methods: ['GET'],
   authLevel: 'anonymous',
@@ -118,21 +163,14 @@ app.http('deleteLeaveRequest', {
   handler: deleteLeaveRequest,
 })
 
-app.http('getLeaveTypes', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'leaves/types',
-  handler: getLeaveTypes,
-})
-
-app.http('evaluateAIFairnessLeaves', {
+// Employees & Organization Directory
+app.http('bulkImportEmployees', {
   methods: ['POST'],
   authLevel: 'anonymous',
-  route: 'leaves/ai-evaluate',
-  handler: evaluateAIFairnessLeaves,
+  route: 'employees/import',
+  handler: bulkImportEmployees,
 })
 
-// Employees & Organization Directory
 app.http('getTeamMembers', {
   methods: ['GET'],
   authLevel: 'anonymous',
@@ -168,13 +206,6 @@ app.http('createEmployee', {
   handler: createEmployee,
 })
 
-app.http('bulkImportEmployees', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'employees/import',
-  handler: bulkImportEmployees,
-})
-
 // Departments & Workspaces
 app.http('getDepartments', {
   methods: ['GET'],
@@ -190,19 +221,12 @@ app.http('createDepartment', {
   handler: createDepartment,
 })
 
-// Payroll & Payslips (Blob Storage integration)
+// Payroll & Payslips
 app.http('getPayslips', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'payroll/payslips',
   handler: getPayslips,
-})
-
-app.http('getPayslipById', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'payroll/payslips/{id}',
-  handler: getPayslipById,
 })
 
 app.http('getPayslipDownloadUrl', {
@@ -212,12 +236,47 @@ app.http('getPayslipDownloadUrl', {
   handler: getPayslipDownloadUrl,
 })
 
+app.http('getPayslipById', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'payroll/payslips/{id}',
+  handler: getPayslipById,
+})
+
+app.http('calculateBiometricPayroll', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payroll/calculate-biometric',
+  handler: calculateBiometricPayroll,
+})
+
+app.http('getPaymentSettings', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'payroll/settings',
+  handler: getPaymentSettings,
+})
+
+app.http('updatePaymentSettings', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payroll/settings',
+  handler: updatePaymentSettings,
+})
+
 // Policies
 app.http('getPolicies', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'policies',
   handler: getPolicies,
+})
+
+app.http('getPolicyDownloadUrl', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'policies/{id}/download-url',
+  handler: getPolicyDownloadUrl,
 })
 
 app.http('getPolicyById', {
@@ -232,13 +291,6 @@ app.http('createPolicy', {
   authLevel: 'anonymous',
   route: 'policies',
   handler: createPolicy,
-})
-
-app.http('getPolicyDownloadUrl', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'policies/{id}/download-url',
-  handler: getPolicyDownloadUrl,
 })
 
 // HR Document Requests & Manager 2FA Signing
@@ -270,6 +322,13 @@ app.http('sendDocumentSoftcopy', {
   handler: sendDocumentSoftcopy,
 })
 
+app.http('handleDocIntelHealth', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'documents/intelligence/health',
+  handler: handleDocIntelHealth,
+})
+
 // Organization HR Admin Endpoints
 app.http('getAdminDashboardStats', {
   methods: ['GET'],
@@ -297,6 +356,27 @@ app.http('getAdminAIUsage', {
   authLevel: 'anonymous',
   route: 'admin/ai-usage',
   handler: getAdminAIUsage,
+})
+
+app.http('getAzureFleetDiagnostic', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/azure-fleet-diagnostic',
+  handler: getAzureFleetDiagnostic,
+})
+
+app.http('getDRStatus', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/dr-status',
+  handler: getDRStatusHandler,
+})
+
+app.http('simulateDRFailover', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'admin/dr-simulate-failover',
+  handler: simulateDRFailoverHandler,
 })
 
 // Kinetic Platform Admin Endpoints
@@ -357,27 +437,7 @@ app.http('deleteBranch', {
   handler: deleteBranch,
 })
 
-app.http('getAzureFleetDiagnostic', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'admin/azure-fleet-diagnostic',
-  handler: getAzureFleetDiagnostic,
-})
-
-app.http('getDRStatus', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'admin/dr-status',
-  handler: getDRStatusHandler,
-})
-
-app.http('simulateDRFailover', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'admin/dr-simulate-failover',
-  handler: simulateDRFailoverHandler,
-})
-
+// Attendance & Biometrics
 app.http('getAttendanceRecords', {
   methods: ['GET'],
   authLevel: 'anonymous',
@@ -392,6 +452,14 @@ app.http('recordAttendanceClock', {
   handler: recordAttendanceClock,
 })
 
+app.http('syncFingerprintLogs', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'attendance/fingerprint-sync',
+  handler: syncFingerprintLogs,
+})
+
+// Notifications
 app.http('getNotifications', {
   methods: ['GET'],
   authLevel: 'anonymous',
@@ -407,8 +475,6 @@ app.http('markNotificationRead', {
 })
 
 // Azure OpenAI Endpoints
-import { handleAIChat, getAIHealth } from './functions/ai'
-
 app.http('handleAIChat', {
   methods: ['POST'],
   authLevel: 'anonymous',
@@ -424,8 +490,6 @@ app.http('getAIHealth', {
 })
 
 // Azure AI Search Endpoints
-import { handleSearchPolicies, handleSeedSearch, handleSearchHealth } from './functions/search'
-
 app.http('handleSearchPolicies', {
   methods: ['GET'],
   authLevel: 'anonymous',
@@ -447,16 +511,31 @@ app.http('handleSearchHealth', {
   handler: handleSearchHealth,
 })
 
-// Azure AI Document Intelligence Endpoints
-import { handleDocIntelHealth } from './functions/documents'
-
-app.http('handleDocIntelHealth', {
+// Azure Infrastructure Health Endpoints
+app.http('getServiceBusHealth', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  route: 'documents/intelligence/health',
-  handler: handleDocIntelHealth,
+  route: 'servicebus/health',
+  handler: async () => ({ status: 200, jsonBody: await checkServiceBusHealth() }),
 })
 
+app.http('getAcsHealth', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'acs/health',
+  handler: async () => ({ status: 200, jsonBody: await checkAcsHealth() }),
+})
 
+app.http('getFrontDoorHealth', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'frontdoor/health',
+  handler: async () => ({ status: 200, jsonBody: await verifyAzureFrontDoor() }),
+})
 
-
+app.http('getEntraHealth', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'auth/entra/health',
+  handler: async () => ({ status: 200, jsonBody: await verifyMicrosoftEntraId() }),
+})

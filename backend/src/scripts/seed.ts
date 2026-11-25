@@ -1,26 +1,11 @@
 import { CosmosClient } from '@azure/cosmos'
 import { BlobServiceClient } from '@azure/storage-blob'
-import fs from 'fs'
-import path from 'path'
+import { loadLocalSettings } from '../config/env'
 import { generateProductionSeedData } from './seedDataGenerator'
 
-// Read credentials from local.settings.json
-let settingsPath = path.resolve(__dirname, '../../local.settings.json')
-if (!fs.existsSync(settingsPath)) {
-  settingsPath = path.resolve(process.cwd(), 'local.settings.json')
-}
-if (!fs.existsSync(settingsPath)) {
-  settingsPath = path.resolve(__dirname, '../../../local.settings.json')
-}
+const settings = loadLocalSettings()
 
-let settings: any = {}
-if (fs.existsSync(settingsPath)) {
-  try {
-    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8')).Values || {}
-  } catch (e) {}
-}
-
-const DB_NAME = settings.COSMOS_DB_DATABASE || 'KineticHR'
+const DB_NAME = settings.COSMOS_DB_DATABASE || process.env.COSMOS_DB_DATABASE || 'KineticHR'
 
 const CONTAINERS = [
   { id: 'organizations', partitionKey: '/tenantId' },

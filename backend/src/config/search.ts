@@ -3,7 +3,8 @@
  * Handles enterprise HR policy indexing, semantic/full-text search, and cross-tenant knowledge retrieval.
  */
 
-import { generateProductionSeedData } from '../scripts/seedDataGenerator'
+import { getSeedData } from './seedDataset'
+import { loadLocalSettings } from './env'
 
 export interface AzureSearchConfig {
   endpoint: string
@@ -39,30 +40,13 @@ export interface SearchResultItem {
 }
 
 export function getSearchConfig(): AzureSearchConfig {
-  let endpoint = (process.env.AZURE_SEARCH_ENDPOINT || '').trim().replace(/\/$/, '')
-  let key = (process.env.AZURE_SEARCH_KEY || '').trim()
-  let indexName = (process.env.AZURE_SEARCH_INDEX || 'kinetic-hr-policies').trim()
-
-  if (!endpoint || !key) {
-    try {
-      const fs = require('fs')
-      const path = require('path')
-      const candidates = [
-        path.resolve(process.cwd(), 'local.settings.json'),
-        path.resolve(__dirname, '../../local.settings.json'),
-        path.resolve(__dirname, '../../../local.settings.json'),
-      ]
-      for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          const parsed = JSON.parse(fs.readFileSync(p, 'utf-8'))
-          endpoint = endpoint || (parsed.Values?.AZURE_SEARCH_ENDPOINT || '').trim().replace(/\/$/, '')
-          key = key || (parsed.Values?.AZURE_SEARCH_KEY || '').trim()
-          indexName = indexName || (parsed.Values?.AZURE_SEARCH_INDEX || 'kinetic-hr-policies').trim()
-          if (endpoint && key) break
-        }
-      }
-    } catch (_) {}
+  if (!process.env.AZURE_SEARCH_ENDPOINT || !process.env.AZURE_SEARCH_KEY) {
+    loadLocalSettings()
   }
+
+  const endpoint = (process.env.AZURE_SEARCH_ENDPOINT || '').trim().replace(/\/$/, '')
+  const key = (process.env.AZURE_SEARCH_KEY || '').trim()
+  const indexName = (process.env.AZURE_SEARCH_INDEX || 'kinetic-hr-policies').trim()
 
   return {
     endpoint,
@@ -89,6 +73,7 @@ export async function ensurePolicyIndex(): Promise<{ success: boolean; created: 
     const checkRes = await fetch(indexUrl, {
       method: 'GET',
       headers: { 'api-key': key },
+      signal: AbortSignal.timeout(8000),
     })
 
     if (checkRes.ok) {
@@ -123,6 +108,7 @@ export async function ensurePolicyIndex(): Promise<{ success: boolean; created: 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(schema),
+        signal: AbortSignal.timeout(8000),
       })
 
       if (!createRes.ok) {
@@ -153,7 +139,7 @@ export async function seedPolicyDocuments(): Promise<{ success: boolean; indexed
   await ensurePolicyIndex()
 
   try {
-    const seed = generateProductionSeedData()
+    const seed = getSeedData()
     const policies = seed.POLICIES || []
 
     const documents: PolicySearchDocument[] = policies.map((p: any) => ({
@@ -184,6 +170,7 @@ export async function seedPolicyDocuments(): Promise<{ success: boolean; indexed
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(batch),
+      signal: AbortSignal.timeout(10000),
     })
 
     if (!res.ok) {
@@ -222,7 +209,8 @@ export async function searchPolicies(
   }
 
   if (options?.tenantId) {
-    bodyPayload.filter = `tenantId eq '${options.tenantId}'`
+    const safeTenantId = options.tenantId.replace(/'/g, "''")
+    bodyPayload.filter = `tenantId eq '${safeTenantId}'`
   }
 
   try {
@@ -233,6 +221,7 @@ export async function searchPolicies(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(bodyPayload),
+      signal: AbortSignal.timeout(8000),
     })
 
     if (!res.ok) {
@@ -296,6 +285,7 @@ export async function checkAzureSearchHealth(): Promise<{
     const res = await fetch(listIndexesUrl, {
       method: 'GET',
       headers: { 'api-key': key },
+      signal: AbortSignal.timeout(8000),
     })
 
     const latencyMs = Date.now() - start

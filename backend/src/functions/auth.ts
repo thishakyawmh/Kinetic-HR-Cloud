@@ -1,6 +1,39 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
+import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
+import bcrypt from 'bcryptjs'
 import { queryTenantItems, getTenantContainer } from '../config/cosmos'
 import { signToken } from '../middleware/auth'
+import { resolveDevFallbackUser } from '../services/authFallback'
+
+function isDevEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    (process.env.AZURE_MODE || '').toLowerCase() !== 'live'
+  )
+}
+
+async function verifyUserPassword(user: any, password?: string): Promise<boolean> {
+  const cleanInput = (password || '').trim()
+  if (!cleanInput) return false
+
+  if (user.passwordHash) {
+    return bcrypt.compare(cleanInput, String(user.passwordHash))
+  }
+
+  if (user.password && cleanInput === String(user.password).trim()) {
+    return true
+  }
+
+  if (user.idNumber && cleanInput.toLowerCase() === String(user.idNumber).trim().toLowerCase()) {
+    return true
+  }
+
+  if (isDevEnvironment()) {
+    const lower = cleanInput.toLowerCase()
+    return lower === 'password123' || lower === 'demo123' || lower === 'password123!'
+  }
+
+  return false
+}
 
 /**
  * POST /api/auth/organization
@@ -130,301 +163,36 @@ export async function loginEmployee(
     }
 
     if (users.length === 0) {
-      // In dev fallback, allow matching mock demo credentials if cosmos DB is not yet populated
-      let devUser: any = null
-      if (cleanEmp.includes('a-1001') || (cleanEmp.includes('kasun') && !cleanEmp.includes('sb'))) {
-        devUser = {
-          id: 'user-sb-admin',
-          tenantId: 'tenant-sampath',
-          name: 'Kasun Perera',
-          email: 'kasun.perera@sampath.lk',
-          role: 'admin' as const,
-          department: 'People Operations & HR',
-          jobTitle: 'Head of Human Resources & Statutory Governance',
-          employeeNumber: 'A-1001',
-          branchId: 'br-sb-1',
-          branchName: 'Colombo Fort Head Office Branch',
-        }
-      } else if (cleanEmp.includes('m-1001') || (cleanEmp.includes('dinuka') && !cleanEmp.includes('sb'))) {
-        devUser = {
-          id: 'user-dinuka',
-          tenantId: 'tenant-sampath',
-          name: 'Dinuka Perera',
-          email: 'dinuka.perera@sampath.lk',
-          role: 'manager' as const,
-          department: 'Retail Banking & Branches',
-          jobTitle: 'Senior Credit Officer',
-          employeeNumber: 'M-1001',
-          branchId: 'br-sb-1',
-          branchName: 'Colombo Fort Head Office Branch',
-        }
-      } else if (cleanEmp.includes('sb-1001')) {
-        devUser = {
-          id: 'user-sb-admin-emp',
-          tenantId: 'tenant-sampath',
-          name: 'Kasun Perera',
-          email: 'kasun.emp@sampath.lk',
-          role: 'employee' as const,
-          department: 'People Operations & HR',
-          jobTitle: 'Senior Credit Officer',
-          employeeNumber: 'SB-1001',
-          branchId: 'br-sb-1',
-          branchName: 'Colombo Fort Head Office Branch',
-        }
-      } else if (cleanEmp.includes('sb-1002')) {
-        devUser = {
-          id: 'user-dinuka-emp',
-          tenantId: 'tenant-sampath',
-          name: 'Dinuka Perera',
-          email: 'dinuka.perera.emp@sampath.lk',
-          role: 'employee' as const,
-          department: 'Retail Banking & Branches',
-          jobTitle: 'Senior Credit Officer',
-          employeeNumber: 'SB-1002',
-          branchId: 'br-sb-1',
-          branchName: 'Colombo Fort Head Office Branch',
-        }
-      } else if (cleanEmp.includes('sb-1007') || cleanEmp.includes('nalaka')) {
-        devUser = {
-          id: 'user-sb-emp-1007',
-          tenantId: 'tenant-sampath',
-          name: 'Nalaka Perera',
-          email: 'nalaka.perera@sampath.lk',
-          role: 'employee' as const,
-          department: 'Retail Banking & Branches',
-          jobTitle: 'Customer Relationship Officer',
-          employeeNumber: 'SB-1007',
-          branchId: 'br-sb-1',
-          branchName: 'Colombo Fort Head Office Branch',
-        }
-      } else if (cleanEmp.includes('a-2001') || (cleanEmp.includes('supun') && !cleanEmp.includes('ks'))) {
-        devUser = {
-          id: 'user-ks-admin',
-          tenantId: 'tenant-keells',
-          name: 'Supun Dissanayake',
-          email: 'supun.dissanayake@keells.com',
-          role: 'admin' as const,
-          department: 'People & Culture',
-          jobTitle: 'Head of People & Retail Talent Operations',
-          employeeNumber: 'A-2001',
-          branchId: 'br-ks-1',
-          branchName: 'Crescat Boulevard Superstore',
-        }
-      } else if (cleanEmp.includes('m-2001') || (cleanEmp.includes('priyantha') && !cleanEmp.includes('ks'))) {
-        devUser = {
-          id: 'user-ks-mgr-1',
-          tenantId: 'tenant-keells',
-          name: 'Priyantha Rathnayake',
-          email: 'priyantha.rathnayake@keells.com',
-          role: 'manager' as const,
-          department: 'Store Operations & Front End',
-          jobTitle: 'Store General Manager (Crescat)',
-          employeeNumber: 'M-2001',
-          branchId: 'br-ks-1',
-          branchName: 'Crescat Boulevard Superstore',
-        }
-      } else if (cleanEmp.includes('ks-2001')) {
-        devUser = {
-          id: 'user-ks-admin-emp',
-          tenantId: 'tenant-keells',
-          name: 'Supun Dissanayake',
-          email: 'supun.emp@keells.com',
-          role: 'employee' as const,
-          department: 'People & Culture',
-          jobTitle: 'Head of People & Retail Talent Operations',
-          employeeNumber: 'KS-2001',
-          branchId: 'br-ks-1',
-          branchName: 'Crescat Boulevard Superstore',
-        }
-      } else if (cleanEmp.includes('ks-2012') || cleanEmp.includes('gunaratne')) {
-        devUser = {
-          id: 'user-ks-emp-2012',
-          tenantId: 'tenant-keells',
-          name: 'Kasun Gunaratne',
-          email: 'kasun.gunaratne@keells.com',
-          role: 'employee' as const,
-          department: 'Store Operations & Front End',
-          jobTitle: 'Senior Retail Associate',
-          employeeNumber: 'KS-2012',
-          branchId: 'br-ks-1',
-          branchName: 'Crescat Boulevard Superstore',
-        }
-      } else if (cleanEmp.includes('a-3001') || (cleanEmp.includes('kavinda') && !cleanEmp.includes('sng'))) {
-        devUser = {
-          id: 'user-sn-admin',
-          tenantId: 'tenant-singer',
-          name: 'Kavinda Samarasinghe',
-          email: 'kavinda.samarasinghe@singersl.com',
-          role: 'admin' as const,
-          department: 'Human Resources & Training',
-          jobTitle: 'Head of HR Operations & Statutory Affairs',
-          employeeNumber: 'A-3001',
-          branchId: 'br-sn-1',
-          branchName: 'Singer Mega - Duplication Road',
-        }
-      } else if (cleanEmp.includes('m-3001') || (cleanEmp.includes('ashen') && !cleanEmp.includes('sng'))) {
-        devUser = {
-          id: 'user-sn-mgr-1',
-          tenantId: 'tenant-singer',
-          name: 'Ashen Senanayake',
-          email: 'ashen.senanayake@singersl.com',
-          role: 'manager' as const,
-          department: 'Showroom Retail Sales',
-          jobTitle: 'Mega Store Manager (Duplication Road)',
-          employeeNumber: 'M-3001',
-          branchId: 'br-sn-1',
-          branchName: 'Singer Mega - Duplication Road',
-        }
-      } else if (cleanEmp.includes('sng-3001')) {
-        devUser = {
-          id: 'user-sn-admin-emp',
-          tenantId: 'tenant-singer',
-          name: 'Kavinda Samarasinghe',
-          email: 'kavinda.emp@singersl.com',
-          role: 'employee' as const,
-          department: 'Human Resources & Training',
-          jobTitle: 'Head of HR Operations & Statutory Affairs',
-          employeeNumber: 'SNG-3001',
-          branchId: 'br-sn-1',
-          branchName: 'Singer Mega - Duplication Road',
-        }
-      } else if (cleanEmp.includes('sng-3008') || cleanEmp.includes('sahan')) {
-        devUser = {
-          id: 'user-sn-emp-3008',
-          tenantId: 'tenant-singer',
-          name: 'Sahan Alahakoon',
-          email: 'sahan.alahakoon@singersl.com',
-          role: 'employee' as const,
-          department: 'Showroom Retail Sales',
-          jobTitle: 'Senior Showroom Sales Consultant',
-          employeeNumber: 'SNG-3008',
-          branchId: 'br-sn-1',
-          branchName: 'Singer Mega - Duplication Road',
-        }
-      } else if (cleanEmp.includes('kt-8842') || cleanEmp === 'alice' || cleanEmp.includes('alice') || cleanEmp === 'employee') {
-        devUser = {
-          id: 'user-Alice',
-          tenantId: 'tenant-kinetic',
-          name: 'Alice Johnson',
-          email: 'Alice.johnson@kinetictech.io',
-          role: 'employee' as const,
-          department: 'Engineering',
-          jobTitle: 'Senior Frontend Engineer',
-          employeeNumber: 'KT-8842',
-        }
-      } else if (cleanEmp.includes('m-1044') || cleanEmp === 'm1044' || cleanEmp === 'manager' || (cleanEmp === 'david' && !cleanEmp.includes('kt'))) {
-        devUser = {
-          id: 'user-david',
-          tenantId: 'tenant-kinetic',
-          name: 'David Wilson',
-          email: 'david.wilson@kinetictech.io',
-          role: 'manager' as const,
-          department: 'Engineering',
-          jobTitle: 'Engineering Director',
-          employeeNumber: 'M-1044',
-        }
-      } else if (cleanEmp.includes('kt-1044')) {
-        devUser = {
-          id: 'user-david-emp',
-          tenantId: 'tenant-kinetic',
-          name: 'David Wilson',
-          email: 'david.emp@kinetictech.io',
-          role: 'employee' as const,
-          department: 'Engineering',
-          jobTitle: 'Engineering Director',
-          employeeNumber: 'KT-1044',
-        }
-      } else if (cleanEmp.includes('a-0012') || cleanEmp === 'a0012' || cleanEmp === 'admin' || cleanEmp === 'hr' || (cleanEmp === 'sarah' && !cleanEmp.includes('kt'))) {
-        devUser = {
-          id: 'user-sarah',
-          tenantId: 'tenant-kinetic',
-          name: 'Sarah Miller',
-          email: 'sarah.miller@kinetictech.io',
-          role: 'admin' as const,
-          department: 'Human Resources',
-          jobTitle: 'VP of People & Operations',
-          employeeNumber: 'A-0012',
-        }
-      } else if (cleanEmp.includes('kt-0012')) {
-        devUser = {
-          id: 'user-sarah-emp',
-          tenantId: 'tenant-kinetic',
-          name: 'Sarah Miller',
-          email: 'sarah.emp@kinetictech.io',
-          role: 'employee' as const,
-          department: 'Human Resources',
-          jobTitle: 'VP of People & Operations',
-          employeeNumber: 'KT-0012',
-        }
-      } else if (cleanEmp.includes('kc-0001') || cleanEmp === 'alex' || cleanEmp.includes('platform')) {
-        devUser = {
-          id: 'user-platform-admin',
-          tenantId: 'tenant-kinetic',
-          name: 'Alex Thorne',
-          email: 'alex.thorne@kineticcloud.azure.com',
-          role: 'platform_admin' as const,
-          department: 'Cloud Platform Operations',
-          jobTitle: 'Principal Cloud Platform Director',
-          employeeNumber: 'KC-0001',
-        }
-      }
-
-      if (devUser) {
-        const token = signToken(devUser)
-        if (devUser.role === 'platform_admin') {
+      if (isDevEnvironment()) {
+        const resolved = resolveDevFallbackUser(cleanEmp, tenantId)
+        if (resolved && (await verifyUserPassword(resolved.user, password))) {
+          const token = signToken(resolved.user)
           return {
             status: 200,
             jsonBody: {
-              user: devUser,
+              user: resolved.user,
               token,
-              tenant: { id: 'tenant-platform', name: 'Global Cloud Fleet Infrastructure', code: 'PLATFORM' },
+              tenant: resolved.tenant,
             },
           }
-        }
-        const targetTenantId = (tenantId && tenantId !== 'tenant-kinetic') ? tenantId : 'tenant-sampath'
-        const tenantInfo = targetTenantId === 'tenant-keells'
-          ? { id: 'tenant-keells', name: 'Keells Supermarkets', code: 'KEELLS' }
-          : targetTenantId === 'tenant-singer'
-          ? { id: 'tenant-singer', name: 'Singer Sri Lanka PLC', code: 'SINGER' }
-          : { id: 'tenant-sampath', name: 'Sampath Bank PLC', code: 'SAMPATH' }
-        return {
-          status: 200,
-          jsonBody: {
-            user: { ...devUser, tenantId: tenantInfo.id },
-            token,
-            tenant: tenantInfo,
-          },
         }
       }
 
       return {
         status: 401,
-        jsonBody: { error: `Employee ID "${employeeId}" not found in this organization. Try KT-8842 (Employee), M-1044 (Manager), A-0012 (HR Admin), or KC-0001 (Platform Admin).` },
+        jsonBody: { error: `Invalid credentials or Employee ID "${employeeId}" not found in this organization.` },
       }
     }
 
     const user = users[0]
 
-    // Verify password with Bcrypt Hashing
-    const expectedPassword = user.password || user.idNumber || 'password123'
-    if (password && password.trim() !== '') {
-      const cleanInput = password.trim()
-      const cleanExpected = expectedPassword.trim()
-      const isDevFallback = cleanInput === 'password123' || cleanInput === 'demo123'
-
-      const isMatch =
-        cleanInput === cleanExpected ||
-        cleanInput.toLowerCase() === cleanExpected.toLowerCase() ||
-        isDevFallback ||
-        (user.passwordHash && user.passwordHash === cleanInput)
-
-      if (!isMatch) {
-        return {
-          status: 401,
-          jsonBody: {
-            error: 'Invalid password. Secure bcrypt authentication failed.',
-          },
-        }
+    const isMatch = await verifyUserPassword(user, password)
+    if (!isMatch) {
+      return {
+        status: 401,
+        jsonBody: {
+          error: 'Invalid credentials. Authentication failed.',
+        },
       }
     }
 
@@ -438,13 +206,12 @@ export async function loginEmployee(
 
     const token = signToken(tokenPayload)
 
-    // Remove sensitive fields before returning
-    delete user.passwordHash
+    const { passwordHash: _ph, password: _pw, ...safeUser } = user
 
     return {
       status: 200,
       jsonBody: {
-        user,
+        user: safeUser,
         token,
         tenant: { id: user.tenantId },
       },
@@ -469,12 +236,28 @@ export async function loginPlatformAdmin(
   try {
     const body = (await request.json()) as { adminId?: string; password?: string }
     const adminId = (body?.adminId || '').trim().toLowerCase()
-    if (!adminId) {
-      return { status: 400, jsonBody: { error: 'Platform Administrator ID is required' } }
+    const cleanPassword = (body?.password || '').trim()
+    if (!adminId || !cleanPassword) {
+      return { status: 400, jsonBody: { error: 'Platform Administrator ID and password are required' } }
     }
 
     if (adminId !== 'kc-0001' && adminId !== 'alex' && adminId !== 'platform_admin' && !adminId.includes('kc-0001')) {
       return { status: 401, jsonBody: { error: 'Invalid Platform Administrator ID. Access is strictly restricted.' } }
+    }
+
+    const configuredAdminPass = process.env.PLATFORM_ADMIN_PASSWORD?.trim()
+    let isPasswordValid = false
+    if (configuredAdminPass) {
+      isPasswordValid = configuredAdminPass.startsWith('$2')
+        ? await bcrypt.compare(cleanPassword, configuredAdminPass)
+        : cleanPassword === configuredAdminPass
+    } else if (isDevEnvironment()) {
+      const lower = cleanPassword.toLowerCase()
+      isPasswordValid = lower === 'password123' || lower === 'demo123' || lower === 'password123!' || lower === 'kc-0001'
+    }
+
+    if (!isPasswordValid) {
+      return { status: 401, jsonBody: { error: 'Invalid Platform Administrator credentials.' } }
     }
 
     const adminUser = {

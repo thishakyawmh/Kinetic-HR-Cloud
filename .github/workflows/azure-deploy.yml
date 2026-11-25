@@ -55,6 +55,7 @@ jobs:
         env:
           VITE_API_BASE_URL: https://kinetichr-api-d0cwatbqbaafg9hh.southindia-01.azurewebsites.net/api
           VITE_APP_ENV: production
+          VITE_USE_MOCK_SERVICES: 'false'
 
   # -------------------------------------------------------------
   # Job 2: Deploy Frontend to Azure Static Web Apps (SWA)
@@ -81,6 +82,7 @@ jobs:
         env:
           VITE_API_BASE_URL: https://kinetichr-api-d0cwatbqbaafg9hh.southindia-01.azurewebsites.net/api
           VITE_APP_ENV: production
+          VITE_USE_MOCK_SERVICES: 'false'
 
   # -------------------------------------------------------------
   # Job 3: Deploy Backend Microservices to Azure Functions

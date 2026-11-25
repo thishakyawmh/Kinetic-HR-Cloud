@@ -1,7 +1,8 @@
 /**
- * Azure AI Document Intelligence Module (Form Recognizer)
- * OCR & Document Data Extraction with Double-Way Resilience
+ * Azure AI Document Intelligence (Form Recognizer) OCR client with local fallback.
  */
+
+import { loadLocalSettings } from './env'
 
 export interface DocumentOcrResult {
   confidence: number
@@ -12,28 +13,12 @@ export interface DocumentOcrResult {
 }
 
 export function getDocumentIntelligenceConfig() {
-  let endpoint = (process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || '').trim().replace(/\/$/, '')
-  let key = (process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY || '').trim()
-
-  if (!endpoint || !key) {
-    try {
-      const fs = require('fs')
-      const path = require('path')
-      const candidates = [
-        path.resolve(process.cwd(), 'local.settings.json'),
-        path.resolve(__dirname, '../../local.settings.json'),
-        path.resolve(__dirname, '../../../local.settings.json'),
-      ]
-      for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          const parsed = JSON.parse(fs.readFileSync(p, 'utf-8'))
-          endpoint = endpoint || (parsed.Values?.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || '').trim().replace(/\/$/, '')
-          key = key || (parsed.Values?.AZURE_DOCUMENT_INTELLIGENCE_KEY || '').trim()
-          if (endpoint && key) break
-        }
-      }
-    } catch (_) {}
+  if (!process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || !process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY) {
+    loadLocalSettings()
   }
+
+  const endpoint = (process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || '').trim().replace(/\/$/, '')
+  const key = (process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY || '').trim()
 
   return {
     endpoint,
@@ -51,7 +36,7 @@ export function isDocumentIntelligenceConfigured(): boolean {
  */
 export async function analyzeDocumentOCR(
   documentType: string,
-  fileName: string
+  _fileName: string
 ): Promise<DocumentOcrResult> {
   const nowIso = new Date().toISOString()
   const { endpoint, key, isConfigured } = getDocumentIntelligenceConfig()
@@ -63,12 +48,10 @@ export async function analyzeDocumentOCR(
       const res = await fetch(targetUrl, {
         method: 'GET',
         headers: { 'Ocp-Apim-Subscription-Key': key },
+        signal: AbortSignal.timeout(8000),
       })
 
       if (res.ok) {
-        console.log(
-          `🟢 [AZURE AI DOCUMENT INTELLIGENCE] OCR Processed file "${fileName}" via Live Form Recognizer Model`
-        )
         return {
           confidence: 0.998,
           extractedFieldsCount: 16,
@@ -83,15 +66,10 @@ export async function analyzeDocumentOCR(
         }
       }
     } catch (err: any) {
-      console.warn(
-        `⚠️  [AZURE AI DOCUMENT INTELLIGENCE ERROR] Analysis failed (${err.message}). Falling back to Simulated OCR!`
-      )
+      console.warn(`[DocumentIntelligence] OCR check failed (${err.message}), using simulated OCR.`)
     }
   }
 
-  console.log(
-    `🟡 [MOCK AI DOCUMENT INTELLIGENCE] Extracted 14 Structured Key-Value Fields from "${fileName}" (Confidence: 99.4%)`
-  )
   return {
     confidence: 0.994,
     extractedFieldsCount: 14,
@@ -134,6 +112,7 @@ export async function checkDocumentIntelligenceHealth(): Promise<{
     const res = await fetch(targetUrl, {
       method: 'GET',
       headers: { 'Ocp-Apim-Subscription-Key': key },
+      signal: AbortSignal.timeout(5000),
     })
 
     const latencyMs = Date.now() - start

@@ -1,7 +1,8 @@
 /**
- * Azure Communication Services (ACS) Module
- * Double-Way Resilient SMS & Email Gateway with Terminal Status Badges
+ * Azure Communication Services (ACS) SMS & Email Gateway with local fallback.
  */
+
+import { loadLocalSettings } from './env'
 
 export interface SmsDispatchResult {
   success: boolean
@@ -12,33 +13,15 @@ export interface SmsDispatchResult {
 }
 
 export function getAcsConfig() {
-  let connStr = (
+  if (!process.env.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING && !process.env.AZURE_ACS_CONNECTION_STRING) {
+    loadLocalSettings()
+  }
+
+  const connStr = (
     process.env.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING ||
     process.env.AZURE_ACS_CONNECTION_STRING ||
     ''
   ).trim()
-
-  if (!connStr) {
-    try {
-      const fs = require('fs')
-      const path = require('path')
-      const candidates = [
-        path.resolve(process.cwd(), 'local.settings.json'),
-        path.resolve(__dirname, '../../local.settings.json'),
-        path.resolve(__dirname, '../../../local.settings.json'),
-      ]
-      for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          const parsed = JSON.parse(fs.readFileSync(p, 'utf-8'))
-          connStr =
-            connStr ||
-            (parsed.Values?.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING || '').trim() ||
-            (parsed.Values?.AZURE_ACS_CONNECTION_STRING || '').trim()
-          if (connStr) break
-        }
-      }
-    } catch (_) {}
-  }
 
   const endpointPart = connStr.split(';').find(p => p.toLowerCase().startsWith('endpoint='))
   const endpoint = endpointPart ? endpointPart.substring(9).replace(/\/$/, '') : ''
@@ -59,7 +42,7 @@ export function isAcsConfigured(): boolean {
  */
 export async function sendMobileSms(
   phoneNumber: string,
-  message: string
+  _message: string
 ): Promise<SmsDispatchResult> {
   const nowIso = new Date().toISOString()
   const msgId = `sms-${Math.random().toString(36).substring(2, 8)}-${Date.now().toString().slice(-4)}`
@@ -67,9 +50,6 @@ export async function sendMobileSms(
 
   if (isConfigured && endpoint) {
     try {
-      console.log(
-        `🟢 [AZURE ACS SMS GATEWAY] Dispatched Live SMS to ${phoneNumber} on ${endpoint} (Ref: ${msgId})`
-      )
       return {
         success: true,
         messageId: msgId,
@@ -78,15 +58,10 @@ export async function sendMobileSms(
         dispatchedAt: nowIso,
       }
     } catch (err: any) {
-      console.warn(
-        `⚠️  [AZURE ACS ERROR] SMS send failed (${err.message}). Falling back to Simulated Gateway!`
-      )
+      console.warn(`[ACS] SMS send failed (${err.message}), using simulated gateway.`)
     }
   }
 
-  console.log(
-    `🟡 [MOCK ACS SMS GATEWAY] Dispatched Simulated 2FA SMS to ${phoneNumber}: "${message.substring(0, 48)}..."`
-  )
   return {
     success: true,
     messageId: msgId,
@@ -100,19 +75,17 @@ export async function sendMobileSms(
  * Dispatches Official Document Softcopies via Email
  */
 export async function sendEmailSoftcopy(
-  toEmail: string,
-  subject: string,
-  documentRef: string
+  _toEmail: string,
+  _subject: string,
+  _documentRef: string
 ): Promise<{ success: boolean; provider: string; sentAt: string }> {
   const nowIso = new Date().toISOString()
   const { isConfigured, endpoint } = getAcsConfig()
 
   if (isConfigured && endpoint) {
-    console.log(`🟢 [AZURE ACS EMAIL] Dispatched Softcopy Email for #${documentRef} to ${toEmail} on ${endpoint}`)
     return { success: true, provider: 'Azure Communication Services Email', sentAt: nowIso }
   }
 
-  console.log(`🟡 [MOCK ACS EMAIL] Dispatched Simulated Softcopy Email for #${documentRef} to ${toEmail}`)
   return { success: true, provider: 'In-Memory Simulated Email Gateway', sentAt: nowIso }
 }
 
@@ -140,7 +113,8 @@ export async function checkAcsHealth(): Promise<{
   }
 
   try {
-    const res = await fetch(endpoint, { method: 'GET' })
+    const res = await fetch(endpoint, { method: 'GET', signal: AbortSignal.timeout(5000) })
+    await res.body?.cancel()
     const latencyMs = Date.now() - start
     return {
       connected: true,

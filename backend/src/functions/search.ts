@@ -14,9 +14,16 @@ export async function handleSearchPolicies(
   if (auth.errorResponse) return auth.errorResponse
 
   const q = request.query.get('q') || request.query.get('search') || '*'
-  const tenantId = request.query.get('tenantId') || auth.user!.tenantId
+  const requestedTenantId = request.query.get('tenantId')
+  if (requestedTenantId && requestedTenantId !== auth.user!.tenantId && auth.user!.role !== 'platform_admin') {
+    return {
+      status: 403,
+      jsonBody: { error: 'Cross-tenant policy search prohibited.', results: [] },
+    }
+  }
+  const tenantId = requestedTenantId || auth.user!.tenantId
   const topStr = request.query.get('top') || '5'
-  const top = parseInt(topStr, 10) || 5
+  const top = Math.min(Math.max(parseInt(topStr, 10) || 5, 1), 50)
 
   try {
     const searchRes = await searchPolicies(q, { tenantId, top })
@@ -40,7 +47,7 @@ export async function handleSeedSearch(
   request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
-  const auth = authenticateRequest(request)
+  const auth = authenticateRequest(request, 'admin')
   if (auth.errorResponse) return auth.errorResponse
 
   try {

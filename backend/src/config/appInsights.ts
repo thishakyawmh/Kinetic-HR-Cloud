@@ -14,18 +14,9 @@ export function isAppInsightsConfigured(): boolean {
  * Tracks custom APM events and logs double-way resilience indicators
  */
 export function trackTelemetryEvent(
-  eventName: string,
-  properties?: Record<string, string>,
-  metrics?: Record<string, number>
+  _eventName: string,
+  _properties?: Record<string, string>,
+  _metrics?: Record<string, number>
 ): void {
-  if (isAppInsightsConfigured()) {
-    console.log(
-      `🟢 [AZURE APP INSIGHTS] Logged Live Telemetry Event "${eventName}" (Properties: ${Object.keys(properties || {}).length})`
-    )
-    return
-  }
-
-  console.log(
-    `🟡 [MOCK APP INSIGHTS] Tracked Telemetry Event "${eventName}" (In-Memory APM Monitor)`
-  )
+  // No-op stub until @azure/monitor-opentelemetry or applicationinsights SDK is wired.
 }

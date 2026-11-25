@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
-import { getTenantContainer, queryTenantItems } from '../config/cosmos'
+import { getTenantContainer } from '../config/cosmos'
 import { authenticateRequest } from '../middleware/auth'
 
 export const PLATFORM_PLANS = [
@@ -234,7 +234,7 @@ export async function getPlatformMetrics(
  * GET /api/platform/subscriptions
  */
 export async function getSubscriptionPlans(
-  request: HttpRequest,
+  _request: HttpRequest,
   _context: InvocationContext
 ): Promise<HttpResponseInit> {
   return { status: 200, jsonBody: PLATFORM_PLANS }

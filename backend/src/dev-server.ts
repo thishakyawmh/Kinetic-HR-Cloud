@@ -1,6 +1,5 @@
 import http from 'http'
-import fs from 'fs'
-import path from 'path'
+import { loadLocalSettings } from './config/env'
 import { validateOrganization, loginEmployee, loginPlatformAdmin } from './functions/auth'
 import {
   getLeaveBalances,
@@ -14,6 +13,7 @@ import {
   createLeavePlan,
   deleteLeavePlan,
   triggerAutoCasualLeave,
+  processPendingLeaves,
 } from './functions/leaves'
 import {
   getEmployees,
@@ -72,38 +72,23 @@ import {
   getDocumentRequests,
   verify2faAndSignDocument,
   sendDocumentSoftcopy,
+  handleDocIntelHealth,
 } from './functions/documents'
 import {
   getNotifications,
   markNotificationRead,
 } from './functions/notifications'
 import { handleAIChat, getAIHealth } from './functions/ai'
+import { handleSearchPolicies, handleSeedSearch, handleSearchHealth } from './functions/search'
+import { ensurePolicyIndex, seedPolicyDocuments } from './config/search'
+import { checkServiceBusHealth } from './config/serviceBus'
+import { checkAcsHealth } from './config/acs'
+import { verifyAzureFrontDoor, verifyMicrosoftEntraId } from './config/azureDiagnostics'
 
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { isCosmosConfigured, getCosmosDatabase } from './config/cosmos'
 
-// Load environment variables from local.settings.json or fallback to example
-try {
-  let settingsPath = path.resolve(__dirname, '../../local.settings.json')
-  if (!fs.existsSync(settingsPath)) {
-    settingsPath = path.resolve(process.cwd(), 'local.settings.json')
-  }
-  const examplePath = path.resolve(__dirname, '../../local.settings.json.example')
-  const pathToLoad = fs.existsSync(settingsPath) ? settingsPath : examplePath
-  if (fs.existsSync(pathToLoad)) {
-    const raw = fs.readFileSync(pathToLoad, 'utf-8')
-    const parsed = JSON.parse(raw)
-    if (parsed.Values) {
-      for (const [k, v] of Object.entries(parsed.Values)) {
-        if (!process.env[k]) {
-          process.env[k] = String(v)
-        }
-      }
-    }
-  }
-} catch (e) {
-  console.warn('Could not load local.settings.json', e)
-}
+loadLocalSettings({ fallbackToExample: true })
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 7071
 
@@ -152,6 +137,7 @@ addRoute('GET', '/api/leaves/plans', getLeavePlans)
 addRoute('POST', '/api/leaves/plans', createLeavePlan)
 addRoute('DELETE', '/api/leaves/plans/{id}', deleteLeavePlan)
 addRoute('POST', '/api/leaves/auto-casual-leave', triggerAutoCasualLeave)
+addRoute('POST', '/api/leaves/process-pending', processPendingLeaves)
 
 // Employees
 addRoute('POST', '/api/employees/import', bulkImportEmployees)
@@ -213,10 +199,6 @@ addRoute('GET', '/api/documents', getDocumentRequests)
 addRoute('POST', '/api/documents/{id}/verify-2fa-sign', verify2faAndSignDocument)
 addRoute('POST', '/api/documents/{id}/send-softcopy', sendDocumentSoftcopy)
 
-// Attendance
-addRoute('GET', '/api/attendance', getAttendanceRecords)
-addRoute('POST', '/api/attendance/clock', recordAttendanceClock)
-
 // Notifications
 addRoute('GET', '/api/notifications', getNotifications)
 addRoute('PATCH', '/api/notifications/{id}/read', markNotificationRead)
@@ -226,32 +208,26 @@ addRoute('POST', '/api/ai/chat', handleAIChat)
 addRoute('GET', '/api/ai/health', getAIHealth)
 
 // Azure AI Search
-import { handleSearchPolicies, handleSeedSearch, handleSearchHealth } from './functions/search'
-import { ensurePolicyIndex, seedPolicyDocuments } from './config/search'
 addRoute('GET', '/api/search/policies', handleSearchPolicies)
 addRoute('POST', '/api/search/seed', handleSeedSearch)
 addRoute('GET', '/api/search/health', handleSearchHealth)
 
 // Azure AI Document Intelligence
-import { handleDocIntelHealth } from './functions/documents'
 addRoute('GET', '/api/documents/intelligence/health', handleDocIntelHealth)
 
 // Azure Service Bus
-import { checkServiceBusHealth } from './config/serviceBus'
 addRoute('GET', '/api/servicebus/health', async () => ({
   status: 200,
   jsonBody: await checkServiceBusHealth(),
 }))
 
 // Azure Communication Services
-import { checkAcsHealth } from './config/acs'
 addRoute('GET', '/api/acs/health', async () => ({
   status: 200,
   jsonBody: await checkAcsHealth(),
 }))
 
 // Azure Front Door (Global Anycast Edge & WAF)
-import { verifyAzureFrontDoor, verifyMicrosoftEntraId } from './config/azureDiagnostics'
 addRoute('GET', '/api/frontdoor/health', async () => ({
   status: 200,
   jsonBody: await verifyAzureFrontDoor(),
@@ -263,33 +239,41 @@ addRoute('GET', '/api/auth/entra/health', async () => ({
   jsonBody: await verifyMicrosoftEntraId(),
 }))
 
-addRoute('GET', '/api/auth/entra/config', async () => ({
-  status: 200,
-  jsonBody: {
-    tenantId: process.env.AZURE_TENANT_ID || '3b429074-b9db-484d-9ef8-16e78864700d',
-    clientId: process.env.AZURE_CLIENT_ID || 'a84e27f1-2856-4dc0-8f92-563b78298711',
-    authority: process.env.AZURE_ENTRA_AUTHORITY || 'https://login.microsoftonline.com/3b429074-b9db-484d-9ef8-16e78864700d',
-    redirectUri: 'http://localhost:5173/auth/callback',
-    scopes: ['openid', 'profile', 'email', 'User.Read'],
-    ssoEnabled: true,
-    protocol: 'OpenID Connect v2.0 / SAML 2.0',
-    compliance: 'Conditional Access & MFA Enforced',
-  },
-}))
+addRoute('GET', '/api/auth/entra/config', async () => {
+  const tenantId = process.env.AZURE_TENANT_ID || '00000000-0000-0000-0000-000000000000'
+  const clientId = process.env.AZURE_CLIENT_ID || '00000000-0000-0000-0000-000000000000'
+  return {
+    status: 200,
+    jsonBody: {
+      tenantId,
+      clientId,
+      authority: process.env.AZURE_ENTRA_AUTHORITY || `https://login.microsoftonline.com/${tenantId}`,
+      redirectUri: process.env.AZURE_ENTRA_REDIRECT_URI || 'http://localhost:5173/auth/callback',
+      scopes: ['openid', 'profile', 'email', 'User.Read'],
+      ssoEnabled: true,
+      protocol: 'OpenID Connect v2.0 / SAML 2.0',
+      compliance: 'Conditional Access & MFA Enforced',
+    },
+  }
+})
 
 addRoute('POST', '/api/auth/entra/sso', async (req) => {
-  const body = (req.body || {}) as any
-  const targetEmail = body.email || 'hirun.perera@sampath.lk'
+  if (process.env.NODE_ENV === 'production' || (process.env.AZURE_MODE || '').toLowerCase() === 'live') {
+    return { status: 403, jsonBody: { error: 'Mock Entra SSO is disabled in production/live mode.' } }
+  }
+  const body = (await req.json().catch(() => ({}))) as any
+  const targetEmail = body?.email || 'admin@sampath.lk'
+  const tenantId = process.env.AZURE_TENANT_ID || '00000000-0000-0000-0000-000000000000'
   return {
     status: 200,
     jsonBody: {
       success: true,
       provider: 'Microsoft Entra ID',
-      tenantId: process.env.AZURE_TENANT_ID || '3b429074-b9db-484d-9ef8-16e78864700d',
+      tenantId,
       claims: {
         upn: targetEmail,
         roles: ['HRAdmin', 'BranchManager'],
-        iss: process.env.AZURE_ENTRA_ISSUER || 'https://login.microsoftonline.com/3b429074-b9db-484d-9ef8-16e78864700d/v2.0',
+        iss: process.env.AZURE_ENTRA_ISSUER || `https://login.microsoftonline.com/${tenantId}/v2.0`,
         authMethod: 'MFA_FIDO2_Passkey',
       },
       token: `entra-jwt-bearer-${Date.now()}`,
@@ -352,14 +336,9 @@ const server = http.createServer(async (req, res) => {
             if (!bodyText || !bodyText.trim()) return {}
             try {
               return JSON.parse(bodyText)
-            } catch (e) {
-              try {
-                // Sanitize potential shell escaping artifacts
-                const clean = bodyText.replace(/\\"/g, '"').replace(/^"|"$/g, '')
-                return JSON.parse(clean)
-              } catch (_) {
-                return {}
-              }
+            } catch {
+              const clean = bodyText.replace(/\\"/g, '"').replace(/^"|"$/g, '')
+              return JSON.parse(clean)
             }
           },
           text: async () => bodyText,
@@ -372,7 +351,7 @@ const server = http.createServer(async (req, res) => {
           info: console.info,
         }
 
-        console.log(`\n📡 [API REQ] ${req.method} ${pathname}`)
+        console.log(`${req.method} ${pathname}`)
         try {
           const result = await route.handler(mockReq as HttpRequest, mockContext as InvocationContext)
           const statusCode = result.status || 200
@@ -412,8 +391,7 @@ const server = http.createServer(async (req, res) => {
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`\n❌ Port ${PORT} is already in use by another process.`)
-    console.error(`👉 You can free the port or specify another port using: $env:PORT="7072"; npm run dev\n`)
+    console.error(`Port ${PORT} is already in use. Set PORT=<port> to use another port.`)
     process.exit(1)
   } else {
     console.error('Server error:', err)
@@ -421,97 +399,36 @@ server.on('error', (err: any) => {
 })
 
 process.on('uncaughtException', (err: any) => {
-  console.error('❌ Uncaught Exception:', err)
+  console.error('Uncaught Exception:', err)
 })
 
-process.on('unhandledRejection', (reason: any, promise: any) => {
-  console.error('❌ Unhandled Rejection:', reason)
+process.on('unhandledRejection', (reason: any) => {
+  console.error('Unhandled Rejection:', reason)
 })
 
 server.listen(PORT, async () => {
-  console.log(`\n================================================================================`)
-  console.log(`🚀 KINETIC HR ENTERPRISE BACKEND ONLINE: http://localhost:${PORT}`)
-  console.log(`--------------------------------------------------------------------------------`)
-
+  let cosmosStatus = 'mock'
   if (isCosmosConfigured()) {
     const db = getCosmosDatabase()
-    const endpoint = process.env.COSMOS_DB_ENDPOINT
-    const dbName = process.env.COSMOS_DB_DATABASE || 'KineticHR'
     try {
       const startMs = Date.now()
       await db?.read()
-      const latencyMs = Date.now() - startMs
-      console.log(`🟢 [AZURE COSMOS DB] STATUS: CONNECTED & ONLINE (${latencyMs}ms)`)
-      console.log(`   Endpoint    : ${endpoint}`)
-      console.log(`   Database    : ${dbName}`)
-      console.log(`   Active Mode : LIVE CLOUD AZURE DATA (Double-Way: Azure Primary)`)
+      cosmosStatus = `connected (${Date.now() - startMs}ms)`
     } catch (err: any) {
-      console.log(`⚠️  [AZURE COSMOS DB] STATUS: CONNECTION FAILED (${err.message})`)
-      console.log(`   Active Mode : IN-MEMORY MOCK DATA FALLBACK (Double-Way: Failover Active)`)
+      cosmosStatus = `fallback (${err.message})`
     }
-  } else {
-    console.log(`🟡 [DATABASE STATUS] COSMOS DB CREDENTIALS NOT CONFIGURED`)
-    console.log(`   Active Mode : IN-MEMORY MOCK DATA (Local offline development dataset)`)
   }
 
-  if (process.env.BLOB_STORAGE_CONNECTION_STRING) {
-    const containerName = process.env.BLOB_CONTAINER_TENANTS || 'tenants'
-    console.log(`🟢 [AZURE BLOB STORAGE] STATUS: CONFIGURED (Container: "${containerName}")`)
-  } else {
-    console.log(`🟡 [AZURE BLOB STORAGE] STATUS: OFFLINE (Local SAS Token Simulator Active)`)
-  }
+  const aiEnabled = Boolean(process.env.AZURE_OPENAI_KEY && process.env.AZURE_OPENAI_ENDPOINT)
+  const searchEnabled = Boolean(process.env.AZURE_SEARCH_KEY && process.env.AZURE_SEARCH_ENDPOINT)
 
-  // Additional Azure Services Telemetry Badges
-  const fdEndpoint = process.env.AZURE_FRONTDOOR_ENDPOINT || 'https://kinetichr-edge.azurefd.net'
-  console.log(`🟢 [AZURE FRONT DOOR] STATUS: CONFIGURED (Global Anycast Edge & WAF: "${fdEndpoint}")`)
-
-  const tenantId = process.env.AZURE_TENANT_ID || '3b429074-b9db-484d-9ef8-16e78864700d'
-  console.log(`🟢 [MICROSOFT ENTRA ID] STATUS: CONFIGURED (OAuth 2.0 / OIDC SSO & RBAC: Tenant ${tenantId.substring(0, 8)}...)`)
-
-  if (process.env.AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING || process.env.AZURE_ACS_CONNECTION_STRING) {
-    console.log(`🟢 [AZURE COMMUNICATION SERVICES] STATUS: CONFIGURED (Twilio / ACS SMS & Email Gateway)`)
-  } else {
-    console.log(`🟡 [AZURE COMMUNICATION SERVICES] STATUS: SIMULATED (Local SMS & Email Gateway Active)`)
-  }
-
-  if (process.env.AZURE_SERVICE_BUS_CONNECTION_STRING) {
-    console.log(`🟢 [AZURE SERVICE BUS] STATUS: CONFIGURED (Live Pub/Sub Topic Pipeline)`)
-  } else {
-    console.log(`🟡 [AZURE SERVICE BUS] STATUS: SIMULATED (In-Memory Pub/Sub Queue Active)`)
-  }
-
-  if (process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
-    console.log(`🟢 [AZURE AI DOCUMENT INTELLIGENCE] STATUS: CONFIGURED (Form Recognizer OCR Engine)`)
-  } else {
-    console.log(`🟡 [AZURE AI DOCUMENT INTELLIGENCE] STATUS: SIMULATED (Local OCR Extraction Engine Active)`)
-  }
-
-  if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
-    console.log(`🟢 [AZURE APPLICATION INSIGHTS] STATUS: CONFIGURED (Live APM Telemetry Tracing)`)
-  } else {
-    console.log(`🟡 [AZURE APPLICATION INSIGHTS] STATUS: SIMULATED (In-Memory APM Tracing Active)`)
-  }
-
-  if (process.env.AZURE_OPENAI_KEY && process.env.AZURE_OPENAI_ENDPOINT) {
-    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-1'
-    console.log(`🟢 [AZURE OPENAI] STATUS: ONLINE (Deployment: "${deployment}")`)
-  } else {
-    console.log(`🟡 [AZURE OPENAI] STATUS: SIMULATED (Local GPT-4o Scenario Engine Active)`)
-  }
-
-  if (process.env.AZURE_SEARCH_KEY && process.env.AZURE_SEARCH_ENDPOINT) {
-    const indexName = process.env.AZURE_SEARCH_INDEX || 'kinetic-hr-policies'
-    console.log(`🟢 [AZURE AI SEARCH] STATUS: ONLINE (Index: "${indexName}")`)
-    // Asynchronously ensure index & seed policies
+  if (searchEnabled) {
     ensurePolicyIndex()
       .then(() => seedPolicyDocuments())
-      .catch(() => {})
-  } else {
-    console.log(`🟡 [AZURE AI SEARCH] STATUS: SIMULATED (In-Memory RAG Vector Index Active)`)
+      .catch(err => console.warn('[Search] Initial index seed failed:', err?.message || err))
   }
 
-  console.log(`--------------------------------------------------------------------------------`)
-  console.log(`🛡️  DOUBLE-WAY ARCHITECTURE: Live Azure Cloud with In-Memory Mock Failover`)
-  console.log(`📡 Ready for incoming requests from frontend`)
-  console.log(`================================================================================\n`)
+  console.log(
+    `[KineticHR] Listening on http://localhost:${PORT} (cosmos=${cosmosStatus}, openai=${aiEnabled ? 'live' : 'mock'}, search=${searchEnabled ? 'live' : 'mock'})`
+  )
 })

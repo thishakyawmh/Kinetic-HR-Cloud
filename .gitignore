@@ -13,9 +13,18 @@ dist
 dist-ssr
 *.local
 
-# Azure Functions local settings & secrets
+# Environment files, Azure Functions local settings & secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
 local.settings.json
-.env.local
+
+# Local emulator & runtime storage artifacts
+AzuriteConfig
+__azurite_db*.json
+__blobstorage__/
+backend/storage/
 
 # Editor directories and files
 .vscode/*

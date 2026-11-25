@@ -1,7 +1,8 @@
 /**
- * Azure Service Bus Module
- * Enterprise Pub/Sub Event Pipeline with Double-Way Resilience
+ * Azure Service Bus event publisher with in-memory queue fallback.
  */
+
+import { loadLocalSettings } from './env'
 
 export interface HREventMessage {
   eventId: string
@@ -14,26 +15,11 @@ export interface HREventMessage {
 }
 
 export function getServiceBusConfig() {
-  let connStr = (process.env.AZURE_SERVICE_BUS_CONNECTION_STRING || '').trim()
-
-  if (!connStr) {
-    try {
-      const fs = require('fs')
-      const path = require('path')
-      const candidates = [
-        path.resolve(process.cwd(), 'local.settings.json'),
-        path.resolve(__dirname, '../../local.settings.json'),
-        path.resolve(__dirname, '../../../local.settings.json'),
-      ]
-      for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          const parsed = JSON.parse(fs.readFileSync(p, 'utf-8'))
-          connStr = connStr || (parsed.Values?.AZURE_SERVICE_BUS_CONNECTION_STRING || '').trim()
-          if (connStr) break
-        }
-      }
-    } catch (_) {}
+  if (!process.env.AZURE_SERVICE_BUS_CONNECTION_STRING) {
+    loadLocalSettings()
   }
+
+  const connStr = (process.env.AZURE_SERVICE_BUS_CONNECTION_STRING || '').trim()
 
   const endpointPart = connStr.split(';').find(p => p.startsWith('Endpoint='))
   const endpoint = endpointPart ? endpointPart.substring(9).replace('sb://', 'https://').replace(/\/$/, '') : ''
@@ -64,9 +50,6 @@ export async function publishHREvent(
 
   if (isConfigured && endpoint) {
     try {
-      console.log(
-        `🟢 [AZURE SERVICE BUS] Published "${eventType}" to topic "${topicName}" on ${endpoint} (Event ID: ${eventId})`
-      )
       return {
         eventId,
         eventType,
@@ -77,15 +60,10 @@ export async function publishHREvent(
         provider: 'Azure Service Bus',
       }
     } catch (err: any) {
-      console.warn(
-        `⚠️  [AZURE SERVICE BUS ERROR] Publish failed (${err.message}). Falling back to In-Memory Event Queue!`
-      )
+      console.warn(`[ServiceBus] Publish failed (${err.message}), using in-memory queue.`)
     }
   }
 
-  console.log(
-    `🟡 [MOCK SERVICE BUS] Published "${eventType}" to In-Memory Event Queue (Topic: "${topicName}")`
-  )
   return {
     eventId,
     eventType,
@@ -121,7 +99,8 @@ export async function checkServiceBusHealth(): Promise<{
   }
 
   try {
-    const res = await fetch(endpoint, { method: 'GET' })
+    const res = await fetch(endpoint, { method: 'GET', signal: AbortSignal.timeout(5000) })
+    await res.body?.cancel()
     const latencyMs = Date.now() - start
     return {
       connected: true,
